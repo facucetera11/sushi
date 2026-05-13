@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Admin Kizuna Pro</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+body{
+background:linear-gradient(135deg,#faf8f5,#efe7df);
+padding:50px;
+max-width:1300px;
+margin:auto;
+color:#16204a;
+}
+
+h1{
+font-size:52px;
+font-weight:900;
+margin-bottom:35px;
+color:#d86a5e;
+}
+
+input,select{
+width:100%;
+padding:16px;
+margin:10px 0;
+border:none;
+border-radius:16px;
+background:white;
+box-shadow:0 8px 20px rgba(0,0,0,.06);
+font-size:15px;
+}
+
+button{
+width:100%;
+padding:16px;
+border:none;
+border-radius:16px;
+font-weight:800;
+cursor:pointer;
+transition:.3s;
+margin-top:10px;
+}
+
+button:hover{
+transform:translateY(-3px);
+}
+
+.add{
+background:#16204a;
+color:white;
+}
+
+.edit{
+background:#2e8b57;
+color:white;
+}
+
+.delete{
+background:#d86a5e;
+color:white;
+}
+
+.card{
+background:white;
+padding:25px;
+margin:25px 0;
+border-radius:28px;
+box-shadow:0 20px 45px rgba(0,0,0,.08);
+animation:fade .4s ease;
+}
+
+.low{
+border-left:10px solid #d86a5e;
+}
+
+.good{
+border-left:10px solid #2e8b57;
+}
+
+.badge{
+display:inline-block;
+padding:8px 16px;
+border-radius:999px;
+font-size:14px;
+font-weight:700;
+margin-bottom:15px;
+}
+
+.lowBadge{
+background:#ffe5e2;
+color:#d86a5e;
+}
+
+.goodBadge{
+background:#e4fff0;
+color:#2e8b57;
+}
+
+.qty{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.qty button{
+width:50px;
+padding:12px;
+}
+
+.success{
+position:fixed;
+top:30px;
+right:30px;
+background:#27ae60;
+color:white;
+padding:18px 25px;
+border-radius:18px;
+font-weight:700;
+z-index:9999;
+}
+
+@keyframes fade{
+from{opacity:0;transform:translateY(20px)}
+to{opacity:1;transform:translateY(0)}
+}
+
+</style>
+</head>
+<body>
+
+<h1>🍣 Admin Kizuna</h1>
+
+<input id="nameInput" placeholder="Nombre">
+<input id="priceInput" type="number" placeholder="Precio">
+<input id="stockInput" type="number" placeholder="Stock">
+<input id="imageInput" placeholder="URL Imagen">
+
+<select id="categoryInput">
+<option value="rolls">Rolls</option>
+<option value="combos">Combos</option>
+<option value="veggie">Veggie</option>
+<option value="bandejas">Bandejas</option>
+<option value="extras">Extras</option>
+</select>
+
+<button class="add" onclick="addProduct()">
+Agregar Producto
+</button>
+
+<div id="products"></div>
+
+<script>
+
+const API="http://localhost:5000";
+const productsDiv=document.getElementById("products");
+
+function toast(msg){
+
+const t=document.createElement("div");
+t.className="success";
+t.innerText=msg;
+
+document.body.appendChild(t);
+
+setTimeout(()=>t.remove(),1800);
+
+}
+
+async function load(){
+
+const res=await fetch(`${API}/products`);
+const products=await res.json();
+
+productsDiv.innerHTML="";
+
+products.forEach(p=>{
+
+const low=p.stock<5;
+
+productsDiv.innerHTML+=`
+
+<div class="card ${low?"low":"good"}">
+
+<div class="badge ${low?"lowBadge":"goodBadge"}">
+${low?"⚠ STOCK BAJO":"✓ STOCK OK"}
+</div>
+
+<input id="name-${p._id}" value="${p.name}">
+<input id="price-${p._id}" type="number" value="${p.price}">
+<input id="stock-${p._id}" type="number" value="${p.stock}">
+<input id="image-${p._id}" value="${p.image}">
+
+<select id="category-${p._id}">
+<option ${p.category==="rolls"?"selected":""}>rolls</option>
+<option ${p.category==="combos"?"selected":""}>combos</option>
+<option ${p.category==="veggie"?"selected":""}>veggie</option>
+<option ${p.category==="bandejas"?"selected":""}>bandejas</option>
+<option ${p.category==="extras"?"selected":""}>extras</option>
+</select>
+
+<div class="qty">
+<button onclick="changeStock('${p._id}',1)">+</button>
+<button onclick="changeStock('${p._id}',-1)">−</button>
+</div>
+
+<button class="edit"
+onclick="updateProduct('${p._id}')">
+Guardar
+</button>
+
+<button class="delete"
+onclick="deleteProduct('${p._id}')">
+Eliminar
+</button>
+
+</div>
+`;
+
+});
+
+}
+
+async function addProduct(){
+
+await fetch(`${API}/products`,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+name:nameInput.value,
+price:parseFloat(priceInput.value)||0,
+stock:parseInt(stockInput.value)||0,
+image:imageInput.value,
+category:categoryInput.value
+})
+});
+
+toast("Producto agregado");
+load();
+
+}
+
+async function updateProduct(id){
+
+await fetch(`${API}/products/${id}`,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+name:document.getElementById(`name-${id}`).value,
+price:parseFloat(document.getElementById(`price-${id}`).value)||0,
+stock:parseInt(document.getElementById(`stock-${id}`).value)||0,
+image:document.getElementById(`image-${id}`).value,
+category:document.getElementById(`category-${id}`).value
+})
+});
+
+toast("Guardado");
+load();
+
+}
+
+async function changeStock(id,val){
+
+const input=document.getElementById(`stock-${id}`);
+input.value=parseInt(input.value)+val;
+
+updateProduct(id);
+
+}
+
+async function deleteProduct(id){
+
+await fetch(`${API}/products/${id}`,{
+method:"DELETE"
+});
+
+toast("Eliminado");
+load();
+
+}
+
+load();
+
+</script>
+
+</body>
+</html>
