@@ -28,7 +28,7 @@ padding:22px 8%;
 display:flex;
 justify-content:space-between;
 align-items:center;
-background:rgba(255,255,255,.75);
+background:rgba(255,255,255,.85);
 backdrop-filter:blur(20px);
 z-index:1000;
 }
@@ -41,7 +41,7 @@ color:#d86a5e;
 
 nav{
 display:flex;
-gap:28px;
+gap:25px;
 }
 
 nav a{
@@ -56,15 +56,23 @@ background:
 linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
 url('https://images.unsplash.com/photo-1579871494447-9811cf80d66c');
 background-size:cover;
+background-position:center;
 display:flex;
+flex-direction:column;
 justify-content:center;
 align-items:center;
-flex-direction:column;
 color:white;
+text-align:center;
 }
 
 .hero h1{
 font-size:90px;
+font-weight:900;
+}
+
+.hero p{
+font-size:22px;
+margin-top:15px;
 }
 
 section{
@@ -72,9 +80,9 @@ padding:120px 8%;
 }
 
 .section-title{
-font-size:54px;
+font-size:52px;
 color:#d86a5e;
-margin-bottom:45px;
+margin-bottom:40px;
 font-weight:900;
 }
 
@@ -86,9 +94,14 @@ gap:35px;
 
 .card{
 background:white;
-border-radius:30px;
+border-radius:28px;
 overflow:hidden;
 box-shadow:0 15px 40px rgba(0,0,0,.08);
+transition:.35s;
+}
+
+.card:hover{
+transform:translateY(-10px);
 }
 
 .card img{
@@ -101,11 +114,15 @@ object-fit:cover;
 padding:25px;
 }
 
+.content h3{
+font-size:26px;
+}
+
 .price{
-font-size:24px;
+font-size:22px;
 font-weight:900;
 color:#d86a5e;
-margin:10px 0;
+margin:12px 0;
 }
 
 .stock{
@@ -122,6 +139,7 @@ background:#16204a;
 color:white;
 font-weight:800;
 cursor:pointer;
+transition:.3s;
 }
 
 button:hover{
@@ -136,27 +154,16 @@ width:380px;
 background:white;
 padding:25px;
 border-radius:28px;
-box-shadow:0 15px 45px rgba(0,0,0,.12);
+box-shadow:0 20px 50px rgba(0,0,0,.15);
 z-index:9999;
 max-height:80vh;
 overflow:auto;
 }
 
 .cart-item{
+margin-bottom:15px;
 display:flex;
 justify-content:space-between;
-align-items:center;
-margin-bottom:14px;
-}
-
-.qty{
-display:flex;
-gap:8px;
-}
-
-.qty button{
-width:35px;
-padding:8px;
 }
 
 footer{
@@ -183,7 +190,7 @@ margin-top:100px;
 
 <section class="hero">
 <h1>KIZUNA SUSHI</h1>
-<p>Experiencia premium</p>
+<p>Experiencia premium artesanal</p>
 </section>
 
 <section id="rolls"><div class="section-title">Rolls</div><div class="grid" id="rollsGrid"></div></section>
@@ -203,7 +210,8 @@ margin-top:100px;
 
 <script>
 
-const API="http://localhost:5000";
+const API="https://kizuna-api-8ja8.onrender.com";
+
 let cart=[];
 let products=[];
 
@@ -212,17 +220,12 @@ async function loadProducts(){
 const res=await fetch(`${API}/products`);
 products=await res.json();
 
-renderAll();
-updateCart();
-
-}
-
-function renderAll(){
 render("rolls","rollsGrid");
 render("combos","combosGrid");
 render("veggie","veggieGrid");
 render("bandejas","bandejasGrid");
 render("extras","extrasGrid");
+
 }
 
 function render(category,id){
@@ -242,44 +245,20 @@ container.innerHTML+=`
 <div class="price">$${product.price}</div>
 <div class="stock">Stock: ${product.stock}</div>
 
-<button
-${product.stock<=0?"disabled":""}
-onclick='addToCart("${product._id}")'>
-${product.stock<=0?"Sin Stock":"Agregar"}
+<button onclick='addToCart(${JSON.stringify(product)})'>
+Agregar
 </button>
 
 </div>
-</div>`;
+</div>
+`;
+
 });
+
 }
 
-function addToCart(id){
-
-const product=products.find(p=>p._id===id);
-
-const item=cart.find(i=>i._id===id);
-
-if(item){
-if(item.qty<product.stock)item.qty++;
-}else{
-cart.push({...product,qty:1});
-}
-
-updateCart();
-}
-
-function changeQty(id,val){
-
-const item=cart.find(i=>i._id===id);
-
-if(!item)return;
-
-item.qty+=val;
-
-if(item.qty<=0){
-cart=cart.filter(i=>i._id!==id);
-}
-
+function addToCart(product){
+cart.push(product);
 updateCart();
 }
 
@@ -289,54 +268,29 @@ let html="";
 let total=0;
 
 cart.forEach(item=>{
-
-html+=`
-<div class="cart-item">
-<div>${item.name} x${item.qty}</div>
-
-<div class="qty">
-<button onclick="changeQty('${item._id}',-1)">−</button>
-<button onclick="changeQty('${item._id}',1)">+</button>
-</div>
-
-<div>$${item.price*item.qty}</div>
-</div>
-`;
-
-total+=item.price*item.qty;
-
+html+=`<div class="cart-item"><span>${item.name}</span><span>$${item.price}</span></div>`;
+total+=item.price;
 });
 
-cartItems.innerHTML=html;
-cartTotal.innerHTML=`Total: $${total}`;
+document.getElementById("cartItems").innerHTML=html;
+document.getElementById("cartTotal").innerHTML=`Total: $${total}`;
+
 }
 
-async function sendWhatsApp(){
+function sendWhatsApp(){
 
-if(!cart.length){
+if(cart.length===0){
 alert("Carrito vacío");
 return;
 }
 
-for(const item of cart){
-
-for(let i=0;i<item.qty;i++){
-
-await fetch(`${API}/buy/${item._id}`,{
-method:"POST"
-});
-
-}
-
-}
-
-let msg="Hola Kizuna, quiero pedir:%0A%0A";
+let msg="Hola Kizuna Sushi, quiero pedir:%0A%0A";
 
 cart.forEach(i=>{
-msg+=`• ${i.name} x${i.qty} - $${i.price*i.qty}%0A`;
+msg+=`• ${i.name} - $${i.price}%0A`;
 });
 
-const total=cart.reduce((a,b)=>a+b.price*b.qty,0);
+const total=cart.reduce((a,b)=>a+b.price,0);
 
 msg+=`%0ATotal: $${total}`;
 
@@ -344,10 +298,6 @@ window.open(
 `https://wa.me/1121734894?text=${msg}`,
 "_blank"
 );
-
-cart=[];
-
-await loadProducts();
 
 }
 
