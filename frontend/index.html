@@ -21,6 +21,8 @@ color:#16204a;
 overflow-x:hidden;
 }
 
+/* HEADER */
+
 header{
 position:fixed;
 top:0;
@@ -29,10 +31,10 @@ padding:24px 8%;
 display:flex;
 justify-content:space-between;
 align-items:center;
-background:rgba(255,255,255,.85);
-backdrop-filter:blur(20px);
+background:rgba(255,255,255,.88);
+backdrop-filter:blur(18px);
 z-index:9999;
-box-shadow:0 10px 25px rgba(0,0,0,.05);
+box-shadow:0 10px 25px rgba(0,0,0,.04);
 }
 
 .logo{
@@ -41,6 +43,25 @@ font-weight:900;
 letter-spacing:4px;
 color:#d86a5e;
 }
+
+nav{
+display:flex;
+gap:28px;
+}
+
+nav a{
+text-decoration:none;
+font-weight:800;
+color:#16204a;
+transition:.3s;
+}
+
+nav a:hover{
+color:#d86a5e;
+transform:translateY(-2px);
+}
+
+/* HERO */
 
 .hero{
 height:100vh;
@@ -55,30 +76,45 @@ align-items:center;
 flex-direction:column;
 color:white;
 text-align:center;
-animation:zoom 18s infinite alternate ease-in-out;
+animation:zoomHero 18s infinite alternate ease-in-out;
 }
 
-@keyframes zoom{
-from{background-size:100%}
-to{background-size:115%}
+@keyframes zoomHero{
+from{background-size:100%;}
+to{background-size:115%;}
 }
 
 .hero h1{
 font-size:100px;
 font-weight:900;
+animation:fadeUp 1s ease;
 }
 
 .hero p{
 font-size:24px;
 margin-top:15px;
+animation:fadeUp 1.4s ease;
 }
+
+@keyframes fadeUp{
+from{
+opacity:0;
+transform:translateY(25px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+/* SECCIONES */
 
 section{
 padding:120px 8%;
 }
 
 .section-title{
-font-size:55px;
+font-size:58px;
 font-weight:900;
 color:#d86a5e;
 margin-bottom:45px;
@@ -90,17 +126,18 @@ grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
 gap:35px;
 }
 
+/* CARD */
+
 .card{
 background:white;
 border-radius:30px;
 overflow:hidden;
 box-shadow:0 18px 45px rgba(0,0,0,.08);
-cursor:pointer;
 transition:.35s;
 }
 
 .card:hover{
-transform:translateY(-10px);
+transform:translateY(-12px);
 }
 
 .card img{
@@ -118,12 +155,18 @@ transform:scale(1.08);
 padding:25px;
 }
 
+.content h3{
+font-size:28px;
+}
+
 .price{
 font-size:24px;
 font-weight:900;
 color:#d86a5e;
-margin:10px 0;
+margin:12px 0;
 }
+
+/* STOCK */
 
 .stock-ok{
 color:#34c759;
@@ -139,6 +182,8 @@ font-weight:800;
 color:#ff3b30;
 font-weight:800;
 }
+
+/* BOTONES */
 
 button{
 width:100%;
@@ -157,11 +202,17 @@ background:#d86a5e;
 transform:translateY(-3px);
 }
 
+button:active{
+transform:scale(.96);
+}
+
+/* CARRITO */
+
 #cart{
 position:fixed;
 right:20px;
 bottom:20px;
-width:360px;
+width:380px;
 background:white;
 padding:28px;
 border-radius:30px;
@@ -171,38 +222,50 @@ max-height:80vh;
 overflow:auto;
 }
 
-#modal{
+#badge{
 position:fixed;
-inset:0;
-background:rgba(0,0,0,.75);
-display:none;
+right:390px;
+bottom:360px;
+background:#d86a5e;
+color:white;
+width:50px;
+height:50px;
+border-radius:50%;
+display:flex;
 justify-content:center;
 align-items:center;
+font-weight:900;
+font-size:20px;
+box-shadow:0 10px 25px rgba(0,0,0,.18);
 z-index:99999;
 }
 
-.modal-box{
-width:900px;
-background:white;
-border-radius:35px;
-overflow:hidden;
+.cart-item{
 display:flex;
+justify-content:space-between;
+align-items:center;
+margin:14px 0;
 }
 
-.modal-box img{
-width:50%;
-height:650px;
-object-fit:cover;
+.qty{
+display:flex;
+gap:8px;
+align-items:center;
 }
 
-.modal-content{
-width:50%;
-padding:50px;
-display:flex;
-flex-direction:column;
-justify-content:center;
-gap:20px;
+.qty button{
+width:36px;
+padding:8px;
+border-radius:12px;
 }
+
+#total{
+font-size:24px;
+font-weight:900;
+margin:18px 0;
+}
+
+/* FOOTER */
 
 footer{
 background:#16204a;
@@ -218,6 +281,14 @@ margin-top:100px;
 
 <header>
 <div class="logo">KIZUNA</div>
+
+<nav>
+<a href="#rolls">Rolls</a>
+<a href="#combos">Combos</a>
+<a href="#veggie">Veggie</a>
+<a href="#bandejas">Bandejas</a>
+<a href="#extras">Extras</a>
+</nav>
 </header>
 
 <section class="hero">
@@ -225,40 +296,19 @@ margin-top:100px;
 <p>Alta cocina japonesa artesanal</p>
 </section>
 
-<section id="rolls">
-<div class="section-title">Rolls</div>
-<div class="grid" id="rollsGrid"></div>
-</section>
+<section id="rolls"><div class="section-title">Rolls</div><div class="grid" id="rollsGrid"></div></section>
+<section id="combos"><div class="section-title">Combos</div><div class="grid" id="combosGrid"></div></section>
+<section id="veggie"><div class="section-title">Veggie</div><div class="grid" id="veggieGrid"></div></section>
+<section id="bandejas"><div class="section-title">Bandejas</div><div class="grid" id="bandejasGrid"></div></section>
+<section id="extras"><div class="section-title">Extras</div><div class="grid" id="extrasGrid"></div></section>
 
-<section id="combos">
-<div class="section-title">Combos</div>
-<div class="grid" id="combosGrid"></div>
-</section>
-
-<section id="veggie">
-<div class="section-title">Veggie</div>
-<div class="grid" id="veggieGrid"></div>
-</section>
-
-<section id="bandejas">
-<div class="section-title">Bandejas</div>
-<div class="grid" id="bandejasGrid"></div>
-</section>
-
-<section id="extras">
-<div class="section-title">Extras</div>
-<div class="grid" id="extrasGrid"></div>
-</section>
+<div id="badge">0</div>
 
 <div id="cart">
 <h2>🛒 Pedido</h2>
 <div id="items"></div>
-<h2 id="total">$0</h2>
+<div id="total">$0</div>
 <button onclick="sendWhatsApp()">Confirmar Pedido</button>
-</div>
-
-<div id="modal">
-<div class="modal-box" id="modalBox"></div>
 </div>
 
 <footer>Kizuna Sushi © 2026</footer>
@@ -283,6 +333,18 @@ render("extras","extrasGrid");
 
 }
 
+function stockClass(stock){
+if(stock<=5)return "stock-critical";
+if(stock<=10)return "stock-low";
+return "stock-ok";
+}
+
+function stockText(stock){
+if(stock<=5)return "⚠ Últimas unidades";
+if(stock<=10)return "Stock bajo";
+return "Disponible";
+}
+
 function render(category,id){
 
 const div=document.getElementById(id);
@@ -292,26 +354,18 @@ products
 .filter(p=>p.category?.toLowerCase().trim()===category)
 .forEach(p=>{
 
-let stockClass="stock-ok";
-let stockText="Disponible";
-
-if(p.stock<=5){
-stockClass="stock-critical";
-stockText="⚠ Últimas unidades";
-}else if(p.stock<=10){
-stockClass="stock-low";
-stockText="Stock bajo";
-}
-
 div.innerHTML+=`
-<div class="card" onclick='openModal(${JSON.stringify(p)})'>
+<div class="card">
 <img src="${p.image}">
 <div class="content">
-<h2>${p.name}</h2>
+<h3>${p.name}</h3>
 <div class="price">$${p.price}</div>
-<div class="${stockClass}">
-${stockText}
+<div class="${stockClass(p.stock)}">
+${stockText(p.stock)}
 </div>
+<button onclick='addToCart(${JSON.stringify(p)})'>
+Agregar
+</button>
 </div>
 </div>
 `;
@@ -320,58 +374,73 @@ ${stockText}
 
 }
 
-function openModal(p){
-
-modal.style.display="flex";
-
-modalBox.innerHTML=`
-<img src="${p.image}">
-<div class="modal-content">
-<h1>${p.name}</h1>
-<h2>$${p.price}</h2>
-<p>Selección premium artesanal Kizuna Sushi.</p>
-<button onclick='addToCart(${JSON.stringify(p)})'>
-Agregar al carrito
-</button>
-<button onclick="closeModal()">Cerrar</button>
-</div>
-`;
-
-}
-
-function closeModal(){
-modal.style.display="none";
-}
-
 function addToCart(p){
-cart.push(p);
+
+const found=cart.find(i=>i._id===p._id);
+
+if(found){
+found.qty++;
+}else{
+cart.push({...p,qty:1});
+}
+
 updateCart();
-closeModal();
+
+}
+
+function changeQty(id,val){
+
+const item=cart.find(i=>i._id===id);
+
+item.qty+=val;
+
+if(item.qty<=0){
+cart=cart.filter(i=>i._id!==id);
+}
+
+updateCart();
+
 }
 
 function updateCart(){
 
 items.innerHTML="";
-let totalValue=0;
+let total=0;
+let count=0;
 
 cart.forEach(i=>{
-items.innerHTML+=`<p>${i.name} - $${i.price}</p>`;
-totalValue+=i.price;
+
+items.innerHTML+=`
+<div class="cart-item">
+<div>${i.name}<br>$${i.price}</div>
+
+<div class="qty">
+<button onclick="changeQty('${i._id}',-1)">−</button>
+<span>${i.qty}</span>
+<button onclick="changeQty('${i._id}',1)">+</button>
+</div>
+</div>
+`;
+
+total+=i.price*i.qty;
+count+=i.qty;
+
 });
 
-total.innerHTML=`$${totalValue}`;
+document.getElementById("total").innerHTML=`$${total}`;
+document.getElementById("badge").innerHTML=count;
 
 }
 
-function sendWhatsApp(){
+async function sendWhatsApp(){
 
 let msg="🍣 Pedido Kizuna%0A%0A";
 
 cart.forEach(i=>{
-msg+=`• ${i.name} - $${i.price}%0A`;
+msg+=`• ${i.name} x${i.qty}%0A`;
 });
 
-msg+=`%0ATotal: ${total.innerHTML}`;
+msg+=`%0ATotal: ${document.getElementById("total").innerHTML}`;
 
 window.open(
 `https://wa.me/1121734894?text=${msg}`,
@@ -379,10 +448,6 @@ window.open(
 );
 
 }
-
-modal.onclick=e=>{
-if(e.target===modal)closeModal();
-};
 
 load();
 
