@@ -192,7 +192,10 @@ max-height:38vh;
 <body>
 
 <header>
-<div class="logo">KIZUNA</div>
+<div style="display:flex;align-items:center;gap:14px;">
+  <div class="logo">KIZUNA</div>
+  <div id="statusBadge" style="font-size:13px;font-weight:800;padding:6px 14px;border-radius:20px;background:rgba(0,0,0,.08);"></div>
+</div>
 <nav>
 <a href="#rolls">Rolls</a>
 <a href="#combos">Combos</a>
@@ -201,7 +204,6 @@ max-height:38vh;
 <a href="#extras">Extras</a>
 </nav>
 </header>
-
 <section class="hero">
   <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1579871494447-9811cf80d66c')"></div>
   <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1617196034183-421b4040ed20')"></div>
@@ -281,21 +283,31 @@ async function load() {
 }
 
 function updateStatus(){
+  const now = new Date();
+  const day = now.getDay();
+  const hour = now.getHours();
 
-const now=new Date();
-const day=now.getDay();
-const hour=now.getHours();
+  const badge = document.getElementById("statusBadge");
 
-if(!settings.openDays.includes(day)){
-statusBox.innerHTML="⛔ Hoy cerrado";
-return;
-}
+  if(!settings.openDays.includes(day)){
+    statusBox.innerHTML = "⛔ Hoy cerrado";
+    badge.innerHTML = "⛔ Cerrado";
+    badge.style.background = "rgba(216,106,94,.15)";
+    badge.style.color = "#d86a5e";
+    return;
+  }
 
-if(hour>=settings.openHour && hour<settings.closeHour){
-statusBox.innerHTML="🟢 Abierto ahora";
-}else{
-statusBox.innerHTML=`🔴 Cerrado · Abrimos ${settings.openHour}:00`;
-}
+  if(hour >= settings.openHour && hour < settings.closeHour){
+    statusBox.innerHTML = "🟢 Abierto ahora";
+    badge.innerHTML = "🟢 Abierto";
+    badge.style.background = "rgba(46,139,87,.12)";
+    badge.style.color = "#2e8b57";
+  } else {
+    statusBox.innerHTML = `🔴 Cerrado · Abrimos ${settings.openHour}:00`;
+    badge.innerHTML = `🔴 Abrimos ${settings.openHour}:00`;
+    badge.style.background = "rgba(216,106,94,.15)";
+    badge.style.color = "#d86a5e";
+  }
 }
 
 function render(cat,id){
