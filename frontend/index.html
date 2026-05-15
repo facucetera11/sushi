@@ -174,22 +174,6 @@ overflow:auto;
 z-index:999;
 }
 
-#badge{
-position:fixed;
-right:385px;
-bottom:340px;
-width:46px;
-height:46px;
-background:#d86a5e;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-color:white;
-font-weight:900;
-z-index:9999;
-}
-
 .cart-item{
 display:flex;
 justify-content:space-between;
@@ -336,7 +320,6 @@ font-size:14px;
 <section id="bandejas"><div class="section-title">Bandejas</div><div class="grid" id="bandejasGrid"></div></section>
 <section id="extras"><div class="section-title">Extras</div><div class="grid" id="extrasGrid"></div></section>
 
-<div id="badge" style="display:none;">0</div>
 
 <div id="cart">
 <h2>🛒 Pedido</h2>
@@ -422,15 +405,6 @@ total+=i.price*i.qty;
 count+=i.qty;
 });
 document.getElementById("total").innerHTML=`$${total}`;
-const badge=document.getElementById("badge");
-
-badge.innerHTML=count;
-
-if(count===0){
-badge.style.display="none";
-}else{
-badge.style.display="flex";
-}
 }
 
 function sendWhatsApp(){
