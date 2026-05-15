@@ -6,110 +6,260 @@
 <title>Kizuna Sushi</title>
 
 <style>
-body{
-font-family:Arial;
-background:#faf8f5;
+
+*{
 margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+scroll-behavior:smooth;
+}
+
+body{
+background:#fdfbf7;
+color:#16204a;
+overflow-x:hidden;
 }
 
 header{
-background:#16204a;
-color:white;
-padding:30px;
-text-align:center;
-font-size:40px;
+position:fixed;
+top:0;
+width:100%;
+padding:24px 8%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:rgba(255,255,255,.85);
+backdrop-filter:blur(20px);
+box-shadow:0 10px 25px rgba(0,0,0,.05);
+z-index:9999;
+}
+
+.logo{
+font-size:34px;
 font-weight:900;
+letter-spacing:3px;
+color:#d86a5e;
+}
+
+nav{
+display:flex;
+gap:30px;
+}
+
+nav a{
+text-decoration:none;
+font-weight:800;
+color:#16204a;
+transition:.3s;
+}
+
+nav a:hover{
+color:#d86a5e;
+transform:translateY(-2px);
+}
+
+.hero{
+height:100vh;
+background:
+linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
+url("https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
+background-size:cover;
+background-position:center;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+color:white;
+text-align:center;
+animation:zoomHero 16s infinite alternate ease-in-out;
+}
+
+@keyframes zoomHero{
+from{background-size:100%;}
+to{background-size:112%;}
+}
+
+.hero h1{
+font-size:95px;
+font-weight:900;
+animation:fadeUp 1s ease;
+}
+
+.hero p{
+font-size:24px;
+margin-top:18px;
+opacity:.95;
+animation:fadeUp 1.4s ease;
+}
+
+@keyframes fadeUp{
+from{
+opacity:0;
+transform:translateY(35px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
 }
 
 section{
-padding:40px;
+padding:120px 8%;
 }
 
-h2{
+.section-title{
+font-size:58px;
+font-weight:900;
 color:#d86a5e;
-font-size:35px;
-margin-bottom:20px;
+margin-bottom:50px;
 }
 
 .grid{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-gap:20px;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:35px;
 }
 
 .card{
 background:white;
-padding:20px;
-border-radius:20px;
-box-shadow:0 10px 25px rgba(0,0,0,.08);
+border-radius:28px;
+overflow:hidden;
+box-shadow:0 18px 45px rgba(0,0,0,.08);
+transition:.35s;
 }
 
-img{
+.card:hover{
+transform:translateY(-12px);
+}
+
+.card img{
 width:100%;
-height:220px;
+height:250px;
 object-fit:cover;
-border-radius:15px;
+transition:.5s;
+}
+
+.card:hover img{
+transform:scale(1.08);
+}
+
+.content{
+padding:28px;
+}
+
+.content h3{
+font-size:28px;
+margin-bottom:12px;
+}
+
+.price{
+font-size:24px;
+font-weight:900;
+color:#d86a5e;
+margin-bottom:10px;
+}
+
+.stock{
+font-weight:700;
+margin-bottom:18px;
 }
 
 button{
 width:100%;
-padding:15px;
+padding:17px;
 border:none;
-border-radius:15px;
-background:#d86a5e;
+border-radius:18px;
+background:#16204a;
 color:white;
-font-weight:bold;
+font-weight:800;
 cursor:pointer;
-margin-top:10px;
+transition:.25s;
+}
+
+button:hover{
+background:#d86a5e;
+transform:translateY(-3px);
+}
+
+button:active{
+transform:scale(.96);
 }
 
 #cart{
 position:fixed;
-right:20px;
-bottom:20px;
-width:300px;
+right:25px;
+bottom:25px;
+width:360px;
 background:white;
-padding:20px;
-border-radius:20px;
-box-shadow:0 10px 30px rgba(0,0,0,.12);
+padding:28px;
+border-radius:30px;
+box-shadow:0 20px 60px rgba(0,0,0,.12);
+z-index:9999;
+max-height:80vh;
+overflow:auto;
 }
+
+#cart h2{
+color:#d86a5e;
+margin-bottom:18px;
+}
+
+.cart-item{
+display:flex;
+justify-content:space-between;
+margin-bottom:12px;
+}
+
+#total{
+font-size:24px;
+font-weight:900;
+margin:18px 0;
+}
+
+footer{
+background:#16204a;
+color:white;
+text-align:center;
+padding:60px;
+margin-top:80px;
+}
+
 </style>
 </head>
 <body>
 
-<header>KIZUNA SUSHI</header>
+<header>
+<div class="logo">KIZUNA</div>
 
-<section>
-<h2>Rolls</h2>
-<div class="grid" id="rollsGrid"></div>
+<nav>
+<a href="#rolls">Rolls</a>
+<a href="#combos">Combos</a>
+<a href="#veggie">Veggie</a>
+<a href="#bandejas">Bandejas</a>
+<a href="#extras">Extras</a>
+</nav>
+</header>
+
+<section class="hero">
+<h1>KIZUNA SUSHI</h1>
+<p>Alta cocina japonesa artesanal</p>
 </section>
 
-<section>
-<h2>Combos</h2>
-<div class="grid" id="combosGrid"></div>
-</section>
-
-<section>
-<h2>Veggie</h2>
-<div class="grid" id="veggieGrid"></div>
-</section>
-
-<section>
-<h2>Bandejas</h2>
-<div class="grid" id="bandejasGrid"></div>
-</section>
-
-<section>
-<h2>Extras</h2>
-<div class="grid" id="extrasGrid"></div>
-</section>
+<section id="rolls"><div class="section-title">Rolls</div><div class="grid" id="rollsGrid"></div></section>
+<section id="combos"><div class="section-title">Combos</div><div class="grid" id="combosGrid"></div></section>
+<section id="veggie"><div class="section-title">Veggie</div><div class="grid" id="veggieGrid"></div></section>
+<section id="bandejas"><div class="section-title">Bandejas</div><div class="grid" id="bandejasGrid"></div></section>
+<section id="extras"><div class="section-title">Extras</div><div class="grid" id="extrasGrid"></div></section>
 
 <div id="cart">
-<h2>Pedido</h2>
+<h2>🛒 Pedido</h2>
 <div id="items"></div>
-<h3 id="total">$0</h3>
-<button onclick="sendWhatsApp()">Confirmar</button>
+<div id="total">$0</div>
+<button onclick="sendWhatsApp()">Confirmar Pedido</button>
 </div>
+
+<footer>Kizuna Sushi © 2026</footer>
 
 <script>
 
@@ -143,12 +293,14 @@ products
 div.innerHTML+=`
 <div class="card">
 <img src="${p.image}">
+<div class="content">
 <h3>${p.name}</h3>
-<p>$${p.price}</p>
-<p>Stock: ${p.stock}</p>
+<div class="price">$${p.price}</div>
+<div class="stock">Stock: ${p.stock}</div>
 <button onclick='addToCart(${JSON.stringify(p)})'>
-Agregar
+Agregar al carrito
 </button>
+</div>
 </div>
 `;
 
@@ -167,7 +319,11 @@ items.innerHTML="";
 let total=0;
 
 cart.forEach(i=>{
-items.innerHTML+=`<p>${i.name} - $${i.price}</p>`;
+items.innerHTML+=`
+<div class="cart-item">
+<span>${i.name}</span>
+<span>$${i.price}</span>
+</div>`;
 total+=i.price;
 });
 
@@ -183,11 +339,14 @@ method:"POST"
 });
 }
 
-window.open("https://wa.me/1121734894","_blank");
+window.open(
+"https://wa.me/1121734894",
+"_blank"
+);
 
 cart=[];
-load();
 updateCart();
+load();
 
 }
 
