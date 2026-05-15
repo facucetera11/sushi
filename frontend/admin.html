@@ -115,18 +115,21 @@ document.getElementById("analytics").innerHTML=`
 ordersDiv.innerHTML="";
 
 orders.forEach(o=>{
-ordersDiv.innerHTML+=`
-<div class="card order">
-<h3>Pedido #${o.number}</h3>
-<p>Total: $${o.total}</p>
+  const itemsList = o.items.map(i => `<li>${i.name} x${i.qty} — $${i.price * i.qty}</li>`).join("");
 
-<select onchange="updateOrder('${o._id}',this.value)">
-<option ${o.status==="Pendiente"?"selected":""}>Pendiente</option>
-<option ${o.status==="Preparando"?"selected":""}>Preparando</option>
-<option ${o.status==="Entregado"?"selected":""}>Entregado</option>
-</select>
-</div>
-`;
+  ordersDiv.innerHTML+=`
+  <div class="card order">
+  <h3>Pedido #${o.number}</h3>
+  <ul style="margin:10px 0;padding-left:20px;opacity:.8;">${itemsList}</ul>
+  <p style="font-weight:900;margin:8px 0;">Total: $${o.total}</p>
+
+  <select onchange="updateOrder('${o._id}',this.value)">
+  <option ${o.status==="Pendiente"?"selected":""}>Pendiente</option>
+  <option ${o.status==="Preparando"?"selected":""}>Preparando</option>
+  <option ${o.status==="Entregado"?"selected":""}>Entregado</option>
+  </select>
+  </div>
+  `;
 });
 
 productsDiv.innerHTML="";
