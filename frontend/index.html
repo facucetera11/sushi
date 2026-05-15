@@ -205,18 +205,36 @@ const API="https://kizuna-api-8ja8.onrender.com";
 
 let products=[],cart=[],settings={};
 
-async function load(){
+async function load() {
+  // Mostrar loading en cada sección
+  ["rollsGrid", "combosGrid", "veggieGrid", "bandejasGrid", "extrasGrid"].forEach(id => {
+    document.getElementById(id).innerHTML = `
+      <p style="opacity:.5;font-size:14px;">Cargando...</p>
+    `;
+  });
 
-const p=await fetch(`${API}/products`);
-products=await p.json();
+  statusBox.innerHTML = "⏳ Verificando horario...";
 
-const s=await fetch(`${API}/settings`);
-settings=await s.json();
+  try {
+    const p = await fetch(`${API}/products`);
+    products = await p.json();
 
-updateStatus();
+    const s = await fetch(`${API}/settings`);
+    settings = await s.json();
 
-["rolls","combos","veggie","bandejas","extras"]
-.forEach(cat=>render(cat,cat+"Grid"));
+    updateStatus();
+
+    ["rolls", "combos", "veggie", "bandejas", "extras"]
+      .forEach(cat => render(cat, cat + "Grid"));
+
+  } catch (err) {
+    statusBox.innerHTML = "⚠️ No se pudo conectar con el servidor";
+    ["rollsGrid", "combosGrid", "veggieGrid", "bandejasGrid", "extrasGrid"].forEach(id => {
+      document.getElementById(id).innerHTML = `
+        <p style="opacity:.5;font-size:14px;">Error al cargar productos. Intentá recargar la página.</p>
+      `;
+    });
+  }
 }
 
 function updateStatus(){
@@ -293,17 +311,23 @@ total+=i.price*i.qty;
 document.getElementById("total").innerHTML=`$${total}`;
 }
 
-function sendWhatsApp(){
+function sendWhatsApp() {
+  if (cart.length === 0) {
+    alert("Tu carrito está vacío");
+    return;
+  }
 
-let msg="🍣 Pedido Kizuna%0A%0A";
+  let msg = "🍣 Pedido Kizuna%0A%0A";
+  let total = 0;
 
-cart.forEach(i=>{
-msg+=`• ${i.name} x${i.qty}%0A`;
-});
+  cart.forEach(i => {
+    msg += `• ${i.name} x${i.qty}%0A`;
+    total += i.price * i.qty;
+  });
 
-msg+=`%0ATotal: ${total.innerHTML}`;
+  msg += `%0ATotal: $${total}`;
 
-window.open(`https://wa.me/1121734894?text=${msg}`,"_blank");
+  window.open(`https://wa.me/1121734894?text=${msg}`, "_blank");
 }
 
 load();
