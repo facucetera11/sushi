@@ -21,17 +21,41 @@ nav{display:flex;gap:20px;}
 nav a{text-decoration:none;font-weight:800;color:#16204a;}
 
 .hero{
+position:relative;
 height:100vh;
-background:
-linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
-url("https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
-background-size:cover;
 display:flex;
 justify-content:center;
 align-items:center;
 flex-direction:column;
 color:white;
 text-align:center;
+overflow:hidden;
+}
+
+.hero-slide{
+position:absolute;
+inset:0;
+background-size:cover;
+background-position:center;
+opacity:0;
+transition:opacity 1.5s ease-in-out;
+z-index:0;
+}
+
+.hero-slide.active{
+opacity:1;
+}
+
+.hero-overlay{
+position:absolute;
+inset:0;
+background:rgba(0,0,0,.38);
+z-index:1;
+}
+
+.hero-content{
+position:relative;
+z-index:2;
 }
 
 .hero h1{font-size:95px;}
@@ -179,9 +203,17 @@ max-height:38vh;
 </header>
 
 <section class="hero">
-<h1>KIZUNA SUSHI</h1>
-<p>Alta cocina japonesa artesanal</p>
-<div id="statusBox"></div>
+  <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1579871494447-9811cf80d66c')"></div>
+  <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1617196034183-421b4040ed20')"></div>
+  <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1611143669185-af224c5e3252')"></div>
+  <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1562802378-063ec186a863')"></div>
+  <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1559410545-0bdcd187e0a6')"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>KIZUNA SUSHI</h1>
+    <p>Alta cocina japonesa artesanal</p>
+    <div id="statusBox"></div>
+  </div>
 </section>
 
 <section id="rolls"><div class="section-title">Rolls</div><div class="grid" id="rollsGrid"></div></section>
@@ -204,6 +236,16 @@ max-height:38vh;
 const API="https://kizuna-api-8ja8.onrender.com";
 
 let products=[],cart=[],settings={};
+
+// Slideshow del hero
+const slides = document.querySelectorAll(".hero-slide");
+let current = 0;
+
+setInterval(() => {
+  slides[current].classList.remove("active");
+  current = (current + 1) % slides.length;
+  slides[current].classList.add("active");
+}, 4000);
 
 async function load() {
   // Mostrar loading en cada sección
@@ -235,6 +277,7 @@ async function load() {
       `;
     });
   }
+  
 }
 
 function updateStatus(){
