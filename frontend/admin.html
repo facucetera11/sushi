@@ -2,231 +2,580 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Admin Kizuna</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Kizuna Sushi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif}
-body{background:#fcfaf6;padding:50px;max-width:1500px;margin:auto;color:#16204a}
-h1{font-size:58px;color:#d86a5e;margin-bottom:30px}
-input,textarea,select{
-width:100%;padding:16px;margin:10px 0;border:none;border-radius:18px;
-background:white;box-shadow:0 10px 25px rgba(0,0,0,.08)
+:root {
+  --red: #d86a5e;
+  --navy: #16204a;
+  --cream: #fcfaf6;
+  --green: #2e8b57;
+  --shadow: 0 12px 35px rgba(0,0,0,.08);
 }
-textarea{height:100px}
-button{
-width:100%;padding:16px;border:none;border-radius:18px;
-font-weight:800;cursor:pointer;transition:.25s
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--cream);
+  color: var(--navy);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
 }
-button:hover{transform:translateY(-3px)}
-.add{background:#16204a;color:white}
-.edit{background:#2e8b57;color:white}
-.delete{background:#d86a5e;color:white}
-.card{
-background:white;padding:28px;border-radius:28px;
-margin:25px 0;box-shadow:0 18px 40px rgba(0,0,0,.08)
+
+/* LOGIN */
+#loginScreen {
+  position: fixed; inset: 0;
+  background: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+  flex-direction: column;
+  gap: 20px;
 }
-#analytics{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:18px;
-margin-bottom:30px
+#loginScreen h1 {
+  font-family: 'Playfair Display', serif;
+  color: white; font-size: 42px;
+  margin-bottom: 10px;
 }
-.metric{
-background:white;padding:25px;border-radius:22px;
-text-align:center;font-weight:900;color:#d86a5e
+#loginScreen p { color: rgba(255,255,255,.5); font-size: 14px; }
+#loginBox {
+  background: rgba(255,255,255,.07);
+  border-radius: 24px; padding: 36px;
+  width: 340px; display: flex; flex-direction: column; gap: 14px;
 }
-.order{border-left:8px solid #d86a5e}
-#toast{
-position:fixed;bottom:30px;right:30px;background:#16204a;
-color:white;padding:18px 28px;border-radius:18px;
-opacity:0;transition:.3s
+#pwInput {
+  padding: 16px; border-radius: 14px; border: none;
+  background: rgba(255,255,255,.1); color: white;
+  font-size: 16px; font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: background .2s;
 }
-#toast.show{opacity:1}
+#pwInput::placeholder { color: rgba(255,255,255,.3); }
+#pwInput:focus { background: rgba(255,255,255,.15); }
+#loginBtn {
+  padding: 16px; border-radius: 14px; border: none;
+  background: var(--red); color: white;
+  font-weight: 800; font-size: 15px; cursor: pointer;
+  transition: .2s;
+}
+#loginBtn:hover { background: #c45a4f; }
+#loginError { color: #ff8a80; font-size: 13px; text-align: center; min-height: 18px; }
+
+/* MAIN ADMIN */
+#adminMain {
+  display: none;
+  padding: 50px 6%;
+  max-width: 1400px;
+  margin: auto;
+}
+
+.admin-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 36px;
+}
+.admin-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px; color: var(--red);
+}
+#logoutBtn {
+  padding: 10px 20px; border-radius: 12px; border: none;
+  background: rgba(22,32,74,.08); color: var(--navy);
+  font-weight: 700; font-size: 13px; cursor: pointer;
+  transition: .2s;
+}
+#logoutBtn:hover { background: var(--red); color: white; }
+
+/* METRICS */
+#analytics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 36px;
+}
+.metric {
+  background: white;
+  padding: 26px 22px;
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.metric-value {
+  font-size: 36px; font-weight: 900; color: var(--red);
+  font-family: 'Playfair Display', serif;
+}
+.metric-label { font-size: 13px; opacity: .55; margin-top: 4px; font-weight: 600; }
+
+/* CARDS */
+.panel {
+  background: white;
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: var(--shadow);
+  margin-bottom: 28px;
+}
+.panel h2 {
+  font-size: 22px; font-weight: 800;
+  margin-bottom: 22px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+/* ORDERS */
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+.order-card {
+  border-radius: 18px;
+  border-left: 6px solid var(--red);
+  padding: 20px;
+  background: var(--cream);
+}
+.order-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+.order-items { font-size: 13px; opacity: .7; margin-bottom: 10px; line-height: 1.7; }
+.order-total { font-weight: 900; font-size: 17px; margin-bottom: 12px; }
+.order-time { font-size: 11px; opacity: .4; margin-bottom: 10px; }
+
+select {
+  width: 100%; padding: 10px 14px;
+  border-radius: 12px; border: none;
+  background: white; color: var(--navy);
+  font-weight: 700; font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.07);
+  cursor: pointer;
+}
+select:focus { outline: 2px solid var(--red); }
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px; border-radius: 10px;
+  font-size: 11px; font-weight: 700;
+  margin-bottom: 8px;
+}
+.status-Pendiente { background: rgba(216,106,94,.12); color: var(--red); }
+.status-Preparando { background: rgba(255,165,0,.12); color: #e6820a; }
+.status-Entregado { background: rgba(46,139,87,.12); color: var(--green); }
+
+/* SETTINGS */
+.settings-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-bottom: 16px;
+}
+.days-grid {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.day-btn {
+  padding: 8px 16px; border-radius: 12px; border: none;
+  background: rgba(22,32,74,.07); color: var(--navy);
+  font-weight: 700; font-size: 13px; cursor: pointer;
+  transition: .2s;
+}
+.day-btn.active { background: var(--navy); color: white; }
+.day-btn:hover:not(.active) { background: rgba(22,32,74,.14); }
+
+/* INPUTS */
+input, textarea {
+  width: 100%; padding: 13px 16px;
+  border: none; border-radius: 14px;
+  background: var(--cream);
+  color: var(--navy);
+  font-size: 14px; font-family: 'DM Sans', sans-serif;
+  margin-bottom: 10px;
+  transition: box-shadow .2s;
+}
+input:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--red);
+}
+textarea { height: 80px; resize: vertical; }
+
+.label { font-size: 12px; font-weight: 700; opacity: .5; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+
+/* BUTTONS */
+.btn {
+  width: 100%; padding: 13px;
+  border: none; border-radius: 14px;
+  font-weight: 800; font-size: 14px;
+  cursor: pointer; transition: .2s;
+  margin-top: 4px;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn-primary { background: var(--navy); color: white; }
+.btn-primary:hover { background: var(--red); }
+.btn-success { background: #2e8b57; color: white; }
+.btn-danger { background: var(--red); color: white; }
+.btn-danger:hover { background: #c45a4f; }
+
+/* PRODUCT GRID */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+.product-card {
+  background: var(--cream);
+  border-radius: 18px;
+  padding: 20px;
+}
+.product-card img {
+  width: 100%; height: 140px;
+  object-fit: cover; border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 30px; right: 30px;
+  background: var(--navy); color: white;
+  padding: 15px 24px; border-radius: 16px;
+  font-weight: 700; font-size: 14px;
+  opacity: 0; transition: .3s; z-index: 9999;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; }
+#toast.success { background: var(--green); }
+#toast.error { background: var(--red); }
+
+/* AUTO-REFRESH BADGE */
+#refreshBadge {
+  font-size: 12px; opacity: .4; font-weight: 600;
+}
+
+@media(max-width:768px) {
+  #adminMain { padding: 30px 4%; }
+  #analytics { grid-template-columns: repeat(2, 1fr); }
+  .settings-row { grid-template-columns: 1fr; }
+  .orders-grid, .products-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
-<h1>🍣 Admin Kizuna</h1>
-
-<div id="analytics"></div>
-
-<div class="card">
-<h2>Pedidos</h2>
-<div id="orders"></div>
+<!-- LOGIN -->
+<div id="loginScreen">
+  <h1>🍣 Kizuna Admin</h1>
+  <p>Panel de administración</p>
+  <div id="loginBox">
+    <input type="password" id="pwInput" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
+    <button id="loginBtn" onclick="login()">Ingresar</button>
+    <div id="loginError"></div>
+  </div>
 </div>
 
-<div class="card">
-<h2>Horario</h2>
-<input id="openHour" type="number">
-<input id="closeHour" type="number">
-<button class="edit" onclick="saveSettings()">Guardar horario</button>
+<!-- ADMIN -->
+<div id="adminMain">
+  <div class="admin-header">
+    <h1>🍣 Admin Kizuna</h1>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span id="refreshBadge">↻ Auto-refresh 30s</span>
+      <button id="logoutBtn" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div id="analytics">
+    <div class="metric"><div class="metric-value" id="mProducts">—</div><div class="metric-label">Productos</div></div>
+    <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
+    <div class="metric"><div class="metric-value" id="mStock">—</div><div class="metric-label">Unidades en stock</div></div>
+    <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
+  </div>
+
+  <!-- PEDIDOS -->
+  <div class="panel">
+    <h2>📋 Pedidos activos</h2>
+    <div class="orders-grid" id="ordersGrid"></div>
+  </div>
+
+  <!-- HORARIO -->
+  <div class="panel">
+    <h2>🕐 Horario de atención</h2>
+    <div class="settings-row">
+      <div>
+        <div class="label">Hora apertura</div>
+        <input id="openHour" type="number" min="0" max="23" placeholder="19">
+      </div>
+      <div>
+        <div class="label">Hora cierre</div>
+        <input id="closeHour" type="number" min="0" max="23" placeholder="23">
+      </div>
+    </div>
+    <div class="label" style="margin-bottom:10px;">Días de atención</div>
+    <div class="days-grid" id="daysGrid"></div>
+    <button class="btn btn-success" onclick="saveSettings()">Guardar horario</button>
+  </div>
+
+  <!-- NUEVO PRODUCTO -->
+  <div class="panel">
+    <h2>➕ Agregar producto</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div><div class="label">Nombre</div><input id="nameInput" placeholder="Ej: Dragon Roll"></div>
+      <div><div class="label">Precio</div><input id="priceInput" type="number" placeholder="1500"></div>
+      <div><div class="label">Stock</div><input id="stockInput" type="number" placeholder="20"></div>
+      <div><div class="label">Categoría</div>
+        <select id="categoryInput" style="margin-bottom:10px;">
+          <option value="rolls">Rolls</option>
+          <option value="combos">Combos</option>
+          <option value="veggie">Veggie</option>
+          <option value="bandejas">Bandejas</option>
+          <option value="extras">Extras</option>
+        </select>
+      </div>
+    </div>
+    <div><div class="label">URL imagen</div><input id="imageInput" placeholder="https://..."></div>
+    <div><div class="label">Descripción</div><textarea id="descInput" placeholder="Descripción del producto..."></textarea></div>
+    <button class="btn btn-primary" onclick="addProduct()">Agregar producto</button>
+  </div>
+
+  <!-- PRODUCTOS -->
+  <div class="panel">
+    <h2>📦 Productos</h2>
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
+
 </div>
 
-<div class="card">
-<input id="nameInput" placeholder="Nombre">
-<input id="priceInput" type="number" placeholder="Precio">
-<input id="stockInput" type="number" placeholder="Stock">
-<input id="imageInput" placeholder="URL imagen">
-<textarea id="descInput" placeholder="Descripción"></textarea>
-
-<select id="categoryInput">
-<option value="rolls">rolls</option>
-<option value="combos">combos</option>
-<option value="veggie">veggie</option>
-<option value="bandejas">bandejas</option>
-<option value="extras">extras</option>
-</select>
-
-<button class="add" onclick="addProduct()">Agregar</button>
-</div>
-
-<div id="products"></div>
 <div id="toast"></div>
 
 <script>
+const API = "https://kizuna-api-8ja8.onrender.com";
+const ADMIN_PASSWORD = "kizuna2026"; // ← cambiá esto
+const SESSION_KEY = "kizuna_admin_auth";
 
-const API="https://kizuna-api-8ja8.onrender.com";
-const productsDiv=document.getElementById("products");
-const ordersDiv=document.getElementById("orders");
-const toastDiv=document.getElementById("toast");
+const DAYS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+let openDays = [];
+let refreshTimer = null;
 
-function toast(msg){
-toastDiv.innerHTML=msg;
-toastDiv.classList.add("show");
-setTimeout(()=>toastDiv.classList.remove("show"),2000);
+/* ── LOGIN ── */
+function login() {
+  const pw = document.getElementById("pwInput").value;
+  const err = document.getElementById("loginError");
+
+  if (pw === ADMIN_PASSWORD) {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminMain").style.display = "block";
+    loadAll();
+    startAutoRefresh();
+  } else {
+    err.textContent = "Contraseña incorrecta";
+    document.getElementById("pwInput").value = "";
+    document.getElementById("pwInput").focus();
+    setTimeout(() => err.textContent = "", 2500);
+  }
 }
 
-async function load(){
-
-const products=await (await fetch(`${API}/products`)).json();
-const orders=await (await fetch(`${API}/orders`)).json();
-const settings=await (await fetch(`${API}/settings`)).json();
-
-openHour.value=settings.openHour;
-closeHour.value=settings.closeHour;
-
-document.getElementById("analytics").innerHTML=`
-<div class="metric">${products.length}<br>Productos</div>
-<div class="metric">${orders.length}<br>Pedidos</div>
-<div class="metric">${products.reduce((a,b)=>a+b.stock,0)}<br>Stock</div>
-<div class="metric">Kizuna<br>Online</div>
-`;
-
-ordersDiv.innerHTML="";
-
-orders.filter(o => o.status !== "Entregado").forEach(o=>{
-  const itemsList = o.items.map(i => `<li>${i.name} x${i.qty} — $${i.price * i.qty}</li>`).join("");
-
-  ordersDiv.innerHTML+=`
-  <div class="card order">
-  <h3>Pedido #${o.number}</h3>
-  <ul style="margin:10px 0;padding-left:20px;opacity:.8;">${itemsList}</ul>
-  <p style="font-weight:900;margin:8px 0;">Total: $${o.total}</p>
-
-  <select onchange="updateOrder('${o._id}',this.value)">
-  <option ${o.status==="Pendiente"?"selected":""}>Pendiente</option>
-  <option ${o.status==="Preparando"?"selected":""}>Preparando</option>
-  <option ${o.status==="Entregado"?"selected":""}>Entregado</option>
-  </select>
-  </div>
-  `;
-});
-
-productsDiv.innerHTML="";
-
-products.forEach(p=>{
-productsDiv.innerHTML+=`
-<div class="card">
-
-<input id="name-${p._id}" value="${p.name}">
-<input id="price-${p._id}" value="${p.price}">
-<input id="stock-${p._id}" value="${p.stock}">
-<input id="image-${p._id}" value="${p.image}">
-<textarea id="desc-${p._id}">${p.description||""}</textarea>
-
-<select id="category-${p._id}">
-<option ${p.category==="rolls"?"selected":""}>rolls</option>
-<option ${p.category==="combos"?"selected":""}>combos</option>
-<option ${p.category==="veggie"?"selected":""}>veggie</option>
-<option ${p.category==="bandejas"?"selected":""}>bandejas</option>
-<option ${p.category==="extras"?"selected":""}>extras</option>
-</select>
-
-<button class="edit" onclick="updateProduct('${p._id}')">Guardar</button>
-<button class="delete" onclick="deleteProduct('${p._id}')">Eliminar</button>
-
-</div>
-`;
-});
-
+function logout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  clearInterval(refreshTimer);
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("adminMain").style.display = "none";
+  document.getElementById("pwInput").value = "";
 }
 
-async function updateOrder(id,status){
-await fetch(`${API}/orders/${id}`,{
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({status})
-});
-toast("Pedido actualizado");
-load();
+// Si ya estaba logueado en esta sesión
+if (sessionStorage.getItem(SESSION_KEY)) {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("adminMain").style.display = "block";
+  loadAll();
+  startAutoRefresh();
 }
 
-async function saveSettings(){
-await fetch(`${API}/settings`,{
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-openHour:+openHour.value,
-closeHour:+closeHour.value
-})
-});
-toast("Horario guardado");
+function startAutoRefresh() {
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(loadAll, 30000);
 }
 
-async function addProduct(){
-await fetch(`${API}/products`,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-name:nameInput.value,
-price:+priceInput.value,
-stock:+stockInput.value,
-image:imageInput.value,
-description:descInput.value,
-category:categoryInput.value
-})
-});
-toast("Producto agregado");
-load();
+/* ── TOAST ── */
+function toast(msg, type = "") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  setTimeout(() => t.className = "", 2500);
 }
 
-async function updateProduct(id){
-await fetch(`${API}/products/${id}`,{
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-name:document.getElementById(`name-${id}`).value,
-price:+document.getElementById(`price-${id}`).value,
-stock:+document.getElementById(`stock-${id}`).value,
-image:document.getElementById(`image-${id}`).value,
-description:document.getElementById(`desc-${id}`).value,
-category:document.getElementById(`category-${id}`).value
-})
-});
-toast("Guardado");
-load();
+/* ── LOAD ALL ── */
+async function loadAll() {
+  try {
+    const [products, orders, settings] = await Promise.all([
+      fetch(`${API}/products`).then(r => r.json()),
+      fetch(`${API}/orders`).then(r => r.json()),
+      fetch(`${API}/settings`).then(r => r.json())
+    ]);
+
+    renderMetrics(products, orders);
+    renderOrders(orders);
+    renderSettings(settings);
+    renderProducts(products);
+
+  } catch (err) {
+    toast("❌ Error al cargar datos", "error");
+  }
 }
 
-async function deleteProduct(id){
-await fetch(`${API}/products/${id}`,{
-method:"DELETE"
-});
-toast("Eliminado");
-load();
+/* ── METRICS ── */
+function renderMetrics(products, orders) {
+  const today = new Date().toDateString();
+  const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
+  const revenue = todayOrders.reduce((a, o) => a + o.total, 0);
+
+  document.getElementById("mProducts").textContent = products.length;
+  document.getElementById("mOrders").textContent = todayOrders.length;
+  document.getElementById("mStock").textContent = products.reduce((a, p) => a + p.stock, 0);
+  document.getElementById("mRevenue").textContent = `$${revenue.toLocaleString("es-AR")}`;
 }
 
-load();
+/* ── ORDERS ── */
+function renderOrders(orders) {
+  const active = orders.filter(o => o.status !== "Entregado");
+  const grid = document.getElementById("ordersGrid");
 
+  if (!active.length) {
+    grid.innerHTML = `<p style="opacity:.4;font-size:14px;">No hay pedidos activos.</p>`;
+    return;
+  }
+
+  grid.innerHTML = active.map(o => {
+    const fecha = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    const itemsList = o.items.map(i => `${i.name} ×${i.qty}`).join("<br>");
+    return `
+    <div class="order-card">
+      <span class="status-badge status-${o.status}">${o.status}</span>
+      <h3>Pedido #${o.number}</h3>
+      <div class="order-items">${itemsList}</div>
+      <div class="order-total">Total: $${o.total.toLocaleString("es-AR")}</div>
+      <div class="order-time">🕐 ${fecha}</div>
+      <select onchange="updateOrder('${o._id}', this.value)">
+        <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
+        <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
+        <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
+      </select>
+    </div>`;
+  }).join("");
+}
+
+async function updateOrder(id, status) {
+  await fetch(`${API}/orders/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status })
+  });
+  toast("✓ Pedido actualizado", "success");
+  loadAll();
+}
+
+/* ── SETTINGS ── */
+function renderSettings(settings) {
+  document.getElementById("openHour").value = settings.openHour;
+  document.getElementById("closeHour").value = settings.closeHour;
+  openDays = settings.openDays || [];
+
+  const grid = document.getElementById("daysGrid");
+  grid.innerHTML = DAYS.map((d, i) => `
+    <button class="day-btn ${openDays.includes(i) ? "active" : ""}"
+      onclick="toggleDay(${i}, this)">${d}</button>
+  `).join("");
+}
+
+function toggleDay(day, btn) {
+  if (openDays.includes(day)) {
+    openDays = openDays.filter(d => d !== day);
+    btn.classList.remove("active");
+  } else {
+    openDays.push(day);
+    btn.classList.add("active");
+  }
+}
+
+async function saveSettings() {
+  await fetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      openHour: +document.getElementById("openHour").value,
+      closeHour: +document.getElementById("closeHour").value,
+      openDays
+    })
+  });
+  toast("✓ Horario guardado", "success");
+}
+
+/* ── PRODUCTS ── */
+function renderProducts(products) {
+  document.getElementById("productsGrid").innerHTML = products.map(p => `
+    <div class="product-card">
+      <img src="${p.image || ''}"
+           alt="${p.name}"
+           onerror="this.style.display='none'">
+      <div class="label">${p.category}</div>
+      <input id="n-${p._id}" value="${p.name}">
+      <input id="pr-${p._id}" type="number" value="${p.price}">
+      <input id="st-${p._id}" type="number" value="${p.stock}">
+      <input id="im-${p._id}" value="${p.image || ''}">
+      <textarea id="de-${p._id}">${p.description || ''}</textarea>
+      <select id="ca-${p._id}">
+        ${["rolls","combos","veggie","bandejas","extras"].map(c =>
+          `<option ${p.category===c?"selected":""} value="${c}">${c}</option>`
+        ).join("")}
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+        <button class="btn btn-success" onclick="updateProduct('${p._id}')">Guardar</button>
+        <button class="btn btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function addProduct() {
+  const body = {
+    name: document.getElementById("nameInput").value.trim(),
+    price: +document.getElementById("priceInput").value,
+    stock: +document.getElementById("stockInput").value,
+    image: document.getElementById("imageInput").value.trim(),
+    description: document.getElementById("descInput").value.trim(),
+    category: document.getElementById("categoryInput").value
+  };
+
+  if (!body.name || !body.price) { toast("Completá nombre y precio", "error"); return; }
+
+  await fetch(`${API}/products`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  ["nameInput","priceInput","stockInput","imageInput","descInput"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+
+  toast("✓ Producto agregado", "success");
+  loadAll();
+}
+
+async function updateProduct(id) {
+  await fetch(`${API}/products/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: document.getElementById(`n-${id}`).value,
+      price: +document.getElementById(`pr-${id}`).value,
+      stock: +document.getElementById(`st-${id}`).value,
+      image: document.getElementById(`im-${id}`).value,
+      description: document.getElementById(`de-${id}`).value,
+      category: document.getElementById(`ca-${id}`).value
+    })
+  });
+  toast("✓ Guardado", "success");
+  loadAll();
+}
+
+async function deleteProduct(id) {
+  if (!confirm("¿Eliminar este producto?")) return;
+  await fetch(`${API}/products/${id}`, { method: "DELETE" });
+  toast("Eliminado", "error");
+  loadAll();
+}
 </script>
 
 </body>

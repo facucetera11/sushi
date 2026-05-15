@@ -103,6 +103,17 @@ app.get("/orders", async (req, res) => {
 
 app.post("/orders", async (req, res) => {
   try {
+    // Validar stock antes de crear el pedido
+    for (const item of req.body.items) {
+      const product = await Product.findById(item._id);
+      if (!product) {
+        return res.status(400).json({ error: `Producto no encontrado: ${item.name}` });
+      }
+      if (product.stock < item.qty) {
+        return res.status(400).json({ error: `Stock insuficiente para: ${item.name}` });
+      }
+    }
+
     const last = await Order.findOne().sort({ number: -1 });
     const order = new Order({
       number: last ? last.number + 1 : 1,
