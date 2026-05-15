@@ -120,6 +120,15 @@ app.post("/orders", async (req, res) => {
       total: req.body.total
     });
     await order.save();
+
+    // Descontar stock de cada producto
+    for (const item of req.body.items) {
+      await Product.findByIdAndUpdate(
+        item._id,
+        { $inc: { stock: -item.qty } }
+      );
+    }
+
     res.json(order);
   } catch (err) {
     res.status(400).json({ error: "Error al crear pedido", detalle: err.message });

@@ -311,7 +311,7 @@ total+=i.price*i.qty;
 document.getElementById("total").innerHTML=`$${total}`;
 }
 
-function sendWhatsApp() {
+async function sendWhatsApp() {
   if (cart.length === 0) {
     alert("Tu carrito está vacío");
     return;
@@ -327,7 +327,24 @@ function sendWhatsApp() {
 
   msg += `%0ATotal: $${total}`;
 
+  try {
+    // Registrar el pedido en la base de datos y descontar stock
+    await fetch(`${API}/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: cart.map(i => ({ _id: i._id, name: i.name, qty: i.qty, price: i.price })),
+        total: total
+      })
+    });
+  } catch (err) {
+    console.error("No se pudo registrar el pedido:", err);
+  }
+
+  // Abrir WhatsApp y vaciar el carrito
   window.open(`https://wa.me/1121734894?text=${msg}`, "_blank");
+  cart = [];
+  updateCart();
 }
 
 load();
