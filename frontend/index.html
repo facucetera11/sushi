@@ -3,52 +3,386 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kizuna</title>
+<title>Kizuna Sushi</title>
+
 <style>
-body{
-font-family:Arial;
-background:#fcfaf6;
-padding:50px;
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+scroll-behavior:smooth;
 }
+
+body{
+background:#fcfaf6;
+color:#16204a;
+overflow-x:hidden;
+}
+
+header{
+position:fixed;
+top:0;
+width:100%;
+padding:24px 8%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:rgba(255,255,255,.85);
+backdrop-filter:blur(20px);
+z-index:9999;
+box-shadow:0 10px 25px rgba(0,0,0,.05);
+}
+
+.logo{
+font-size:34px;
+font-weight:900;
+letter-spacing:4px;
+color:#d86a5e;
+}
+
+.hero{
+height:100vh;
+background:
+linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
+url("https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
+background-size:cover;
+background-position:center;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+color:white;
+text-align:center;
+animation:zoom 18s infinite alternate ease-in-out;
+}
+
+@keyframes zoom{
+from{background-size:100%}
+to{background-size:115%}
+}
+
+.hero h1{
+font-size:100px;
+font-weight:900;
+}
+
+.hero p{
+font-size:24px;
+margin-top:15px;
+}
+
+section{
+padding:120px 8%;
+}
+
+.section-title{
+font-size:55px;
+font-weight:900;
+color:#d86a5e;
+margin-bottom:45px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:35px;
+}
+
 .card{
 background:white;
-padding:20px;
-margin:20px;
-border-radius:20px;
-box-shadow:0 10px 20px rgba(0,0,0,.08);
+border-radius:30px;
+overflow:hidden;
+box-shadow:0 18px 45px rgba(0,0,0,.08);
+cursor:pointer;
+transition:.35s;
 }
-img{
-width:300px;
-border-radius:20px;
+
+.card:hover{
+transform:translateY(-10px);
 }
+
+.card img{
+width:100%;
+height:250px;
+object-fit:cover;
+transition:.45s;
+}
+
+.card:hover img{
+transform:scale(1.08);
+}
+
+.content{
+padding:25px;
+}
+
+.price{
+font-size:24px;
+font-weight:900;
+color:#d86a5e;
+margin:10px 0;
+}
+
+.stock-ok{
+color:#34c759;
+font-weight:800;
+}
+
+.stock-low{
+color:#ff9500;
+font-weight:800;
+}
+
+.stock-critical{
+color:#ff3b30;
+font-weight:800;
+}
+
+button{
+width:100%;
+padding:16px;
+border:none;
+border-radius:18px;
+background:#16204a;
+color:white;
+font-weight:800;
+cursor:pointer;
+transition:.25s;
+}
+
+button:hover{
+background:#d86a5e;
+transform:translateY(-3px);
+}
+
+#cart{
+position:fixed;
+right:20px;
+bottom:20px;
+width:360px;
+background:white;
+padding:28px;
+border-radius:30px;
+box-shadow:0 20px 60px rgba(0,0,0,.14);
+z-index:9999;
+max-height:80vh;
+overflow:auto;
+}
+
+#modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.75);
+display:none;
+justify-content:center;
+align-items:center;
+z-index:99999;
+}
+
+.modal-box{
+width:900px;
+background:white;
+border-radius:35px;
+overflow:hidden;
+display:flex;
+}
+
+.modal-box img{
+width:50%;
+height:650px;
+object-fit:cover;
+}
+
+.modal-content{
+width:50%;
+padding:50px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+gap:20px;
+}
+
+footer{
+background:#16204a;
+color:white;
+padding:60px;
+text-align:center;
+margin-top:100px;
+}
+
 </style>
 </head>
 <body>
 
-<h1>Kizuna Sushi</h1>
+<header>
+<div class="logo">KIZUNA</div>
+</header>
 
-<div id="products"></div>
+<section class="hero">
+<h1>KIZUNA SUSHI</h1>
+<p>Alta cocina japonesa artesanal</p>
+</section>
+
+<section id="rolls">
+<div class="section-title">Rolls</div>
+<div class="grid" id="rollsGrid"></div>
+</section>
+
+<section id="combos">
+<div class="section-title">Combos</div>
+<div class="grid" id="combosGrid"></div>
+</section>
+
+<section id="veggie">
+<div class="section-title">Veggie</div>
+<div class="grid" id="veggieGrid"></div>
+</section>
+
+<section id="bandejas">
+<div class="section-title">Bandejas</div>
+<div class="grid" id="bandejasGrid"></div>
+</section>
+
+<section id="extras">
+<div class="section-title">Extras</div>
+<div class="grid" id="extrasGrid"></div>
+</section>
+
+<div id="cart">
+<h2>🛒 Pedido</h2>
+<div id="items"></div>
+<h2 id="total">$0</h2>
+<button onclick="sendWhatsApp()">Confirmar Pedido</button>
+</div>
+
+<div id="modal">
+<div class="modal-box" id="modalBox"></div>
+</div>
+
+<footer>Kizuna Sushi © 2026</footer>
 
 <script>
 
 const API="https://kizuna-api-8ja8.onrender.com";
 
+let products=[];
+let cart=[];
+
 async function load(){
 
 const res=await fetch(`${API}/products`);
-const products=await res.json();
+products=await res.json();
 
-document.getElementById("products").innerHTML=
-products.map(p=>`
-<div class="card">
-<img src="${p.image}">
-<h2>${p.name}</h2>
-<p>$${p.price}</p>
-<p>${p.category}</p>
-</div>
-`).join("");
+render("rolls","rollsGrid");
+render("combos","combosGrid");
+render("veggie","veggieGrid");
+render("bandejas","bandejasGrid");
+render("extras","extrasGrid");
 
 }
+
+function render(category,id){
+
+const div=document.getElementById(id);
+div.innerHTML="";
+
+products
+.filter(p=>p.category?.toLowerCase().trim()===category)
+.forEach(p=>{
+
+let stockClass="stock-ok";
+let stockText="Disponible";
+
+if(p.stock<=5){
+stockClass="stock-critical";
+stockText="⚠ Últimas unidades";
+}else if(p.stock<=10){
+stockClass="stock-low";
+stockText="Stock bajo";
+}
+
+div.innerHTML+=`
+<div class="card" onclick='openModal(${JSON.stringify(p)})'>
+<img src="${p.image}">
+<div class="content">
+<h2>${p.name}</h2>
+<div class="price">$${p.price}</div>
+<div class="${stockClass}">
+${stockText}
+</div>
+</div>
+</div>
+`;
+
+});
+
+}
+
+function openModal(p){
+
+modal.style.display="flex";
+
+modalBox.innerHTML=`
+<img src="${p.image}">
+<div class="modal-content">
+<h1>${p.name}</h1>
+<h2>$${p.price}</h2>
+<p>Selección premium artesanal Kizuna Sushi.</p>
+<button onclick='addToCart(${JSON.stringify(p)})'>
+Agregar al carrito
+</button>
+<button onclick="closeModal()">Cerrar</button>
+</div>
+`;
+
+}
+
+function closeModal(){
+modal.style.display="none";
+}
+
+function addToCart(p){
+cart.push(p);
+updateCart();
+closeModal();
+}
+
+function updateCart(){
+
+items.innerHTML="";
+let totalValue=0;
+
+cart.forEach(i=>{
+items.innerHTML+=`<p>${i.name} - $${i.price}</p>`;
+totalValue+=i.price;
+});
+
+total.innerHTML=`$${totalValue}`;
+
+}
+
+function sendWhatsApp(){
+
+let msg="🍣 Pedido Kizuna%0A%0A";
+
+cart.forEach(i=>{
+msg+=`• ${i.name} - $${i.price}%0A`;
+});
+
+msg+=`%0ATotal: ${total.innerHTML}`;
+
+window.open(
+`https://wa.me/1121734894?text=${msg}`,
+"_blank"
+);
+
+}
+
+modal.onclick=e=>{
+if(e.target===modal)closeModal();
+};
 
 load();
 
