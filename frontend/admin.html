@@ -14,17 +14,18 @@ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 body{
-background:linear-gradient(135deg,#faf8f5,#f3ece4);
+background:linear-gradient(135deg,#fcfaf6,#f5eee6);
 padding:50px;
-max-width:1400px;
+max-width:1500px;
 margin:auto;
+color:#16204a;
 }
 
 h1{
-font-size:55px;
+font-size:58px;
+font-weight:900;
 color:#d86a5e;
 margin-bottom:30px;
-font-weight:900;
 }
 
 input,select{
@@ -34,7 +35,7 @@ margin:10px 0;
 border:none;
 border-radius:18px;
 background:white;
-box-shadow:0 8px 20px rgba(0,0,0,.08);
+box-shadow:0 10px 25px rgba(0,0,0,.08);
 font-size:16px;
 }
 
@@ -47,6 +48,10 @@ font-weight:800;
 cursor:pointer;
 transition:.25s;
 font-size:16px;
+}
+
+button:hover{
+transform:translateY(-3px);
 }
 
 button:active{
@@ -68,25 +73,39 @@ background:#d86a5e;
 color:white;
 }
 
-button:hover{
-transform:translateY(-3px);
+#stats{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+margin:35px 0;
+}
+
+.stat{
+background:white;
+padding:30px;
+border-radius:28px;
+box-shadow:0 15px 35px rgba(0,0,0,.08);
+text-align:center;
+font-size:22px;
+font-weight:900;
+animation:fade .4s ease;
 }
 
 .card{
 background:white;
-padding:25px;
+padding:28px;
 margin:25px 0;
-border-radius:28px;
-box-shadow:0 15px 40px rgba(0,0,0,.08);
-animation:fade .4s ease;
+border-radius:30px;
+box-shadow:0 18px 40px rgba(0,0,0,.08);
 position:relative;
+animation:fade .35s ease;
 }
 
 .stock-alert{
 position:absolute;
 top:20px;
 right:20px;
-padding:8px 14px;
+padding:10px 16px;
 border-radius:999px;
 font-size:13px;
 font-weight:800;
@@ -111,9 +130,9 @@ bottom:30px;
 right:30px;
 background:#16204a;
 color:white;
-padding:18px 25px;
+padding:18px 28px;
 border-radius:18px;
-font-weight:700;
+font-weight:800;
 opacity:0;
 transform:translateY(20px);
 transition:.35s;
@@ -128,7 +147,7 @@ transform:translateY(0);
 @keyframes fade{
 from{
 opacity:0;
-transform:translateY(20px);
+transform:translateY(18px);
 }
 to{
 opacity:1;
@@ -159,6 +178,8 @@ transform:translateY(0);
 Agregar Producto
 </button>
 
+<div id="stats"></div>
+
 <div id="products"></div>
 
 <div id="toast"></div>
@@ -186,20 +207,32 @@ async function load(){
 const res=await fetch(`${API}/products`);
 const products=await res.json();
 
+const totalProducts=products.length;
+const lowStock=products.filter(p=>p.stock<=5).length;
+const totalStock=products.reduce((a,b)=>a+b.stock,0);
+const inventory=products.reduce((a,b)=>a+(b.stock*b.price),0);
+
+document.getElementById("stats").innerHTML=`
+<div class="stat">${totalProducts}<br>Productos</div>
+<div class="stat">${lowStock}<br>Críticos</div>
+<div class="stat">${totalStock}<br>Stock Total</div>
+<div class="stat">$${inventory}<br>Inventario</div>
+`;
+
 productsDiv.innerHTML="";
 
 products.forEach(p=>{
 
 let alertClass="ok";
-let alertText="Stock OK";
+let alertText="Disponible";
 
 if(p.stock<=5){
 alertClass="low";
-alertText="⚠ Stock crítico";
+alertText="⚠ Crítico";
 }
 else if(p.stock<=10){
 alertClass="medium";
-alertText="Stock bajo";
+alertText="Stock Bajo";
 }
 
 productsDiv.innerHTML+=`
