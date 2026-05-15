@@ -397,12 +397,13 @@ async function sendWhatsApp() {
     console.error("No se pudo registrar el pedido:", err);
   }
 
-  // Vaciar carrito
-  cart = [];
-  updateCart();
-
-  // Redirigir a WhatsApp (funciona en mobile y desktop)
-  location.href = `https://wa.me/1121734894?text=${msg}`;
+ if (res.ok) {
+    cart = [];
+    updateCart();
+    location.href = `https://wa.me/5491121734894?text=${msg}`;
+  } else {
+    alert("Hubo un error al registrar el pedido. Intentá de nuevo.");
+  }
 }
 
 load();
