@@ -114,7 +114,7 @@ document.getElementById("analytics").innerHTML=`
 
 ordersDiv.innerHTML="";
 
-orders.forEach(o=>{
+orders.filter(o => o.status !== "Entregado").forEach(o=>{
   const itemsList = o.items.map(i => `<li>${i.name} x${i.qty} — $${i.price * i.qty}</li>`).join("");
 
   ordersDiv.innerHTML+=`
