@@ -327,8 +327,15 @@ async function sendWhatsApp() {
 
   msg += `%0ATotal: $${total}`;
 
+  // Abrir WhatsApp primero (antes de cualquier await)
+  window.open(`https://wa.me/1121734894?text=${msg}`, "_blank");
+
+  // Vaciar carrito inmediatamente
+  cart = [];
+  updateCart();
+
+  // Registrar pedido en segundo plano
   try {
-    // Registrar el pedido en la base de datos y descontar stock
     await fetch(`${API}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -340,11 +347,6 @@ async function sendWhatsApp() {
   } catch (err) {
     console.error("No se pudo registrar el pedido:", err);
   }
-
-  // Abrir WhatsApp y vaciar el carrito
-  window.open(`https://wa.me/1121734894?text=${msg}`, "_blank");
-  cart = [];
-  updateCart();
 }
 
 load();
