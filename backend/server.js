@@ -4,6 +4,7 @@ const cors=require("cors");
 require("dotenv").config();
 
 const Product=require("./models/Product");
+const Order=require("./models/Order");
 
 const app=express();
 
@@ -12,7 +13,7 @@ app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI);
 
-/* ---------- SETTINGS ---------- */
+/* SETTINGS */
 
 const SettingsSchema=new mongoose.Schema({
 openHour:Number,
@@ -22,26 +23,20 @@ openDays:[Number]
 
 const Settings=mongoose.model("Settings",SettingsSchema);
 
-/* ---------- PRODUCTS ---------- */
+/* PRODUCTS */
 
 app.get("/products",async(req,res)=>{
-const products=await Product.find();
-res.json(products);
+res.json(await Product.find());
 });
 
 app.post("/products",async(req,res)=>{
-const product=new Product(req.body);
-await product.save();
-res.json(product);
+const p=new Product(req.body);
+await p.save();
+res.json(p);
 });
 
 app.put("/products/:id",async(req,res)=>{
-const product=await Product.findByIdAndUpdate(
-req.params.id,
-req.body,
-{new:true}
-);
-res.json(product);
+res.json(await Product.findByIdAndUpdate(req.params.id,req.body,{new:true}));
 });
 
 app.delete("/products/:id",async(req,res)=>{
@@ -49,40 +44,59 @@ await Product.findByIdAndDelete(req.params.id);
 res.json({ok:true});
 });
 
-/* ---------- SETTINGS ---------- */
+/* SETTINGS */
 
 app.get("/settings",async(req,res)=>{
 
-let settings=await Settings.findOne();
+let s=await Settings.findOne();
 
-if(!settings){
-settings=await Settings.create({
+if(!s){
+s=await Settings.create({
 openHour:19,
 closeHour:23,
 openDays:[1,2,3,4,5,6]
 });
 }
 
-res.json(settings);
-
+res.json(s);
 });
 
 app.put("/settings",async(req,res)=>{
 
-let settings=await Settings.findOne();
+let s=await Settings.findOne();
 
-if(!settings){
-settings=new Settings(req.body);
-}else{
-settings.openHour=req.body.openHour;
-settings.closeHour=req.body.closeHour;
-settings.openDays=req.body.openDays;
-}
+if(!s)s=new Settings(req.body);
+else Object.assign(s,req.body);
 
-await settings.save();
+await s.save();
+res.json(s);
 
-res.json(settings);
+});
 
+/* ORDERS */
+
+app.get("/orders",async(req,res)=>{
+res.json(await Order.find().sort({number:-1}));
+});
+
+app.post("/orders",async(req,res)=>{
+
+const last=await Order.findOne().sort({number:-1});
+
+const order=new Order({
+number:last?last.number+1:1,
+items:req.body.items,
+total:req.body.total
+});
+
+await order.save();
+
+res.json(order);
+
+});
+
+app.put("/orders/:id",async(req,res)=>{
+res.json(await Order.findByIdAndUpdate(req.params.id,req.body,{new:true}));
 });
 
 app.listen(process.env.PORT||5000);

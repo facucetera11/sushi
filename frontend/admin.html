@@ -8,84 +8,39 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif}
 body{background:#fcfaf6;padding:50px;max-width:1500px;margin:auto;color:#16204a}
 h1{font-size:58px;color:#d86a5e;margin-bottom:30px}
-
 input,textarea,select{
-width:100%;
-padding:16px;
-margin:10px 0;
-border:none;
-border-radius:18px;
-background:white;
-box-shadow:0 10px 25px rgba(0,0,0,.08);
+width:100%;padding:16px;margin:10px 0;border:none;border-radius:18px;
+background:white;box-shadow:0 10px 25px rgba(0,0,0,.08)
 }
-
 textarea{height:100px}
-
 button{
-width:100%;
-padding:16px;
-border:none;
-border-radius:18px;
-font-weight:800;
-cursor:pointer;
-transition:.25s;
+width:100%;padding:16px;border:none;border-radius:18px;
+font-weight:800;cursor:pointer;transition:.25s
 }
-
 button:hover{transform:translateY(-3px)}
-
 .add{background:#16204a;color:white}
 .edit{background:#2e8b57;color:white}
 .delete{background:#d86a5e;color:white}
-
 .card{
-background:white;
-padding:28px;
-border-radius:28px;
-margin:25px 0;
-box-shadow:0 18px 40px rgba(0,0,0,.08);
+background:white;padding:28px;border-radius:28px;
+margin:25px 0;box-shadow:0 18px 40px rgba(0,0,0,.08)
 }
-
 #analytics{
 display:grid;
 grid-template-columns:repeat(4,1fr);
 gap:18px;
-margin-bottom:30px;
+margin-bottom:30px
 }
-
 .metric{
-background:white;
-padding:25px;
-border-radius:22px;
-text-align:center;
-font-weight:900;
-color:#d86a5e;
+background:white;padding:25px;border-radius:22px;
+text-align:center;font-weight:900;color:#d86a5e
 }
-
-.stockAlert{
-color:#ff3b30;
-font-weight:900;
-margin:10px 0;
-}
-
-.days{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-margin:15px 0;
-}
-
+.order{border-left:8px solid #d86a5e}
 #toast{
-position:fixed;
-bottom:30px;
-right:30px;
-background:#16204a;
-color:white;
-padding:18px 28px;
-border-radius:18px;
-opacity:0;
-transition:.3s;
+position:fixed;bottom:30px;right:30px;background:#16204a;
+color:white;padding:18px 28px;border-radius:18px;
+opacity:0;transition:.3s
 }
-
 #toast.show{opacity:1}
 </style>
 </head>
@@ -96,21 +51,14 @@ transition:.3s;
 <div id="analytics"></div>
 
 <div class="card">
-<h2>Horario</h2>
-
-<input id="openHour" type="number">
-<input id="closeHour" type="number">
-
-<div class="days">
-<label><input type="checkbox" value="0">Dom</label>
-<label><input type="checkbox" value="1">Lun</label>
-<label><input type="checkbox" value="2">Mar</label>
-<label><input type="checkbox" value="3">Mié</label>
-<label><input type="checkbox" value="4">Jue</label>
-<label><input type="checkbox" value="5">Vie</label>
-<label><input type="checkbox" value="6">Sáb</label>
+<h2>Pedidos</h2>
+<div id="orders"></div>
 </div>
 
+<div class="card">
+<h2>Horario</h2>
+<input id="openHour" type="number">
+<input id="closeHour" type="number">
 <button class="edit" onclick="saveSettings()">Guardar horario</button>
 </div>
 
@@ -122,14 +70,14 @@ transition:.3s;
 <textarea id="descInput" placeholder="Descripción"></textarea>
 
 <select id="categoryInput">
-<option value="rolls">Rolls</option>
-<option value="combos">Combos</option>
-<option value="veggie">Veggie</option>
-<option value="bandejas">Bandejas</option>
-<option value="extras">Extras</option>
+<option value="rolls">rolls</option>
+<option value="combos">combos</option>
+<option value="veggie">veggie</option>
+<option value="bandejas">bandejas</option>
+<option value="extras">extras</option>
 </select>
 
-<button class="add" onclick="addProduct()">Agregar Producto</button>
+<button class="add" onclick="addProduct()">Agregar</button>
 </div>
 
 <div id="products"></div>
@@ -138,8 +86,8 @@ transition:.3s;
 <script>
 
 const API="https://kizuna-api-8ja8.onrender.com";
-
 const productsDiv=document.getElementById("products");
+const ordersDiv=document.getElementById("orders");
 const toastDiv=document.getElementById("toast");
 
 function toast(msg){
@@ -148,57 +96,44 @@ toastDiv.classList.add("show");
 setTimeout(()=>toastDiv.classList.remove("show"),2000);
 }
 
-async function loadSettings(){
-const r=await fetch(`${API}/settings`);
-const s=await r.json();
-
-openHour.value=s.openHour;
-closeHour.value=s.closeHour;
-
-document.querySelectorAll(".days input")
-.forEach(c=>c.checked=s.openDays.includes(+c.value));
-}
-
-async function saveSettings(){
-
-const openDays=[...document.querySelectorAll(".days input:checked")]
-.map(c=>+c.value);
-
-await fetch(`${API}/settings`,{
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-openHour:+openHour.value,
-closeHour:+closeHour.value,
-openDays
-})
-});
-
-toast("Horario guardado ✅");
-}
-
 async function load(){
 
-await loadSettings();
+const products=await (await fetch(`${API}/products`)).json();
+const orders=await (await fetch(`${API}/orders`)).json();
+const settings=await (await fetch(`${API}/settings`)).json();
 
-const res=await fetch(`${API}/products`);
-const products=await res.json();
+openHour.value=settings.openHour;
+closeHour.value=settings.closeHour;
 
-analytics.innerHTML=`
+document.getElementById("analytics").innerHTML=`
 <div class="metric">${products.length}<br>Productos</div>
+<div class="metric">${orders.length}<br>Pedidos</div>
 <div class="metric">${products.reduce((a,b)=>a+b.stock,0)}<br>Stock</div>
-<div class="metric">${products.filter(p=>p.stock<=5).length}<br>Críticos</div>
 <div class="metric">Kizuna<br>Online</div>
 `;
+
+ordersDiv.innerHTML="";
+
+orders.forEach(o=>{
+ordersDiv.innerHTML+=`
+<div class="card order">
+<h3>Pedido #${o.number}</h3>
+<p>Total: $${o.total}</p>
+
+<select onchange="updateOrder('${o._id}',this.value)">
+<option ${o.status==="Pendiente"?"selected":""}>Pendiente</option>
+<option ${o.status==="Preparando"?"selected":""}>Preparando</option>
+<option ${o.status==="Entregado"?"selected":""}>Entregado</option>
+</select>
+</div>
+`;
+});
 
 productsDiv.innerHTML="";
 
 products.forEach(p=>{
-
 productsDiv.innerHTML+=`
 <div class="card">
-
-${p.stock<=5?'<div class="stockAlert">⚠ Stock crítico</div>':''}
 
 <input id="name-${p._id}" value="${p.name}">
 <input id="price-${p._id}" value="${p.price}">
@@ -219,9 +154,30 @@ ${p.stock<=5?'<div class="stockAlert">⚠ Stock crítico</div>':''}
 
 </div>
 `;
-
 });
 
+}
+
+async function updateOrder(id,status){
+await fetch(`${API}/orders/${id}`,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({status})
+});
+toast("Pedido actualizado");
+load();
+}
+
+async function saveSettings(){
+await fetch(`${API}/settings`,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+openHour:+openHour.value,
+closeHour:+closeHour.value
+})
+});
+toast("Horario guardado");
 }
 
 async function addProduct(){
@@ -237,8 +193,7 @@ description:descInput.value,
 category:categoryInput.value
 })
 });
-
-toast("Producto agregado 🍣");
+toast("Producto agregado");
 load();
 }
 
@@ -255,19 +210,21 @@ description:document.getElementById(`desc-${id}`).value,
 category:document.getElementById(`category-${id}`).value
 })
 });
-
-toast("Guardado ✅");
+toast("Guardado");
 load();
 }
 
 async function deleteProduct(id){
-await fetch(`${API}/products/${id}`,{method:"DELETE"});
-toast("Eliminado ❌");
+await fetch(`${API}/products/${id}`,{
+method:"DELETE"
+});
+toast("Eliminado");
 load();
 }
 
 load();
 
 </script>
+
 </body>
 </html>
