@@ -5,21 +5,9 @@
 <title>Admin Kizuna</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif;}
-
-body{
-background:#fcfaf6;
-padding:50px;
-max-width:1500px;
-margin:auto;
-color:#16204a;
-}
-
-h1{
-font-size:58px;
-color:#d86a5e;
-margin-bottom:30px;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif}
+body{background:#fcfaf6;padding:50px;max-width:1500px;margin:auto;color:#16204a}
+h1{font-size:58px;color:#d86a5e;margin-bottom:30px}
 
 input,textarea,select{
 width:100%;
@@ -31,7 +19,7 @@ background:white;
 box-shadow:0 10px 25px rgba(0,0,0,.08);
 }
 
-textarea{height:100px;}
+textarea{height:100px}
 
 button{
 width:100%;
@@ -43,11 +31,11 @@ cursor:pointer;
 transition:.25s;
 }
 
-button:hover{transform:translateY(-3px);}
+button:hover{transform:translateY(-3px)}
 
-.add{background:#16204a;color:white;}
-.edit{background:#2e8b57;color:white;}
-.delete{background:#d86a5e;color:white;}
+.add{background:#16204a;color:white}
+.edit{background:#2e8b57;color:white}
+.delete{background:#d86a5e;color:white}
 
 .card{
 background:white;
@@ -71,13 +59,19 @@ border-radius:22px;
 text-align:center;
 font-weight:900;
 color:#d86a5e;
-box-shadow:0 14px 30px rgba(0,0,0,.07);
 }
 
 .stockAlert{
 color:#ff3b30;
 font-weight:900;
 margin:10px 0;
+}
+
+.days{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin:15px 0;
 }
 
 #toast{
@@ -92,21 +86,7 @@ opacity:0;
 transition:.3s;
 }
 
-#toast.show{opacity:1;}
-
-.days{
-display:flex;
-gap:12px;
-margin:15px 0;
-flex-wrap:wrap;
-}
-
-.days label{
-background:white;
-padding:12px 18px;
-border-radius:16px;
-cursor:pointer;
-}
+#toast.show{opacity:1}
 </style>
 </head>
 <body>
@@ -118,8 +98,8 @@ cursor:pointer;
 <div class="card">
 <h2>Horario</h2>
 
-<input id="openHour" type="number" min="0" max="23" placeholder="Apertura">
-<input id="closeHour" type="number" min="0" max="23" placeholder="Cierre">
+<input id="openHour" type="number">
+<input id="closeHour" type="number">
 
 <div class="days">
 <label><input type="checkbox" value="0">Dom</label>
@@ -131,16 +111,14 @@ cursor:pointer;
 <label><input type="checkbox" value="6">Sáb</label>
 </div>
 
-<button class="edit" onclick="saveSettings()">
-Guardar horario
-</button>
+<button class="edit" onclick="saveSettings()">Guardar horario</button>
 </div>
 
 <div class="card">
 <input id="nameInput" placeholder="Nombre">
 <input id="priceInput" type="number" placeholder="Precio">
 <input id="stockInput" type="number" placeholder="Stock">
-<input id="imageInput" placeholder="URL Imagen">
+<input id="imageInput" placeholder="URL imagen">
 <textarea id="descInput" placeholder="Descripción"></textarea>
 
 <select id="categoryInput">
@@ -151,9 +129,7 @@ Guardar horario
 <option value="extras">Extras</option>
 </select>
 
-<button class="add" onclick="addProduct()">
-Agregar Producto
-</button>
+<button class="add" onclick="addProduct()">Agregar Producto</button>
 </div>
 
 <div id="products"></div>
@@ -163,10 +139,13 @@ Agregar Producto
 
 const API="https://kizuna-api-8ja8.onrender.com";
 
+const productsDiv=document.getElementById("products");
+const toastDiv=document.getElementById("toast");
+
 function toast(msg){
-toast.innerHTML=msg;
-toast.classList.add("show");
-setTimeout(()=>toast.classList.remove("show"),2000);
+toastDiv.innerHTML=msg;
+toastDiv.classList.add("show");
+setTimeout(()=>toastDiv.classList.remove("show"),2000);
 }
 
 async function loadSettings(){
@@ -177,9 +156,7 @@ openHour.value=s.openHour;
 closeHour.value=s.closeHour;
 
 document.querySelectorAll(".days input")
-.forEach(c=>{
-c.checked=s.openDays.includes(+c.value);
-});
+.forEach(c=>c.checked=s.openDays.includes(+c.value));
 }
 
 async function saveSettings(){
@@ -211,12 +188,13 @@ analytics.innerHTML=`
 <div class="metric">${products.length}<br>Productos</div>
 <div class="metric">${products.reduce((a,b)=>a+b.stock,0)}<br>Stock</div>
 <div class="metric">${products.filter(p=>p.stock<=5).length}<br>Críticos</div>
-<div class="metric">${products[0]?.category||"-"}<br>Top</div>
+<div class="metric">Kizuna<br>Online</div>
 `;
 
 productsDiv.innerHTML="";
 
 products.forEach(p=>{
+
 productsDiv.innerHTML+=`
 <div class="card">
 
@@ -239,8 +217,11 @@ ${p.stock<=5?'<div class="stockAlert">⚠ Stock crítico</div>':''}
 <button class="edit" onclick="updateProduct('${p._id}')">Guardar</button>
 <button class="delete" onclick="deleteProduct('${p._id}')">Eliminar</button>
 
-</div>`;
+</div>
+`;
+
 });
+
 }
 
 async function addProduct(){
@@ -256,6 +237,7 @@ description:descInput.value,
 category:categoryInput.value
 })
 });
+
 toast("Producto agregado 🍣");
 load();
 }
@@ -273,6 +255,7 @@ description:document.getElementById(`desc-${id}`).value,
 category:document.getElementById(`category-${id}`).value
 })
 });
+
 toast("Guardado ✅");
 load();
 }
