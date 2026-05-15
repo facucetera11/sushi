@@ -214,7 +214,6 @@ max-height:38vh;
   <div class="hero-content">
     <h1>KIZUNA SUSHI</h1>
     <p>Alta cocina japonesa artesanal</p>
-    <div id="statusBox"></div>
   </div>
 </section>
 
@@ -257,7 +256,7 @@ async function load() {
     `;
   });
 
-  statusBox.innerHTML = "⏳ Verificando horario...";
+
 
   try {
     const p = await fetch(`${API}/products`);
@@ -272,7 +271,6 @@ async function load() {
       .forEach(cat => render(cat, cat + "Grid"));
 
   } catch (err) {
-    statusBox.innerHTML = "⚠️ No se pudo conectar con el servidor";
     ["rollsGrid", "combosGrid", "veggieGrid", "bandejasGrid", "extrasGrid"].forEach(id => {
       document.getElementById(id).innerHTML = `
         <p style="opacity:.5;font-size:14px;">Error al cargar productos. Intentá recargar la página.</p>
@@ -290,7 +288,6 @@ function updateStatus(){
   const badge = document.getElementById("statusBadge");
 
   if(!settings.openDays.includes(day)){
-    statusBox.innerHTML = "⛔ Hoy cerrado";
     badge.innerHTML = "⛔ Cerrado";
     badge.style.background = "rgba(216,106,94,.15)";
     badge.style.color = "#d86a5e";
@@ -298,12 +295,10 @@ function updateStatus(){
   }
 
   if(hour >= settings.openHour && hour < settings.closeHour){
-    statusBox.innerHTML = "🟢 Abierto ahora";
     badge.innerHTML = "🟢 Abierto";
     badge.style.background = "rgba(46,139,87,.12)";
     badge.style.color = "#2e8b57";
   } else {
-    statusBox.innerHTML = `🔴 Cerrado · Abrimos ${settings.openHour}:00`;
     badge.innerHTML = `🔴 Abrimos ${settings.openHour}:00`;
     badge.style.background = "rgba(216,106,94,.15)";
     badge.style.color = "#d86a5e";
