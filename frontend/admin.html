@@ -5,9 +5,28 @@
 <title>Admin Kizuna Premium</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-body{background:linear-gradient(135deg,#fcfaf6,#f5eee6);padding:50px;max-width:1500px;margin:auto;color:#16204a;}
-h1{font-size:58px;font-weight:900;color:#d86a5e;margin-bottom:30px;}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+body{
+background:linear-gradient(135deg,#fcfaf6,#f5eee6);
+padding:50px;
+max-width:1500px;
+margin:auto;
+color:#16204a;
+}
+
+h1{
+font-size:58px;
+font-weight:900;
+color:#d86a5e;
+margin-bottom:30px;
+}
 
 input,select,textarea{
 width:100%;
@@ -36,12 +55,28 @@ transition:.25s;
 font-size:16px;
 }
 
-button:hover{transform:translateY(-3px);}
-button:active{transform:scale(.96);}
+button:hover{
+transform:translateY(-3px);
+}
 
-.add{background:#16204a;color:white;}
-.edit{background:#2e8b57;color:white;}
-.delete{background:#d86a5e;color:white;}
+button:active{
+transform:scale(.96);
+}
+
+.add{
+background:#16204a;
+color:white;
+}
+
+.edit{
+background:#2e8b57;
+color:white;
+}
+
+.delete{
+background:#d86a5e;
+color:white;
+}
 
 .card{
 background:white;
@@ -49,6 +84,12 @@ padding:28px;
 margin:25px 0;
 border-radius:30px;
 box-shadow:0 18px 40px rgba(0,0,0,.08);
+}
+
+.stockAlert{
+color:#ff3b30;
+font-weight:900;
+margin:10px 0;
 }
 
 #toast{
@@ -61,9 +102,13 @@ padding:18px 28px;
 border-radius:18px;
 opacity:0;
 transition:.35s;
+z-index:9999;
 }
 
-#toast.show{opacity:1;}
+#toast.show{
+opacity:1;
+}
+
 </style>
 </head>
 <body>
@@ -75,7 +120,7 @@ transition:.35s;
 <input id="stockInput" type="number" placeholder="Stock">
 <input id="imageInput" placeholder="URL Imagen">
 
-<textarea id="descInput" placeholder="Descripción del producto"></textarea>
+<textarea id="descInput" placeholder="Descripción"></textarea>
 
 <select id="categoryInput">
 <option value="rolls">Rolls</option>
@@ -85,22 +130,25 @@ transition:.35s;
 <option value="extras">Extras</option>
 </select>
 
-<button class="add" onclick="addProduct()">Agregar Producto</button>
+<button class="add" onclick="addProduct()">
+Agregar Producto
+</button>
 
 <div id="products"></div>
+
 <div id="toast"></div>
 
 <script>
 
 const API="https://kizuna-api-8ja8.onrender.com";
+const productsDiv=document.getElementById("products");
+const toastBox=document.getElementById("toast");
 
 function toast(msg){
 toastBox.innerHTML=msg;
 toastBox.classList.add("show");
 setTimeout(()=>toastBox.classList.remove("show"),2200);
 }
-
-const toastBox=document.getElementById("toast");
 
 async function load(){
 
@@ -113,6 +161,8 @@ products.forEach(p=>{
 
 productsDiv.innerHTML+=`
 <div class="card">
+
+${p.stock<=5 ? `<div class="stockAlert">⚠ Stock crítico</div>` : ""}
 
 <input id="name-${p._id}" value="${p.name}">
 <input id="price-${p._id}" value="${p.price}">
@@ -129,7 +179,7 @@ productsDiv.innerHTML+=`
 </select>
 
 <button class="edit" onclick="updateProduct('${p._id}')">
-Guardar
+Guardar cambios
 </button>
 
 <button class="delete" onclick="deleteProduct('${p._id}')">
@@ -138,11 +188,10 @@ Eliminar
 
 </div>
 `;
+
 });
 
 }
-
-const productsDiv=document.getElementById("products");
 
 async function addProduct(){
 
@@ -185,13 +234,19 @@ load();
 }
 
 async function deleteProduct(id){
-await fetch(`${API}/products/${id}`,{method:"DELETE"});
+
+await fetch(`${API}/products/${id}`,{
+method:"DELETE"
+});
+
 toast("Producto eliminado ❌");
 load();
+
 }
 
 load();
 
 </script>
+
 </body>
 </html>

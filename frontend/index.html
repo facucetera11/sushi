@@ -27,38 +27,32 @@ header{
 position:fixed;
 top:0;
 width:100%;
-padding:24px 8%;
+padding:22px 8%;
 display:flex;
 justify-content:space-between;
 align-items:center;
-background:rgba(255,255,255,.88);
+background:rgba(255,255,255,.9);
 backdrop-filter:blur(18px);
 z-index:9999;
-box-shadow:0 10px 25px rgba(0,0,0,.04);
+box-shadow:0 8px 20px rgba(0,0,0,.05);
 }
 
 .logo{
 font-size:34px;
 font-weight:900;
-letter-spacing:4px;
 color:#d86a5e;
+letter-spacing:4px;
 }
 
 nav{
 display:flex;
-gap:28px;
+gap:24px;
 }
 
 nav a{
 text-decoration:none;
 font-weight:800;
 color:#16204a;
-transition:.3s;
-}
-
-nav a:hover{
-color:#d86a5e;
-transform:translateY(-2px);
 }
 
 /* HERO */
@@ -85,39 +79,26 @@ to{background-size:115%;}
 }
 
 .hero h1{
-font-size:100px;
+font-size:90px;
 font-weight:900;
-animation:fadeUp 1s ease;
 }
 
 .hero p{
 font-size:24px;
 margin-top:15px;
-animation:fadeUp 1.4s ease;
 }
 
-@keyframes fadeUp{
-from{
-opacity:0;
-transform:translateY(25px);
-}
-to{
-opacity:1;
-transform:translateY(0);
-}
-}
-
-/* SECCIONES */
+/* SECTIONS */
 
 section{
 padding:120px 8%;
 }
 
 .section-title{
-font-size:58px;
+font-size:56px;
 font-weight:900;
 color:#d86a5e;
-margin-bottom:45px;
+margin-bottom:40px;
 }
 
 .grid{
@@ -130,121 +111,89 @@ gap:35px;
 
 .card{
 background:white;
-border-radius:30px;
+border-radius:28px;
 overflow:hidden;
 box-shadow:0 18px 45px rgba(0,0,0,.08);
-transition:.35s;
-}
-
-.card:hover{
-transform:translateY(-12px);
 }
 
 .card img{
 width:100%;
-height:250px;
+height:240px;
 object-fit:cover;
-transition:.45s;
-}
-
-.card:hover img{
-transform:scale(1.08);
 }
 
 .content{
-padding:25px;
+padding:24px;
 }
 
 .content h3{
-font-size:28px;
+font-size:26px;
+}
+
+.desc{
+opacity:.7;
+margin:10px 0;
+line-height:1.5;
 }
 
 .price{
 font-size:24px;
 font-weight:900;
 color:#d86a5e;
-margin:12px 0;
+margin:10px 0;
 }
 
-/* STOCK */
-
-.stock-ok{
-color:#34c759;
-font-weight:800;
-}
-
-.stock-low{
-color:#ff9500;
-font-weight:800;
-}
-
-.stock-critical{
-color:#ff3b30;
-font-weight:800;
-}
-
-/* BOTONES */
+.stock-ok{color:#34c759;font-weight:800;}
+.stock-low{color:#ff9500;font-weight:800;}
+.stock-critical{color:#ff3b30;font-weight:800;}
 
 button{
 width:100%;
-padding:16px;
+padding:15px;
 border:none;
 border-radius:18px;
 background:#16204a;
 color:white;
 font-weight:800;
 cursor:pointer;
-transition:.25s;
 }
 
-button:hover{
-background:#d86a5e;
-transform:translateY(-3px);
-}
-
-button:active{
-transform:scale(.96);
-}
-
-/* CARRITO */
+/* CART */
 
 #cart{
 position:fixed;
 right:20px;
 bottom:20px;
-width:380px;
+width:360px;
 background:white;
-padding:28px;
-border-radius:30px;
-box-shadow:0 20px 60px rgba(0,0,0,.14);
-z-index:9999;
-max-height:80vh;
+padding:24px;
+border-radius:28px;
+box-shadow:0 20px 60px rgba(0,0,0,.15);
+max-height:75vh;
 overflow:auto;
+z-index:999;
 }
 
 #badge{
 position:fixed;
-right:390px;
-bottom:360px;
+right:385px;
+bottom:340px;
+width:46px;
+height:46px;
 background:#d86a5e;
-color:white;
-width:50px;
-height:50px;
 border-radius:50%;
 display:flex;
-justify-content:center;
 align-items:center;
+justify-content:center;
+color:white;
 font-weight:900;
-font-size:20px;
-box-shadow:0 10px 25px rgba(0,0,0,.18);
-z-index:99999;
+z-index:9999;
 }
 
 .cart-item{
 display:flex;
 justify-content:space-between;
-align-items:center;
-margin:14px 0;
+margin:12px 0;
 }
 
 .qty{
@@ -254,15 +203,8 @@ align-items:center;
 }
 
 .qty button{
-width:36px;
+width:34px;
 padding:8px;
-border-radius:12px;
-}
-
-#total{
-font-size:24px;
-font-weight:900;
-margin:18px 0;
 }
 
 /* FOOTER */
@@ -270,9 +212,102 @@ margin:18px 0;
 footer{
 background:#16204a;
 color:white;
-padding:60px;
+padding:50px;
 text-align:center;
-margin-top:100px;
+margin-top:80px;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+header{
+padding:14px 5%;
+flex-direction:column;
+gap:12px;
+}
+
+.logo{
+font-size:24px;
+}
+
+nav{
+flex-wrap:wrap;
+justify-content:center;
+gap:12px;
+}
+
+nav a{
+font-size:13px;
+}
+
+.hero{
+height:75vh;
+padding:20px;
+}
+
+.hero h1{
+font-size:44px;
+line-height:1.1;
+}
+
+.hero p{
+font-size:17px;
+}
+
+section{
+padding:70px 5%;
+}
+
+.section-title{
+font-size:32px;
+}
+
+.grid{
+grid-template-columns:1fr;
+gap:22px;
+}
+
+.card img{
+height:200px;
+}
+
+.content h3{
+font-size:22px;
+}
+
+.desc{
+font-size:14px;
+}
+
+#cart{
+width:92%;
+right:4%;
+bottom:12px;
+padding:16px;
+max-height:38vh;
+font-size:14px;
+border-radius:22px;
+}
+
+#badge{
+right:18px;
+bottom:250px;
+width:40px;
+height:40px;
+font-size:15px;
+}
+
+.qty button{
+width:28px;
+padding:6px;
+}
+
+button{
+padding:13px;
+font-size:14px;
+}
+
 }
 
 </style>
@@ -281,7 +316,6 @@ margin-top:100px;
 
 <header>
 <div class="logo">KIZUNA</div>
-
 <nav>
 <a href="#rolls">Rolls</a>
 <a href="#combos">Combos</a>
@@ -307,153 +341,98 @@ margin-top:100px;
 <div id="cart">
 <h2>🛒 Pedido</h2>
 <div id="items"></div>
-<div id="total">$0</div>
+<h2 id="total">$0</h2>
 <button onclick="sendWhatsApp()">Confirmar Pedido</button>
 </div>
 
 <footer>Kizuna Sushi © 2026</footer>
 
 <script>
-
 const API="https://kizuna-api-8ja8.onrender.com";
-
-let products=[];
-let cart=[];
+let products=[],cart=[];
 
 async function load(){
-
 const res=await fetch(`${API}/products`);
 products=await res.json();
-
 render("rolls","rollsGrid");
 render("combos","combosGrid");
 render("veggie","veggieGrid");
 render("bandejas","bandejasGrid");
 render("extras","extrasGrid");
-
 }
 
-function stockClass(stock){
-if(stock<=5)return "stock-critical";
-if(stock<=10)return "stock-low";
-return "stock-ok";
+function stockClass(s){
+if(s<=5)return"stock-critical";
+if(s<=10)return"stock-low";
+return"stock-ok";
 }
 
-function stockText(stock){
-if(stock<=5)return "⚠ Últimas unidades";
-if(stock<=10)return "Stock bajo";
-return "Disponible";
+function stockText(s){
+if(s<=5)return"⚠ Últimas unidades";
+if(s<=10)return"Stock bajo";
+return"Disponible";
 }
 
-function render(category,id){
-
+function render(cat,id){
 const div=document.getElementById(id);
 div.innerHTML="";
-
-products
-.filter(p=>p.category?.toLowerCase().trim()===category)
-.forEach(p=>{
-
+products.filter(p=>p.category===cat).forEach(p=>{
 div.innerHTML+=`
 <div class="card">
 <img src="${p.image}">
 <div class="content">
 <h3>${p.name}</h3>
-<p style="opacity:.7;margin:8px 0 14px;font-size:15px;line-height:1.5;">
-${p.description || "Selección artesanal premium Kizuna."}
-</p>
+<p class="desc">${p.description||"Selección premium artesanal."}</p>
 <div class="price">$${p.price}</div>
-<div class="${stockClass(p.stock)}">
-${stockText(p.stock)}
+<div class="${stockClass(p.stock)}">${stockText(p.stock)}</div>
+<button onclick='addToCart(${JSON.stringify(p)})'>Agregar</button>
 </div>
-<button onclick='addToCart(${JSON.stringify(p)})'>
-Agregar
-</button>
-</div>
-</div>
-`;
-
+</div>`;
 });
-
 }
 
 function addToCart(p){
-
-const found=cart.find(i=>i._id===p._id);
-
-if(found){
-found.qty++;
-}else{
-cart.push({...p,qty:1});
-}
-
+const f=cart.find(i=>i._id===p._id);
+if(f)f.qty++;
+else cart.push({...p,qty:1});
 updateCart();
-
 }
 
-function changeQty(id,val){
-
-const item=cart.find(i=>i._id===id);
-
-item.qty+=val;
-
-if(item.qty<=0){
-cart=cart.filter(i=>i._id!==id);
-}
-
+function changeQty(id,v){
+const i=cart.find(x=>x._id===id);
+i.qty+=v;
+if(i.qty<=0)cart=cart.filter(x=>x._id!==id);
 updateCart();
-
 }
 
 function updateCart(){
-
 items.innerHTML="";
-let total=0;
-let count=0;
-
+let total=0,count=0;
 cart.forEach(i=>{
-
 items.innerHTML+=`
 <div class="cart-item">
-<div>${i.name}<br>$${i.price}</div>
-
+<div>${i.name}</div>
 <div class="qty">
 <button onclick="changeQty('${i._id}',-1)">−</button>
 <span>${i.qty}</span>
 <button onclick="changeQty('${i._id}',1)">+</button>
 </div>
-</div>
-`;
-
+</div>`;
 total+=i.price*i.qty;
 count+=i.qty;
-
 });
-
 document.getElementById("total").innerHTML=`$${total}`;
 document.getElementById("badge").innerHTML=count;
-
 }
 
-async function sendWhatsApp(){
-
+function sendWhatsApp(){
 let msg="🍣 Pedido Kizuna%0A%0A";
-
-cart.forEach(i=>{
-msg+=`• ${i.name} x${i.qty}%0A`;
-});
-
-msg+=`%0ATotal: ${document.getElementById("total").innerHTML}`;
-
-window.open(
-`https://wa.me/1121734894?text=${msg}`,
-"_blank"
-);
-
+cart.forEach(i=>msg+=`• ${i.name} x${i.qty}%0A`);
+msg+=`%0ATotal: ${total.innerHTML}`;
+window.open(`https://wa.me/1121734894?text=${msg}`,"_blank");
 }
 
 load();
-
 </script>
 
 </body>
