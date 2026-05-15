@@ -390,7 +390,7 @@ async function sendWhatsApp() {
   msg += `%0ATotal: $${total}`;
 
   // Registrar pedido en la API
-   try {
+try {
     const res = await fetch(`${API}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -399,10 +399,18 @@ async function sendWhatsApp() {
         total: total
       })
     });
+
+    if (res.ok) {
+      cart = [];
+      updateCart();
+      location.href = `https://wa.me/5491121734894?text=${msg}`;
+    } else {
+      alert("Hubo un error al registrar el pedido. Intentá de nuevo.");
+    }
+
   } catch (err) {
     console.error("No se pudo registrar el pedido:", err);
   }
-
  if (res.ok) {
     cart = [];
     updateCart();
