@@ -319,6 +319,7 @@ async function sendWhatsApp() {
 
   let msg = "🍣 Pedido Kizuna%0A%0A";
   let total = 0;
+  const itemsParaEnviar = [...cart]; // Guardamos copia antes de vaciar
 
   cart.forEach(i => {
     msg += `• ${i.name} x${i.qty}%0A`;
@@ -327,26 +328,26 @@ async function sendWhatsApp() {
 
   msg += `%0ATotal: $${total}`;
 
-  // Abrir WhatsApp primero (antes de cualquier await)
-  window.open(`https://wa.me/1121734894?text=${msg}`, "_blank");
-
-  // Vaciar carrito inmediatamente
-  cart = [];
-  updateCart();
-
-  // Registrar pedido en segundo plano
+  // Registrar pedido en la API
   try {
     await fetch(`${API}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        items: cart.map(i => ({ _id: i._id, name: i.name, qty: i.qty, price: i.price })),
+        items: itemsParaEnviar.map(i => ({ _id: i._id, name: i.name, qty: i.qty, price: i.price })),
         total: total
       })
     });
   } catch (err) {
     console.error("No se pudo registrar el pedido:", err);
   }
+
+  // Vaciar carrito
+  cart = [];
+  updateCart();
+
+  // Redirigir a WhatsApp (funciona en mobile y desktop)
+  location.href = `https://wa.me/1121734894?text=${msg}`;
 }
 
 load();
