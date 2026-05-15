@@ -5,29 +5,19 @@ require("dotenv").config();
 
 const Product = require("./models/Product");
 const Order = require("./models/Order");
+const Settings = require("./models/Settings");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Conexión a MongoDB con manejo de error
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB conectado"))
   .catch((err) => {
     console.error("❌ Error conectando a MongoDB:", err.message);
-    process.exit(1); // Si no hay DB, no tiene sentido seguir
+    process.exit(1);
   });
-
-/* SETTINGS */
-
-const SettingsSchema = new mongoose.Schema({
-  openHour: Number,
-  closeHour: Number,
-  openDays: [Number]
-});
-
-const Settings = mongoose.model("Settings", SettingsSchema);
 
 /* PRODUCTS */
 
@@ -121,7 +111,6 @@ app.post("/orders", async (req, res) => {
     });
     await order.save();
 
-    // Descontar stock de cada producto
     for (const item of req.body.items) {
       await Product.findByIdAndUpdate(
         item._id,
@@ -145,7 +134,6 @@ app.put("/orders/:id", async (req, res) => {
   }
 });
 
-// Ruta no encontrada (404 genérico)
 app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });
 });
