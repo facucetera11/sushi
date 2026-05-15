@@ -379,8 +379,8 @@ async function sendWhatsApp() {
   msg += `%0ATotal: $${total}`;
 
   // Registrar pedido en la API
-  try {
-    await fetch(`${API}/orders`, {
+   try {
+    const res = await fetch(`${API}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
