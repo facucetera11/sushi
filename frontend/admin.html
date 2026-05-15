@@ -5,30 +5,11 @@
 <title>Admin Kizuna Premium</title>
 
 <style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+body{background:linear-gradient(135deg,#fcfaf6,#f5eee6);padding:50px;max-width:1500px;margin:auto;color:#16204a;}
+h1{font-size:58px;font-weight:900;color:#d86a5e;margin-bottom:30px;}
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
-
-body{
-background:linear-gradient(135deg,#fcfaf6,#f5eee6);
-padding:50px;
-max-width:1500px;
-margin:auto;
-color:#16204a;
-}
-
-h1{
-font-size:58px;
-font-weight:900;
-color:#d86a5e;
-margin-bottom:30px;
-}
-
-input,select{
+input,select,textarea{
 width:100%;
 padding:16px;
 margin:10px 0;
@@ -37,6 +18,11 @@ border-radius:18px;
 background:white;
 box-shadow:0 10px 25px rgba(0,0,0,.08);
 font-size:16px;
+}
+
+textarea{
+resize:none;
+height:110px;
 }
 
 button{
@@ -50,46 +36,12 @@ transition:.25s;
 font-size:16px;
 }
 
-button:hover{
-transform:translateY(-3px);
-}
+button:hover{transform:translateY(-3px);}
+button:active{transform:scale(.96);}
 
-button:active{
-transform:scale(.96);
-}
-
-.add{
-background:#16204a;
-color:white;
-}
-
-.edit{
-background:#2e8b57;
-color:white;
-}
-
-.delete{
-background:#d86a5e;
-color:white;
-}
-
-#stats{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:20px;
-margin:35px 0;
-}
-
-.stat{
-background:white;
-padding:30px;
-border-radius:28px;
-box-shadow:0 15px 35px rgba(0,0,0,.08);
-text-align:center;
-font-size:22px;
-font-weight:900;
-animation:fade .4s ease;
-}
+.add{background:#16204a;color:white;}
+.edit{background:#2e8b57;color:white;}
+.delete{background:#d86a5e;color:white;}
 
 .card{
 background:white;
@@ -97,31 +49,6 @@ padding:28px;
 margin:25px 0;
 border-radius:30px;
 box-shadow:0 18px 40px rgba(0,0,0,.08);
-position:relative;
-animation:fade .35s ease;
-}
-
-.stock-alert{
-position:absolute;
-top:20px;
-right:20px;
-padding:10px 16px;
-border-radius:999px;
-font-size:13px;
-font-weight:800;
-color:white;
-}
-
-.low{
-background:#ff3b30;
-}
-
-.medium{
-background:#ff9500;
-}
-
-.ok{
-background:#34c759;
 }
 
 #toast{
@@ -132,39 +59,23 @@ background:#16204a;
 color:white;
 padding:18px 28px;
 border-radius:18px;
-font-weight:800;
 opacity:0;
-transform:translateY(20px);
 transition:.35s;
-z-index:99999;
 }
 
-#toast.show{
-opacity:1;
-transform:translateY(0);
-}
-
-@keyframes fade{
-from{
-opacity:0;
-transform:translateY(18px);
-}
-to{
-opacity:1;
-transform:translateY(0);
-}
-}
-
+#toast.show{opacity:1;}
 </style>
 </head>
 <body>
 
-<h1>🍣 Admin Kizuna Premium</h1>
+<h1>🍣 Admin Kizuna</h1>
 
 <input id="nameInput" placeholder="Nombre">
 <input id="priceInput" type="number" placeholder="Precio">
 <input id="stockInput" type="number" placeholder="Stock">
 <input id="imageInput" placeholder="URL Imagen">
+
+<textarea id="descInput" placeholder="Descripción del producto"></textarea>
 
 <select id="categoryInput">
 <option value="rolls">Rolls</option>
@@ -174,79 +85,40 @@ transform:translateY(0);
 <option value="extras">Extras</option>
 </select>
 
-<button class="add" onclick="addProduct()">
-Agregar Producto
-</button>
-
-<div id="stats"></div>
+<button class="add" onclick="addProduct()">Agregar Producto</button>
 
 <div id="products"></div>
-
 <div id="toast"></div>
 
 <script>
 
 const API="https://kizuna-api-8ja8.onrender.com";
-const productsDiv=document.getElementById("products");
 
 function toast(msg){
-
-const t=document.getElementById("toast");
-
-t.innerHTML=msg;
-t.classList.add("show");
-
-setTimeout(()=>{
-t.classList.remove("show");
-},2200);
-
+toastBox.innerHTML=msg;
+toastBox.classList.add("show");
+setTimeout(()=>toastBox.classList.remove("show"),2200);
 }
+
+const toastBox=document.getElementById("toast");
 
 async function load(){
 
 const res=await fetch(`${API}/products`);
 const products=await res.json();
 
-const totalProducts=products.length;
-const lowStock=products.filter(p=>p.stock<=5).length;
-const totalStock=products.reduce((a,b)=>a+b.stock,0);
-const inventory=products.reduce((a,b)=>a+(b.stock*b.price),0);
-
-document.getElementById("stats").innerHTML=`
-<div class="stat">${totalProducts}<br>Productos</div>
-<div class="stat">${lowStock}<br>Críticos</div>
-<div class="stat">${totalStock}<br>Stock Total</div>
-<div class="stat">$${inventory}<br>Inventario</div>
-`;
-
 productsDiv.innerHTML="";
 
 products.forEach(p=>{
 
-let alertClass="ok";
-let alertText="Disponible";
-
-if(p.stock<=5){
-alertClass="low";
-alertText="⚠ Crítico";
-}
-else if(p.stock<=10){
-alertClass="medium";
-alertText="Stock Bajo";
-}
-
 productsDiv.innerHTML+=`
-
 <div class="card">
 
-<div class="stock-alert ${alertClass}">
-${alertText}
-</div>
-
 <input id="name-${p._id}" value="${p.name}">
-<input id="price-${p._id}" type="number" value="${p.price}">
-<input id="stock-${p._id}" type="number" value="${p.stock}">
+<input id="price-${p._id}" value="${p.price}">
+<input id="stock-${p._id}" value="${p.stock}">
 <input id="image-${p._id}" value="${p.image}">
+<textarea id="desc-${p._id}">${p.description||""}</textarea>
 
 <select id="category-${p._id}">
 <option ${p.category==="rolls"?"selected":""}>rolls</option>
@@ -256,22 +128,21 @@ ${alertText}
 <option ${p.category==="extras"?"selected":""}>extras</option>
 </select>
 
-<button class="edit"
-onclick="updateProduct('${p._id}')">
-Guardar Cambios
+<button class="edit" onclick="updateProduct('${p._id}')">
+Guardar
 </button>
 
-<button class="delete"
-onclick="deleteProduct('${p._id}')">
+<button class="delete" onclick="deleteProduct('${p._id}')">
 Eliminar
 </button>
 
 </div>
 `;
-
 });
 
 }
+
+const productsDiv=document.getElementById("products");
 
 async function addProduct(){
 
@@ -283,6 +154,7 @@ name:nameInput.value,
 price:+priceInput.value,
 stock:+stockInput.value,
 image:imageInput.value,
+description:descInput.value,
 category:categoryInput.value
 })
 });
@@ -302,6 +174,7 @@ name:document.getElementById(`name-${id}`).value,
 price:+document.getElementById(`price-${id}`).value,
 stock:+document.getElementById(`stock-${id}`).value,
 image:document.getElementById(`image-${id}`).value,
+description:document.getElementById(`desc-${id}`).value,
 category:document.getElementById(`category-${id}`).value
 })
 });
@@ -312,19 +185,13 @@ load();
 }
 
 async function deleteProduct(id){
-
-await fetch(`${API}/products/${id}`,{
-method:"DELETE"
-});
-
+await fetch(`${API}/products/${id}`,{method:"DELETE"});
 toast("Producto eliminado ❌");
 load();
-
 }
 
 load();
 
 </script>
-
 </body>
 </html>

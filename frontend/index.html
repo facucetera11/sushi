@@ -359,6 +359,9 @@ div.innerHTML+=`
 <img src="${p.image}">
 <div class="content">
 <h3>${p.name}</h3>
+<p style="opacity:.7;margin:8px 0 14px;font-size:15px;line-height:1.5;">
+${p.description || "Selección artesanal premium Kizuna."}
+</p>
 <div class="price">$${p.price}</div>
 <div class="${stockClass(p.stock)}">
 ${stockText(p.stock)}
