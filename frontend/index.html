@@ -11,7 +11,7 @@
 :root {
   --red: #d86a5e;
   --navy: #16204a;
-  --cream: #fcfaf6;
+  --cream: #f7e7c6;
   --green: #2e8b57;
   --shadow: 0 18px 45px rgba(0,0,0,.09);
 }
@@ -30,7 +30,7 @@ header {
   position: fixed; top: 0; width: 100%;
   padding: 18px 7%;
   display: flex; justify-content: space-between; align-items: center;
-  background: rgba(252,250,246,.95);
+  background: rgba(209, 169, 88, 0.95);
   backdrop-filter: blur(20px);
   z-index: 999;
   border-bottom: 1px solid rgba(22,32,74,.07);
@@ -64,7 +64,7 @@ nav a:hover { opacity: 1; }
 .hero {
   position: relative; height: 100vh;
   display: flex; justify-content: center; align-items: center;
-  flex-direction: column; color: white; text-align: center;
+  flex-direction: column; color: #f7e7c6; text-align: center;
   overflow: hidden;
 }
 
@@ -436,7 +436,7 @@ function updateStatus() {
     badge.textContent = "🟢 Abierto";
     badge.style.cssText = "background:rgba(46,139,87,.12);color:#2e8b57;";
   } else {
-    badge.textContent = `🔴 Abrimos ${settings.openHour}:00`;
+    badge.textContent = `🔴Cerrado-Abrimos ${settings.openHour}:00`;
     badge.style.cssText = "background:rgba(216,106,94,.12);color:#d86a5e;";
   }
 }
