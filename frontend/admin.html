@@ -2,19 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Admin Kizuna Premium</title>
+<title>Admin Kizuna</title>
 
 <style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif;}
 
 body{
-background:linear-gradient(135deg,#fcfaf6,#f5eee6);
+background:#fcfaf6;
 padding:50px;
 max-width:1500px;
 margin:auto;
@@ -23,12 +17,11 @@ color:#16204a;
 
 h1{
 font-size:58px;
-font-weight:900;
 color:#d86a5e;
 margin-bottom:30px;
 }
 
-input,select,textarea{
+input,textarea,select{
 width:100%;
 padding:16px;
 margin:10px 0;
@@ -36,13 +29,9 @@ border:none;
 border-radius:18px;
 background:white;
 box-shadow:0 10px 25px rgba(0,0,0,.08);
-font-size:16px;
 }
 
-textarea{
-resize:none;
-height:110px;
-}
+textarea{height:100px;}
 
 button{
 width:100%;
@@ -52,38 +41,37 @@ border-radius:18px;
 font-weight:800;
 cursor:pointer;
 transition:.25s;
-font-size:16px;
 }
 
-button:hover{
-transform:translateY(-3px);
-}
+button:hover{transform:translateY(-3px);}
 
-button:active{
-transform:scale(.96);
-}
-
-.add{
-background:#16204a;
-color:white;
-}
-
-.edit{
-background:#2e8b57;
-color:white;
-}
-
-.delete{
-background:#d86a5e;
-color:white;
-}
+.add{background:#16204a;color:white;}
+.edit{background:#2e8b57;color:white;}
+.delete{background:#d86a5e;color:white;}
 
 .card{
 background:white;
 padding:28px;
+border-radius:28px;
 margin:25px 0;
-border-radius:30px;
 box-shadow:0 18px 40px rgba(0,0,0,.08);
+}
+
+#analytics{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:18px;
+margin-bottom:30px;
+}
+
+.metric{
+background:white;
+padding:25px;
+border-radius:22px;
+text-align:center;
+font-weight:900;
+color:#d86a5e;
+box-shadow:0 14px 30px rgba(0,0,0,.07);
 }
 
 .stockAlert{
@@ -101,25 +89,58 @@ color:white;
 padding:18px 28px;
 border-radius:18px;
 opacity:0;
-transition:.35s;
-z-index:9999;
+transition:.3s;
 }
 
-#toast.show{
-opacity:1;
+#toast.show{opacity:1;}
+
+.days{
+display:flex;
+gap:12px;
+margin:15px 0;
+flex-wrap:wrap;
 }
 
+.days label{
+background:white;
+padding:12px 18px;
+border-radius:16px;
+cursor:pointer;
+}
 </style>
 </head>
 <body>
 
 <h1>🍣 Admin Kizuna</h1>
 
+<div id="analytics"></div>
+
+<div class="card">
+<h2>Horario</h2>
+
+<input id="openHour" type="number" min="0" max="23" placeholder="Apertura">
+<input id="closeHour" type="number" min="0" max="23" placeholder="Cierre">
+
+<div class="days">
+<label><input type="checkbox" value="0">Dom</label>
+<label><input type="checkbox" value="1">Lun</label>
+<label><input type="checkbox" value="2">Mar</label>
+<label><input type="checkbox" value="3">Mié</label>
+<label><input type="checkbox" value="4">Jue</label>
+<label><input type="checkbox" value="5">Vie</label>
+<label><input type="checkbox" value="6">Sáb</label>
+</div>
+
+<button class="edit" onclick="saveSettings()">
+Guardar horario
+</button>
+</div>
+
+<div class="card">
 <input id="nameInput" placeholder="Nombre">
 <input id="priceInput" type="number" placeholder="Precio">
 <input id="stockInput" type="number" placeholder="Stock">
 <input id="imageInput" placeholder="URL Imagen">
-
 <textarea id="descInput" placeholder="Descripción"></textarea>
 
 <select id="categoryInput">
@@ -133,36 +154,73 @@ opacity:1;
 <button class="add" onclick="addProduct()">
 Agregar Producto
 </button>
+</div>
 
 <div id="products"></div>
-
 <div id="toast"></div>
 
 <script>
 
 const API="https://kizuna-api-8ja8.onrender.com";
-const productsDiv=document.getElementById("products");
-const toastBox=document.getElementById("toast");
 
 function toast(msg){
-toastBox.innerHTML=msg;
-toastBox.classList.add("show");
-setTimeout(()=>toastBox.classList.remove("show"),2200);
+toast.innerHTML=msg;
+toast.classList.add("show");
+setTimeout(()=>toast.classList.remove("show"),2000);
+}
+
+async function loadSettings(){
+const r=await fetch(`${API}/settings`);
+const s=await r.json();
+
+openHour.value=s.openHour;
+closeHour.value=s.closeHour;
+
+document.querySelectorAll(".days input")
+.forEach(c=>{
+c.checked=s.openDays.includes(+c.value);
+});
+}
+
+async function saveSettings(){
+
+const openDays=[...document.querySelectorAll(".days input:checked")]
+.map(c=>+c.value);
+
+await fetch(`${API}/settings`,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+openHour:+openHour.value,
+closeHour:+closeHour.value,
+openDays
+})
+});
+
+toast("Horario guardado ✅");
 }
 
 async function load(){
 
+await loadSettings();
+
 const res=await fetch(`${API}/products`);
 const products=await res.json();
+
+analytics.innerHTML=`
+<div class="metric">${products.length}<br>Productos</div>
+<div class="metric">${products.reduce((a,b)=>a+b.stock,0)}<br>Stock</div>
+<div class="metric">${products.filter(p=>p.stock<=5).length}<br>Críticos</div>
+<div class="metric">${products[0]?.category||"-"}<br>Top</div>
+`;
 
 productsDiv.innerHTML="";
 
 products.forEach(p=>{
-
 productsDiv.innerHTML+=`
 <div class="card">
 
-${p.stock<=5 ? `<div class="stockAlert">⚠ Stock crítico</div>` : ""}
+${p.stock<=5?'<div class="stockAlert">⚠ Stock crítico</div>':''}
 
 <input id="name-${p._id}" value="${p.name}">
 <input id="price-${p._id}" value="${p.price}">
@@ -178,23 +236,14 @@ ${p.stock<=5 ? `<div class="stockAlert">⚠ Stock crítico</div>` : ""}
 <option ${p.category==="extras"?"selected":""}>extras</option>
 </select>
 
-<button class="edit" onclick="updateProduct('${p._id}')">
-Guardar cambios
-</button>
+<button class="edit" onclick="updateProduct('${p._id}')">Guardar</button>
+<button class="delete" onclick="deleteProduct('${p._id}')">Eliminar</button>
 
-<button class="delete" onclick="deleteProduct('${p._id}')">
-Eliminar
-</button>
-
-</div>
-`;
-
+</div>`;
 });
-
 }
 
 async function addProduct(){
-
 await fetch(`${API}/products`,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
@@ -207,14 +256,11 @@ description:descInput.value,
 category:categoryInput.value
 })
 });
-
 toast("Producto agregado 🍣");
 load();
-
 }
 
 async function updateProduct(id){
-
 await fetch(`${API}/products/${id}`,{
 method:"PUT",
 headers:{"Content-Type":"application/json"},
@@ -227,26 +273,18 @@ description:document.getElementById(`desc-${id}`).value,
 category:document.getElementById(`category-${id}`).value
 })
 });
-
-toast("Cambios guardados ✅");
+toast("Guardado ✅");
 load();
-
 }
 
 async function deleteProduct(id){
-
-await fetch(`${API}/products/${id}`,{
-method:"DELETE"
-});
-
-toast("Producto eliminado ❌");
+await fetch(`${API}/products/${id}`,{method:"DELETE"});
+toast("Eliminado ❌");
 load();
-
 }
 
 load();
 
 </script>
-
 </body>
 </html>

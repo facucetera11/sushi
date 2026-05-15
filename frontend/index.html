@@ -6,56 +6,19 @@
 <title>Kizuna Sushi</title>
 
 <style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-scroll-behavior:smooth;
-}
-
-body{
-background:#fcfaf6;
-color:#16204a;
-overflow-x:hidden;
-}
-
-/* HEADER */
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif;scroll-behavior:smooth;}
+body{background:#fcfaf6;color:#16204a;overflow-x:hidden;}
 
 header{
-position:fixed;
-top:0;
-width:100%;
-padding:22px 8%;
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:rgba(255,255,255,.9);
-backdrop-filter:blur(18px);
-z-index:9999;
-box-shadow:0 8px 20px rgba(0,0,0,.05);
+position:fixed;top:0;width:100%;padding:22px 8%;
+display:flex;justify-content:space-between;align-items:center;
+background:rgba(255,255,255,.92);backdrop-filter:blur(18px);z-index:999;
 }
 
-.logo{
-font-size:34px;
-font-weight:900;
-color:#d86a5e;
-letter-spacing:4px;
-}
+.logo{font-size:34px;font-weight:900;color:#d86a5e;}
 
-nav{
-display:flex;
-gap:24px;
-}
-
-nav a{
-text-decoration:none;
-font-weight:800;
-color:#16204a;
-}
-
-/* HERO */
+nav{display:flex;gap:20px;}
+nav a{text-decoration:none;font-weight:800;color:#16204a;}
 
 .hero{
 height:100vh;
@@ -63,36 +26,27 @@ background:
 linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
 url("https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
 background-size:cover;
-background-position:center;
 display:flex;
 justify-content:center;
 align-items:center;
 flex-direction:column;
 color:white;
 text-align:center;
-animation:zoomHero 18s infinite alternate ease-in-out;
 }
 
-@keyframes zoomHero{
-from{background-size:100%;}
-to{background-size:115%;}
+.hero h1{font-size:95px;}
+.hero p{font-size:24px;margin-top:15px;}
+
+#statusBox{
+margin-top:20px;
+padding:14px 28px;
+background:rgba(255,255,255,.15);
+border-radius:20px;
+font-weight:800;
+backdrop-filter:blur(10px);
 }
 
-.hero h1{
-font-size:90px;
-font-weight:900;
-}
-
-.hero p{
-font-size:24px;
-margin-top:15px;
-}
-
-/* SECTIONS */
-
-section{
-padding:120px 8%;
-}
+section{padding:120px 8%;}
 
 .section-title{
 font-size:56px;
@@ -107,8 +61,6 @@ grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
 gap:35px;
 }
 
-/* CARD */
-
 .card{
 background:white;
 border-radius:28px;
@@ -122,30 +74,15 @@ height:240px;
 object-fit:cover;
 }
 
-.content{
-padding:24px;
-}
+.content{padding:24px;}
 
-.content h3{
-font-size:26px;
-}
-
-.desc{
-opacity:.7;
-margin:10px 0;
-line-height:1.5;
-}
+.desc{opacity:.7;margin:10px 0;}
 
 .price{
 font-size:24px;
 font-weight:900;
 color:#d86a5e;
-margin:10px 0;
 }
-
-.stock-ok{color:#34c759;font-weight:800;}
-.stock-low{color:#ff9500;font-weight:800;}
-.stock-critical{color:#ff3b30;font-weight:800;}
 
 button{
 width:100%;
@@ -158,8 +95,6 @@ font-weight:800;
 cursor:pointer;
 }
 
-/* CART */
-
 #cart{
 position:fixed;
 right:20px;
@@ -171,7 +106,6 @@ border-radius:28px;
 box-shadow:0 20px 60px rgba(0,0,0,.15);
 max-height:75vh;
 overflow:auto;
-z-index:999;
 }
 
 .cart-item{
@@ -191,7 +125,11 @@ width:34px;
 padding:8px;
 }
 
-/* FOOTER */
+#total{
+font-size:22px;
+font-weight:900;
+margin:15px 0;
+}
 
 footer{
 background:#16204a;
@@ -201,99 +139,30 @@ text-align:center;
 margin-top:80px;
 }
 
-/* MOBILE */
-
 @media(max-width:768px){
 
 header{
-padding:14px 5%;
 flex-direction:column;
-gap:12px;
+padding:14px 5%;
 }
 
-.logo{
-font-size:24px;
-}
+.hero h1{font-size:42px;}
+.hero p{font-size:17px;}
 
-nav{
-flex-wrap:wrap;
-justify-content:center;
-gap:12px;
-}
+section{padding:70px 5%;}
 
-nav a{
-font-size:13px;
-}
+.section-title{font-size:32px;}
 
-.hero{
-height:75vh;
-padding:20px;
-}
-
-.hero h1{
-font-size:44px;
-line-height:1.1;
-}
-
-.hero p{
-font-size:17px;
-}
-
-section{
-padding:70px 5%;
-}
-
-.section-title{
-font-size:32px;
-}
-
-.grid{
-grid-template-columns:1fr;
-gap:22px;
-}
-
-.card img{
-height:200px;
-}
-
-.content h3{
-font-size:22px;
-}
-
-.desc{
-font-size:14px;
-}
+.grid{grid-template-columns:1fr;}
 
 #cart{
 width:92%;
 right:4%;
-bottom:12px;
-padding:16px;
+bottom:10px;
 max-height:38vh;
-font-size:14px;
-border-radius:22px;
-}
-
-#badge{
-right:18px;
-bottom:250px;
-width:40px;
-height:40px;
-font-size:15px;
-}
-
-.qty button{
-width:28px;
-padding:6px;
-}
-
-button{
-padding:13px;
-font-size:14px;
 }
 
 }
-
 </style>
 </head>
 <body>
@@ -312,6 +181,7 @@ font-size:14px;
 <section class="hero">
 <h1>KIZUNA SUSHI</h1>
 <p>Alta cocina japonesa artesanal</p>
+<div id="statusBox"></div>
 </section>
 
 <section id="rolls"><div class="section-title">Rolls</div><div class="grid" id="rollsGrid"></div></section>
@@ -320,57 +190,71 @@ font-size:14px;
 <section id="bandejas"><div class="section-title">Bandejas</div><div class="grid" id="bandejasGrid"></div></section>
 <section id="extras"><div class="section-title">Extras</div><div class="grid" id="extrasGrid"></div></section>
 
-
 <div id="cart">
 <h2>🛒 Pedido</h2>
 <div id="items"></div>
-<h2 id="total">$0</h2>
+<div id="total">$0</div>
 <button onclick="sendWhatsApp()">Confirmar Pedido</button>
 </div>
 
 <footer>Kizuna Sushi © 2026</footer>
 
 <script>
+
 const API="https://kizuna-api-8ja8.onrender.com";
-let products=[],cart=[];
+
+let products=[],cart=[],settings={};
 
 async function load(){
-const res=await fetch(`${API}/products`);
-products=await res.json();
-render("rolls","rollsGrid");
-render("combos","combosGrid");
-render("veggie","veggieGrid");
-render("bandejas","bandejasGrid");
-render("extras","extrasGrid");
+
+const p=await fetch(`${API}/products`);
+products=await p.json();
+
+const s=await fetch(`${API}/settings`);
+settings=await s.json();
+
+updateStatus();
+
+["rolls","combos","veggie","bandejas","extras"]
+.forEach(cat=>render(cat,cat+"Grid"));
 }
 
-function stockClass(s){
-if(s<=5)return"stock-critical";
-if(s<=10)return"stock-low";
-return"stock-ok";
+function updateStatus(){
+
+const now=new Date();
+const day=now.getDay();
+const hour=now.getHours();
+
+if(!settings.openDays.includes(day)){
+statusBox.innerHTML="⛔ Hoy cerrado";
+return;
 }
 
-function stockText(s){
-if(s<=5)return"⚠ Últimas unidades";
-if(s<=10)return"Stock bajo";
-return"Disponible";
+if(hour>=settings.openHour && hour<settings.closeHour){
+statusBox.innerHTML="🟢 Abierto ahora";
+}else{
+statusBox.innerHTML=`🔴 Cerrado · Abrimos ${settings.openHour}:00`;
+}
 }
 
 function render(cat,id){
-const div=document.getElementById(id);
-div.innerHTML="";
-products.filter(p=>p.category===cat).forEach(p=>{
-div.innerHTML+=`
+document.getElementById(id).innerHTML="";
+
+products.filter(p=>p.category===cat)
+.forEach(p=>{
+
+document.getElementById(id).innerHTML+=`
 <div class="card">
 <img src="${p.image}">
 <div class="content">
 <h3>${p.name}</h3>
-<p class="desc">${p.description||"Selección premium artesanal."}</p>
+<p class="desc">${p.description||""}</p>
 <div class="price">$${p.price}</div>
-<div class="${stockClass(p.stock)}">${stockText(p.stock)}</div>
 <button onclick='addToCart(${JSON.stringify(p)})'>Agregar</button>
 </div>
-</div>`;
+</div>
+`;
+
 });
 }
 
@@ -389,8 +273,10 @@ updateCart();
 }
 
 function updateCart(){
+
 items.innerHTML="";
-let total=0,count=0;
+let total=0;
+
 cart.forEach(i=>{
 items.innerHTML+=`
 <div class="cart-item">
@@ -402,19 +288,26 @@ items.innerHTML+=`
 </div>
 </div>`;
 total+=i.price*i.qty;
-count+=i.qty;
 });
+
 document.getElementById("total").innerHTML=`$${total}`;
 }
 
 function sendWhatsApp(){
+
 let msg="🍣 Pedido Kizuna%0A%0A";
-cart.forEach(i=>msg+=`• ${i.name} x${i.qty}%0A`);
+
+cart.forEach(i=>{
+msg+=`• ${i.name} x${i.qty}%0A`;
+});
+
 msg+=`%0ATotal: ${total.innerHTML}`;
+
 window.open(`https://wa.me/1121734894?text=${msg}`,"_blank");
 }
 
 load();
+
 </script>
 
 </body>
