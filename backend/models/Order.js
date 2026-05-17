@@ -10,6 +10,7 @@ const OrderSchema=new mongoose.Schema({
   clientName: { type: String, default: "" },
   scheduledDate: { type: String, default: "" },
   scheduledTime: { type: String, default: "" },
+  paymentMethod: { type: String, default: "transfer" }, // "transfer" | "cash"
   createdAt: { type: Date, default: Date.now }
 });
 

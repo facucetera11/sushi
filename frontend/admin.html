@@ -318,6 +318,27 @@ textarea { height: 80px; resize: vertical; }
     <button class="btn btn-success" onclick="saveSettings()">Guardar horario</button>
   </div>
 
+  <!-- PAGOS -->
+  <div class="panel">
+    <h2>💳 Métodos de pago</h2>
+    <div class="settings-row">
+      <div>
+        <div class="label">% Descuento en efectivo</div>
+        <input id="cashDiscount" type="number" min="0" max="100" placeholder="Ej: 10">
+        <div style="font-size:11px;opacity:.45;margin-top:-4px;margin-bottom:8px;">Ponelo en 0 para no aplicar descuento</div>
+      </div>
+      <div>
+        <div class="label">Alias / CBU (Transferencia)</div>
+        <input id="transferAlias" type="text" placeholder="Ej: kizuna.sushi o tu CBU">
+      </div>
+    </div>
+    <div>
+      <div class="label">Link de Mercado Pago (opcional)</div>
+      <input id="mercadoPagoLink" type="text" placeholder="https://mpago.la/...">
+    </div>
+    <button class="btn btn-primary" onclick="savePaymentSettings()">Guardar configuración de pagos</button>
+  </div>
+
   <!-- NUEVO PRODUCTO -->
   <div class="panel">
     <h2>➕ Agregar producto</h2>
@@ -462,6 +483,9 @@ function renderOrders(orders) {
     const clientTag = o.clientName
       ? `<span class="order-tag" style="background:rgba(0,0,0,.05);color:#333;">👤 ${o.clientName}</span>`
       : "";
+    const payTag = o.paymentMethod === "cash"
+      ? `<span class="order-tag" style="background:rgba(46,139,87,.1);color:#2e8b57;">💵 Efectivo</span>`
+      : `<span class="order-tag" style="background:rgba(22,32,74,.07);color:var(--navy);">🏦 Transferencia</span>`;
     const addressLine = isDelivery && o.address
       ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">📍 ${o.address}</div>`
       : "";
@@ -472,7 +496,7 @@ function renderOrders(orders) {
         <h3>Pedido #${o.number}</h3>
         <span class="status-badge status-${o.status}">${o.status}</span>
       </div>
-      <div class="order-meta">${clientTag}${deliveryTag}${schedTag}</div>
+      <div class="order-meta">${clientTag}${deliveryTag}${schedTag}${payTag}</div>
       ${addressLine}
       <div class="order-items">${itemsList}</div>
       <div class="order-total">$${o.total.toLocaleString("es-AR")}</div>
@@ -502,6 +526,11 @@ function renderSettings(settings) {
   document.getElementById("closeHour").value = settings.closeHour;
   openDays = settings.openDays || [];
 
+  // Payment settings
+  document.getElementById("cashDiscount").value = settings.cashDiscount ?? 0;
+  document.getElementById("transferAlias").value = settings.transferAlias || "";
+  document.getElementById("mercadoPagoLink").value = settings.mercadoPagoLink || "";
+
   const grid = document.getElementById("daysGrid");
   grid.innerHTML = DAYS.map((d, i) => `
     <button class="day-btn ${openDays.includes(i) ? "active" : ""}"
@@ -530,6 +559,24 @@ async function saveSettings() {
     })
   });
   toast("✓ Horario guardado", "success");
+}
+
+async function savePaymentSettings() {
+  const discount = +document.getElementById("cashDiscount").value;
+  if (isNaN(discount) || discount < 0 || discount > 100) {
+    toast("❌ El descuento debe ser entre 0 y 100", "error"); return;
+  }
+  const res = await fetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      cashDiscount: discount,
+      transferAlias: document.getElementById("transferAlias").value.trim(),
+      mercadoPagoLink: document.getElementById("mercadoPagoLink").value.trim()
+    })
+  });
+  if (res.ok) toast("✓ Pagos guardado", "success");
+  else toast("❌ Error al guardar", "error");
 }
 
 /* ── PRODUCTS ── */

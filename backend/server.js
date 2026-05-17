@@ -69,7 +69,10 @@ app.get("/settings", async (req, res) => {
       s = await Settings.create({
         openHour: 19,
         closeHour: 23,
-        openDays: [1, 2, 3, 4, 5, 6]
+        openDays: [1, 2, 3, 4, 5, 6],
+        cashDiscount: 0,
+        transferAlias: "",
+        mercadoPagoLink: ""
       });
     }
     res.json(s);
