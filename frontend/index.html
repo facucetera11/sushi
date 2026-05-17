@@ -296,6 +296,108 @@ nav a:hover { opacity: 1; }
 #btnConfirm:hover { background: #a93226; }
 #btnConfirm:disabled { background: #e0e0e0; color: #aaa; cursor: not-allowed; }
 
+/* ── CHECKOUT MODAL ── */
+.checkout-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  z-index: 600; display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; pointer-events: none; transition: opacity .28s ease;
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.checkout-overlay.open { opacity: 1; pointer-events: all; }
+
+.checkout-modal {
+  background: var(--white); border-radius: 14px;
+  width: 100%; max-width: 460px; overflow: hidden;
+  border: 0.5px solid var(--border); box-shadow: 0 32px 80px rgba(0,0,0,.2);
+  transform: translateY(24px) scale(.96);
+  transition: transform .3s cubic-bezier(.34,1.4,.64,1);
+}
+.checkout-overlay.open .checkout-modal { transform: translateY(0) scale(1); }
+
+.checkout-head {
+  padding: 24px 28px 20px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.checkout-head h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 700; letter-spacing: .3px;
+}
+.checkout-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(0,0,0,.06); border: none; cursor: pointer;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  transition: background .15s; color: var(--navy);
+}
+.checkout-close:hover { background: rgba(0,0,0,.12); }
+
+.checkout-body { padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 22px; }
+
+/* tipo entrega */
+.checkout-label {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(0,0,0,.38); font-weight: 500; margin-bottom: 10px;
+}
+.delivery-toggle {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.delivery-opt {
+  padding: 14px 12px; border-radius: 8px;
+  border: 1px solid var(--border); cursor: pointer;
+  text-align: center; transition: border-color .18s, background .18s;
+  background: transparent;
+}
+.delivery-opt:hover { border-color: rgba(0,0,0,.2); }
+.delivery-opt.selected { border-color: var(--navy); background: var(--navy); }
+.delivery-opt .opt-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+.delivery-opt .opt-label {
+  font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--navy); transition: color .18s;
+}
+.delivery-opt.selected .opt-label { color: white; }
+
+/* dirección (solo delivery) */
+#addressRow { display: none; }
+#addressRow.show { display: block; }
+#addressInput {
+  width: 100%; padding: 12px 14px; border-radius: 6px;
+  border: 0.5px solid rgba(0,0,0,.18); background: transparent;
+  font-family: 'Jost', sans-serif; font-size: 13px; color: var(--navy);
+  transition: border-color .15s; outline: none;
+}
+#addressInput:focus { border-color: var(--navy); }
+#addressInput::placeholder { color: rgba(0,0,0,.28); }
+
+/* fecha y hora */
+.datetime-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.checkout-select {
+  width: 100%; padding: 12px 14px; border-radius: 6px;
+  border: 0.5px solid rgba(0,0,0,.18); background: transparent;
+  font-family: 'Jost', sans-serif; font-size: 13px; color: var(--navy);
+  appearance: none; cursor: pointer; outline: none; transition: border-color .15s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.checkout-select:focus { border-color: var(--navy); }
+
+/* resumen */
+.checkout-summary {
+  background: rgba(0,0,0,.03); border-radius: 8px;
+  padding: 14px 16px; font-size: 12.5px; line-height: 1.9;
+  color: rgba(0,0,0,.55); font-weight: 300;
+}
+.checkout-summary strong { font-weight: 600; color: var(--navy); }
+
+/* confirm btn */
+#btnCheckoutConfirm {
+  width: 100%; padding: 15px; border: none; border-radius: 6px;
+  background: var(--red); color: white; font-weight: 500; font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  font-family: 'Jost', sans-serif; transition: background .18s;
+}
+#btnCheckoutConfirm:hover { background: #a93226; }
+#btnCheckoutConfirm:disabled { background: #e0e0e0; color: #aaa; cursor: not-allowed; }
+
 /* ── FAB MOBILE ── */
 #cartFab {
   display: none; position: fixed; right: 20px; bottom: 20px;
