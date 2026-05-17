@@ -740,9 +740,9 @@ function renderCat(cat) {
             <div class="price">$${p.price.toLocaleString("es-AR")}</div>
           </div>
           <button class="btn-add"
-            onclick="event.stopPropagation(); openModal('${p._id}')"
+            onclick="event.stopPropagation(); addToCartDirect('${p._id}')"
             ${sinStock ? "disabled" : ""}>
-            ${sinStock ? "Agotado" : "Ver más"}
+            ${sinStock ? "Agotado" : "Agregar al carrito"}
           </button>
         </div>
       </div>
@@ -994,7 +994,19 @@ async function sendWhatsApp() {
     btn.disabled = false; btn.textContent = "Confirmar por WhatsApp 💬";
   }
 }
-
+function addToCartDirect(id) {
+  const p = products.find(x => x._id === id);
+  if (!p || p.stock <= 0) return;
+  const found = cart.find(i => i._id === p._id);
+  if (found) {
+    if (found.qty >= p.stock) { toast("Stock máximo alcanzado"); return; }
+    found.qty += 1;
+  } else {
+    cart.push({ ...p, qty: 1 });
+  }
+  updateCart();
+  toast(`✓ ${p.name} agregado al carrito`);
+}
 load();
 </script>
 
