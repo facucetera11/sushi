@@ -534,28 +534,48 @@ async function saveSettings() {
 
 /* ── PRODUCTS ── */
 function renderProducts(products) {
-  document.getElementById("productsGrid").innerHTML = products.map(p => `
-    <div class="product-card">
-      <img src="${p.image || ''}"
-           alt="${p.name}"
-           onerror="this.style.display='none'">
-      <div class="label">${p.category}</div>
-      <input id="n-${p._id}" value="${p.name}">
-      <input id="pr-${p._id}" type="number" value="${p.price}">
-      <input id="st-${p._id}" type="number" value="${p.stock}">
-      <input id="im-${p._id}" value="${p.image || ''}">
-      <textarea id="de-${p._id}">${p.description || ''}</textarea>
-      <select id="ca-${p._id}">
-        ${["rolls","combos","veggie","bandejas","extras"].map(c =>
-          `<option ${p.category===c?"selected":""} value="${c}">${c}</option>`
-        ).join("")}
-      </select>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-        <button class="btn btn-success" onclick="updateProduct('${p._id}')">Guardar</button>
-        <button class="btn btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
+  const cats = ["rolls","combos","veggie","bandejas","extras"];
+  const catNames = {
+    rolls: "🍣 Rolls",
+    combos: "🎁 Combos",
+    veggie: "🥗 Veggie Rolls",
+    bandejas: "🍱 Bandejas",
+    extras: "➕ Extras"
+  };
+
+  document.getElementById("productsGrid").innerHTML = cats.map(cat => {
+    const items = products.filter(p => p.category === cat);
+    if (!items.length) return "";
+    return `
+      <div style="grid-column:1/-1;margin-top:24px;margin-bottom:8px;">
+        <h3 style="font-size:18px;font-weight:800;color:var(--navy);
+          padding-bottom:10px;border-bottom:2px solid rgba(22,32,74,.08);">
+          ${catNames[cat]} <span style="font-size:13px;opacity:.4;font-weight:500;">${items.length} productos</span>
+        </h3>
       </div>
-    </div>
-  `).join("");
+      ${items.map(p => `
+        <div class="product-card">
+          <img src="${p.image || ''}" alt="${p.name}"
+               onerror="this.style.display='none'">
+          <div class="label">${p.category}</div>
+          <input id="n-${p._id}" value="${p.name}">
+          <input id="pr-${p._id}" type="number" value="${p.price}" placeholder="Precio">
+          <input id="st-${p._id}" type="number" value="${p.stock}" placeholder="Stock">
+          <input id="im-${p._id}" value="${p.image || ''}" placeholder="URL imagen">
+          <textarea id="de-${p._id}">${p.description || ''}</textarea>
+          <select id="ca-${p._id}">
+            ${["rolls","combos","veggie","bandejas","extras"].map(c =>
+              `<option ${p.category===c?"selected":""} value="${c}">${c}</option>`
+            ).join("")}
+          </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <button class="btn btn-success" onclick="updateProduct('${p._id}')">Guardar</button>
+            <button class="btn btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
+          </div>
+        </div>
+      `).join("")}
+    `;
+  }).join("");
 }
 
 async function addProduct() {
