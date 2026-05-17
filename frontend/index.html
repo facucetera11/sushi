@@ -209,7 +209,7 @@ nav a:hover { opacity: 1; }
 .modal-cat { font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--red); font-weight: 500; margin-bottom: 6px; }
 .modal-body h2 { font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 700; margin-bottom: 10px; }
 .modal-desc { font-size: 13px; color: rgba(0,0,0,.52); line-height: 1.75; margin-bottom: 18px; font-weight: 300; }
-.modal-stock-info { font-size: 11px; color: rgba(0,0,0,.4); margin-bottom: 18px; }
+.modal-stock-info { display: none; }
 
 .modal-qty-row { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
 .modal-qty-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(0,0,0,.4); }
@@ -561,7 +561,49 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   </div>
   <div id="cartItems"></div>
   <div id="cartTotal">$0</div>
-  <button id="btnConfirm" onclick="sendWhatsApp()" disabled>Confirmar por WhatsApp</button>
+  <button id="btnConfirm" onclick="openCheckout()" disabled>Confirmar por WhatsApp</button>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="checkout-overlay" id="checkoutOverlay" onclick="onCheckoutOverlayClick(event)">
+  <div class="checkout-modal">
+    <div class="checkout-head">
+      <h2>Finalizar pedido</h2>
+      <button class="checkout-close" onclick="closeCheckout()">×</button>
+    </div>
+    <div class="checkout-body">
+      <div>
+        <div class="checkout-label">¿Cómo recibís tu pedido?</div>
+        <div class="delivery-toggle">
+          <div class="delivery-opt selected" id="optRetiro" onclick="selectDelivery('retiro')">
+            <span class="opt-icon">🏃</span>
+            <div class="opt-label">Retiro en local</div>
+          </div>
+          <div class="delivery-opt" id="optDelivery" onclick="selectDelivery('delivery')">
+            <span class="opt-icon">🛵</span>
+            <div class="opt-label">Delivery</div>
+          </div>
+        </div>
+      </div>
+      <div id="addressRow">
+        <div class="checkout-label">Dirección de entrega</div>
+        <input id="addressInput" type="text" placeholder="Calle, número, piso / depto…">
+      </div>
+      <div>
+        <div class="checkout-label">Tu nombre</div>
+        <input id="clientName" type="text" placeholder="¿Cómo te llamás?">
+      </div>
+      <div>
+        <div class="checkout-label">¿Cuándo querés recibirlo?</div>
+        <div class="datetime-row">
+          <select class="checkout-select" id="deliveryDate"></select>
+          <select class="checkout-select" id="deliveryTime"></select>
+        </div>
+      </div>
+      <div class="checkout-summary" id="checkoutSummary"></div>
+      <button id="btnCheckoutConfirm" onclick="sendWhatsApp()">Confirmar por WhatsApp 💬</button>
+    </div>
+  </div>
 </div>
 
 <!-- FAB MOBILE -->
@@ -696,7 +738,6 @@ function renderCat(cat) {
         <div class="card-bottom">
           <div>
             <div class="price">$${p.price.toLocaleString("es-AR")}</div>
-            ${sinStock ? `<span class="stock-badge">Sin stock</span>` : ""}
           </div>
           <button class="btn-add"
             onclick="event.stopPropagation(); openModal('${p._id}')"
@@ -805,36 +846,152 @@ function toggleCartMobile() {
   document.getElementById("cart").classList.toggle("mobile-open");
 }
 
+/* ── CHECKOUT ── */
+let deliveryType = "retiro";
+
+function openCheckout() {
+  if (!cart.length) return;
+  deliveryType = "retiro";
+  document.getElementById("optRetiro").classList.add("selected");
+  document.getElementById("optDelivery").classList.remove("selected");
+  document.getElementById("addressRow").classList.remove("show");
+  document.getElementById("addressInput").value = "";
+  document.getElementById("clientName").value = "";
+  populateDateTimeSelects();
+  updateCheckoutSummary();
+  document.getElementById("checkoutOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeCheckout() {
+  document.getElementById("checkoutOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function onCheckoutOverlayClick(e) {
+  if (e.target === document.getElementById("checkoutOverlay")) closeCheckout();
+}
+
+function selectDelivery(type) {
+  deliveryType = type;
+  document.getElementById("optRetiro").classList.toggle("selected", type === "retiro");
+  document.getElementById("optDelivery").classList.toggle("selected", type === "delivery");
+  document.getElementById("addressRow").classList.toggle("show", type === "delivery");
+  updateCheckoutSummary();
+}
+
+function populateDateTimeSelects() {
+  const dateEl = document.getElementById("deliveryDate");
+  const timeEl = document.getElementById("deliveryTime");
+  const days = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  const months = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const openDays = settings.openDays || [1,2,3,4,5,6];
+  const openHour = settings.openHour || 19;
+  const closeHour = settings.closeHour || 23;
+
+  // Próximos 7 días filtrando por días abiertos
+  const dates = [];
+  const now = new Date();
+  for (let i = 0; i < 14 && dates.length < 7; i++) {
+    const d = new Date(now); d.setDate(d.getDate() + i);
+    if (openDays.includes(d.getDay())) dates.push(d);
+  }
+  dateEl.innerHTML = dates.map(d =>
+    `<option value="${d.toISOString().slice(0,10)}">${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}</option>`
+  ).join("") || `<option value="">Sin días disponibles</option>`;
+
+  // Franjas horarias cada 30 min
+  timeEl.innerHTML = "";
+  for (let h = openHour; h < closeHour; h++) {
+    timeEl.innerHTML += `<option value="${h}:00">${h}:00</option>`;
+    timeEl.innerHTML += `<option value="${h}:30">${h}:30</option>`;
+  }
+
+  dateEl.addEventListener("change", updateCheckoutSummary);
+  timeEl.addEventListener("change", updateCheckoutSummary);
+}
+
+function updateCheckoutSummary() {
+  const name = (document.getElementById("clientName").value || "").trim();
+  const date = document.getElementById("deliveryDate")?.options[document.getElementById("deliveryDate").selectedIndex]?.text || "";
+  const time = document.getElementById("deliveryTime")?.value || "";
+  const address = document.getElementById("addressInput")?.value.trim() || "";
+  let total = cart.reduce((a, i) => a + i.price * i.qty, 0);
+
+  const itemsText = cart.map(i => `<strong>${i.name}</strong> ×${i.qty}`).join(", ");
+  const entrega = deliveryType === "delivery"
+    ? `🛵 Delivery${address ? ` a <strong>${address}</strong>` : ""}`
+    : `🏃 Retiro en local`;
+
+  document.getElementById("checkoutSummary").innerHTML = `
+    ${name ? `👤 <strong>${name}</strong><br>` : ""}
+    ${entrega}<br>
+    📅 ${date} a las ${time}<br>
+    🛒 ${itemsText}<br>
+    💰 Total: <strong>$${total.toLocaleString("es-AR")}</strong>
+  `;
+}
+
+document.addEventListener("input", e => {
+  if (e.target.id === "clientName" || e.target.id === "addressInput") updateCheckoutSummary();
+});
+
 /* ── WHATSAPP ── */
 async function sendWhatsApp() {
   if (!cart.length) return;
-  const btn = document.getElementById("btnConfirm");
+
+  const clientName = document.getElementById("clientName").value.trim();
+  const address = document.getElementById("addressInput").value.trim();
+  const dateEl = document.getElementById("deliveryDate");
+  const timeEl = document.getElementById("deliveryTime");
+  const dateText = dateEl?.options[dateEl.selectedIndex]?.text || "";
+  const timeText = timeEl?.value || "";
+
+  if (!clientName) { toast("❌ Ingresá tu nombre"); return; }
+  if (deliveryType === "delivery" && !address) { toast("❌ Ingresá la dirección"); return; }
+
+  const btn = document.getElementById("btnCheckoutConfirm");
   btn.disabled = true; btn.textContent = "Enviando...";
-  let msg = "🍣 Pedido Kizuna%0A%0A";
+
   let total = 0;
   const snapshot = cart.map(i => ({ _id: i._id, name: i.name, qty: i.qty, price: i.price }));
+  snapshot.forEach(i => { total += i.price * i.qty; });
+
+  // Armar mensaje WhatsApp
+  const enc = encodeURIComponent;
+  let msg = `🍣 *Pedido Kizuna*\n\n`;
+  msg += `👤 *${clientName}*\n`;
+  msg += deliveryType === "delivery"
+    ? `🛵 *Delivery* a: ${address}\n`
+    : `🏃 *Retiro en local*\n`;
+  msg += `📅 ${dateText} a las ${timeText}\n\n`;
   snapshot.forEach(i => {
-    msg += `• ${i.name} x${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}%0A`;
-    total += i.price * i.qty;
+    msg += `• ${i.name} ×${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}\n`;
   });
-  msg += `%0ATotal: $${total.toLocaleString("es-AR")}`;
+  msg += `\n💰 *Total: $${total.toLocaleString("es-AR")}*`;
+
   try {
     const res = await fetch(`${API}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: snapshot, total })
+      body: JSON.stringify({
+        items: snapshot, total,
+        deliveryType, address: deliveryType === "delivery" ? address : "",
+        clientName, scheduledDate: dateText, scheduledTime: timeText
+      })
     });
     if (res.ok) {
       cart = []; updateCart();
-      location.href = `https://wa.me/5491121734894?text=${msg}`;
+      closeCheckout();
+      location.href = `https://wa.me/5491121734894?text=${enc(msg)}`;
     } else {
       const data = await res.json();
       toast(`❌ ${data.error || "Error al registrar el pedido"}`);
-      btn.disabled = false; btn.textContent = "Confirmar por WhatsApp";
+      btn.disabled = false; btn.textContent = "Confirmar por WhatsApp 💬";
     }
   } catch (err) {
     toast("❌ Error de conexión. Intentá de nuevo.");
-    btn.disabled = false; btn.textContent = "Confirmar por WhatsApp";
+    btn.disabled = false; btn.textContent = "Confirmar por WhatsApp 💬";
   }
 }
 

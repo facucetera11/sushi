@@ -123,19 +123,31 @@ body {
 /* ORDERS */
 .orders-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 18px;
 }
 .order-card {
   border-radius: 18px;
-  border-left: 6px solid var(--red);
+  border: 1.5px solid rgba(22,32,74,.08);
   padding: 20px;
   background: var(--cream);
+  transition: box-shadow .2s;
 }
+.order-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.07); }
 .order-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
 .order-items { font-size: 13px; opacity: .7; margin-bottom: 10px; line-height: 1.7; }
-.order-total { font-weight: 900; font-size: 17px; margin-bottom: 12px; }
+.order-total { font-weight: 900; font-size: 17px; margin-bottom: 6px; }
 .order-time { font-size: 11px; opacity: .4; margin-bottom: 10px; }
+.order-meta {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 12px;
+}
+.order-tag {
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+}
+.tag-delivery { background: rgba(22,32,74,.08); color: var(--navy); }
+.tag-retiro { background: rgba(46,139,87,.1); color: #2e8b57; }
+.tag-scheduled { background: rgba(216,106,94,.1); color: var(--red); }
 
 select {
   width: 100%; padding: 10px 14px;
@@ -438,14 +450,33 @@ function renderOrders(orders) {
 
   grid.innerHTML = active.map(o => {
     const fecha = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    const fechaDia = new Date(o.createdAt).toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit" });
     const itemsList = o.items.map(i => `${i.name} ×${i.qty}`).join("<br>");
+    const isDelivery = o.deliveryType === "delivery";
+    const deliveryTag = isDelivery
+      ? `<span class="order-tag tag-delivery">🛵 Delivery</span>`
+      : `<span class="order-tag tag-retiro">🏃 Retiro</span>`;
+    const schedTag = (o.scheduledDate && o.scheduledTime)
+      ? `<span class="order-tag tag-scheduled">📅 ${o.scheduledDate} ${o.scheduledTime}</span>`
+      : "";
+    const clientTag = o.clientName
+      ? `<span class="order-tag" style="background:rgba(0,0,0,.05);color:#333;">👤 ${o.clientName}</span>`
+      : "";
+    const addressLine = isDelivery && o.address
+      ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">📍 ${o.address}</div>`
+      : "";
+
     return `
     <div class="order-card">
-      <span class="status-badge status-${o.status}">${o.status}</span>
-      <h3>Pedido #${o.number}</h3>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <h3>Pedido #${o.number}</h3>
+        <span class="status-badge status-${o.status}">${o.status}</span>
+      </div>
+      <div class="order-meta">${clientTag}${deliveryTag}${schedTag}</div>
+      ${addressLine}
       <div class="order-items">${itemsList}</div>
-      <div class="order-total">Total: $${o.total.toLocaleString("es-AR")}</div>
-      <div class="order-time">🕐 ${fecha}</div>
+      <div class="order-total">$${o.total.toLocaleString("es-AR")}</div>
+      <div class="order-time">🕐 ${fechaDia} · ${fecha}</div>
       <select onchange="updateOrder('${o._id}', this.value)">
         <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
         <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
