@@ -99,34 +99,10 @@ nav a:hover { opacity: 1; }
 }
 @keyframes scrollDot { 0%,100%{ opacity:.3; } 50%{ opacity:1; } }
 
-/* ── TABS ── */
-.tabs-wrap {
-  position: sticky; top: 57px; z-index: 100;
-  background: rgba(255,255,255,0.96);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-bottom: 0.5px solid var(--border);
-}
-.tabs {
-  display: flex; padding: 0 7%; overflow-x: auto;
-  scrollbar-width: none;
-}
-.tabs::-webkit-scrollbar { display: none; }
-.tab-btn {
-  padding: 16px 22px;
-  font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
-  cursor: pointer; color: rgba(0,0,0,.38);
-  border: none; border-bottom: 2px solid transparent;
-  background: none; font-family: 'Jost', sans-serif; white-space: nowrap;
-  transition: color .2s, border-color .2s;
-}
-.tab-btn:hover:not(.active) { color: rgba(0,0,0,.65); }
-.tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
-
 /* ── SECTIONS ── */
 .menu-body { padding: 72px 7% 100px; }
-.cat-section { display: none; animation: fadeIn .3s ease; }
-.cat-section.visible { display: block; }
-@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.cat-section { display: block; }
+.cat-section + .cat-section { margin-top: 64px; }
 
 .section-header {
   display: flex; align-items: baseline; gap: 14px;
@@ -377,11 +353,11 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
     <div id="statusBadge"></div>
   </div>
   <nav>
-    <a href="#" onclick="switchTab('rolls');return false;">Rolls</a>
-    <a href="#" onclick="switchTab('combos');return false;">Combos</a>
-    <a href="#" onclick="switchTab('veggie');return false;">Veggie</a>
-    <a href="#" onclick="switchTab('bandejas');return false;">Bandejas</a>
-    <a href="#" onclick="switchTab('extras');return false;">Extras</a>
+    <a href="#cat-rolls">Rolls</a>
+    <a href="#cat-combos">Combos</a>
+    <a href="#cat-veggie">Veggie</a>
+    <a href="#cat-bandejas">Bandejas</a>
+    <a href="#cat-extras">Extras</a>
   </nav>
 </header>
 
@@ -405,20 +381,10 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   </div>
 </section>
 
-<!-- TABS -->
-<div class="tabs-wrap">
-  <div class="tabs" id="tabBar">
-    <button class="tab-btn active" data-cat="rolls">Rolls</button>
-    <button class="tab-btn" data-cat="combos">Combos</button>
-    <button class="tab-btn" data-cat="veggie">Veggie</button>
-    <button class="tab-btn" data-cat="bandejas">Bandejas</button>
-    <button class="tab-btn" data-cat="extras">Extras</button>
-  </div>
-</div>
 
 <!-- MENÚ -->
 <div class="menu-body">
-  <div class="cat-section visible" id="cat-rolls">
+  <div class="cat-section" id="cat-rolls">
     <div class="section-header">
       <div class="section-title">Rolls</div>
       <span class="section-count" id="count-rolls"></span>
@@ -526,20 +492,30 @@ setInterval(() => {
   slides[slideIdx].classList.add("active");
 }, 4500);
 
-/* ── TABS ── */
-document.getElementById("tabBar").addEventListener("click", e => {
-  const btn = e.target.closest(".tab-btn");
-  if (!btn) return;
-  switchTab(btn.dataset.cat);
-});
+/* ── NAV HIGHLIGHT ON SCROLL ── */
+const navLinks = document.querySelectorAll("nav a");
+const sections = CATS.map(cat => document.getElementById("cat-" + cat));
 
-function switchTab(cat) {
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.querySelector(`.tab-btn[data-cat="${cat}"]`)?.classList.add("active");
-  document.querySelectorAll(".cat-section").forEach(s => s.classList.remove("visible"));
-  const sec = document.getElementById("cat-" + cat);
-  if (sec) sec.classList.add("visible");
+function updateNavHighlight() {
+  const scrollY = window.scrollY + 100;
+  let active = null;
+  sections.forEach((sec, i) => {
+    if (sec && sec.offsetTop <= scrollY) active = i;
+  });
+  navLinks.forEach((a, i) => a.style.opacity = (i === active) ? "1" : ".45");
 }
+window.addEventListener("scroll", updateNavHighlight, { passive: true });
+
+/* ── SCROLL OFFSET for fixed header ── */
+document.querySelectorAll("nav a").forEach(a => {
+  a.addEventListener("click", e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute("href"));
+    if (!target) return;
+    const offset = target.getBoundingClientRect().top + window.scrollY - 72;
+    window.scrollTo({ top: offset, behavior: "smooth" });
+  });
+});
 
 /* ── TOAST ── */
 function toast(msg) {
