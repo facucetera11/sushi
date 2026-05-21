@@ -19,6 +19,19 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
+/* AUTH */
+
+app.post("/auth", (req, res) => {
+  const { password } = req.body;
+  if (!process.env.ADMIN_PASSWORD) {
+    return res.status(500).json({ error: "ADMIN_PASSWORD no configurada en el servidor" });
+  }
+  if (password === process.env.ADMIN_PASSWORD) {
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ error: "Contraseña incorrecta" });
+});
+
 /* PRODUCTS */
 
 app.get("/products", async (req, res) => {

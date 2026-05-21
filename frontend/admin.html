@@ -377,7 +377,6 @@ textarea { height: 80px; resize: vertical; }
 
 <script>
 const API = "https://kizuna-api-8ja8.onrender.com";
-const ADMIN_PASSWORD = "kizuna2026"; // ← cambiá esto
 const SESSION_KEY = "kizuna_admin_auth";
 
 const DAYS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
@@ -385,21 +384,39 @@ let openDays = [];
 let refreshTimer = null;
 
 /* ── LOGIN ── */
-function login() {
+async function login() {
   const pw = document.getElementById("pwInput").value;
   const err = document.getElementById("loginError");
+  const btn = document.getElementById("loginBtn");
 
-  if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem(SESSION_KEY, "1");
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("adminMain").style.display = "block";
-    loadAll();
-    startAutoRefresh();
-  } else {
-    err.textContent = "Contraseña incorrecta";
-    document.getElementById("pwInput").value = "";
-    document.getElementById("pwInput").focus();
-    setTimeout(() => err.textContent = "", 2500);
+  btn.disabled = true;
+  btn.textContent = "Verificando...";
+
+  try {
+    const res = await fetch(`${API}/auth`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw })
+    });
+
+    if (res.ok) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("adminMain").style.display = "block";
+      loadAll();
+      startAutoRefresh();
+    } else {
+      err.textContent = "Contraseña incorrecta";
+      document.getElementById("pwInput").value = "";
+      document.getElementById("pwInput").focus();
+      setTimeout(() => err.textContent = "", 2500);
+    }
+  } catch (e) {
+    err.textContent = "Error de conexión con el servidor";
+    setTimeout(() => err.textContent = "", 3000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Ingresar";
   }
 }
 
