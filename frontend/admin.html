@@ -134,17 +134,7 @@ textarea{height:80px;resize:vertical;}
 .btn-delete-order{flex:1;padding:9px;border:none;border-radius:11px;background:rgba(216,106,94,.1);color:var(--red);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
 .btn-delete-order:hover{background:var(--red);color:white;}
 
-@media print{
-  body *{visibility:hidden;}
-  #printArea,#printArea *{visibility:visible;}
-  #printArea{position:fixed;inset:0;padding:30px;font-family:'DM Sans',sans-serif;font-size:14px;color:#000;}
-  .print-logo{font-size:24px;font-weight:900;margin-bottom:4px;}
-  .print-divider{border:none;border-top:1.5px dashed #999;margin:10px 0;}
-  .print-row{display:flex;justify-content:space-between;margin-bottom:4px;}
-  .print-items{margin:10px 0;}
-  .print-item{display:flex;justify-content:space-between;margin-bottom:3px;}
-  .print-total{font-size:20px;font-weight:900;margin-top:8px;}
-}
+
 
 @media(max-width:768px){
   #adminMain{padding:30px 4%;}
@@ -259,7 +249,6 @@ textarea{height:80px;resize:vertical;}
   </div>
 </div>
 
-<div id="printArea" style="display:none;"></div>
 <div id="toast"></div>
 
 <script>
@@ -475,36 +464,55 @@ async function updateOrder(id, status) {
 }
 
 function printOrder(id) {
-  const allOrders = [...document.querySelectorAll(".order-card")];
-  // Buscamos el pedido en memoria (re-fetch para tener datos frescos)
   fetch(`${API}/orders`).then(r => r.json()).then(orders => {
     const o = orders.find(x => x._id === id);
     if (!o) { toast("No se encontró el pedido","error"); return; }
     const fecha = new Date(o.createdAt).toLocaleString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
     const itemsHTML = o.items.map(i =>
-      `<div class="print-item"><span>${i.name} ×${i.qty}</span><span>$${(i.price * i.qty).toLocaleString("es-AR")}</span></div>`
+      `<tr><td>${i.name} ×${i.qty}</td><td style="text-align:right">$${(i.price * i.qty).toLocaleString("es-AR")}</td></tr>`
     ).join("");
     const deliveryLine = o.deliveryType === "delivery"
-      ? `<div class="print-row"><span>Envío a:</span><span>${o.address || "—"}</span></div>`
-      : `<div class="print-row"><span>Modalidad:</span><span>Retiro en local</span></div>`;
-    const pagoLine = o.paymentMethod === "cash" ? "💵 Efectivo" : "🏦 Transferencia";
+      ? `<tr><td>Envío a</td><td>${o.address || "—"}</td></tr>`
+      : `<tr><td>Modalidad</td><td>Retiro en local</td></tr>`;
+    const pagoLine = o.paymentMethod === "cash" ? "Efectivo" : "Transferencia";
     const schedLine = (o.scheduledDate && o.scheduledTime)
-      ? `<div class="print-row"><span>Programado:</span><span>${o.scheduledDate} ${o.scheduledTime}</span></div>` : "";
+      ? `<tr><td>Programado</td><td>${o.scheduledDate} ${o.scheduledTime}</td></tr>` : "";
 
-    document.getElementById("printArea").innerHTML = `
-      <div class="print-logo">🍣 Kizuna Sushi</div>
-      <div style="font-size:12px;color:#666;margin-bottom:6px;">${fecha}</div>
-      <hr class="print-divider">
-      <div class="print-row"><span style="font-size:18px;font-weight:900;">Pedido #${o.number}</span><span>${o.clientName || ""}</span></div>
-      ${deliveryLine}
-      ${schedLine}
-      <div class="print-row"><span>Pago:</span><span>${pagoLine}</span></div>
-      <hr class="print-divider">
-      <div class="print-items">${itemsHTML}</div>
-      <hr class="print-divider">
-      <div class="print-row print-total"><span>TOTAL</span><span>$${o.total.toLocaleString("es-AR")}</span></div>
-    `;
-    window.print();
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  body{font-family:Arial,sans-serif;font-size:13px;color:#000;padding:20px;max-width:320px;margin:auto;}
+  h1{font-size:20px;margin:0 0 2px;}
+  .sub{font-size:11px;color:#666;margin-bottom:10px;}
+  hr{border:none;border-top:1px dashed #999;margin:10px 0;}
+  table{width:100%;border-collapse:collapse;}
+  td{padding:3px 0;vertical-align:top;}
+  .section-title{font-weight:bold;font-size:11px;text-transform:uppercase;color:#666;margin:8px 0 4px;}
+  .total-row td{font-size:18px;font-weight:900;padding-top:8px;}
+  .numero{font-size:17px;font-weight:900;}
+</style>
+</head><body>
+<h1>🍣 Kizuna Sushi</h1>
+<div class="sub">${fecha}</div>
+<hr>
+<div class="numero">Pedido #${o.number}${o.clientName ? " — " + o.clientName : ""}</div>
+<hr>
+<div class="section-title">Datos</div>
+<table>
+  ${deliveryLine}
+  ${schedLine}
+  <tr><td>Pago</td><td>${pagoLine}</td></tr>
+</table>
+<hr>
+<div class="section-title">Items</div>
+<table>${itemsHTML}</table>
+<hr>
+<table><tr class="total-row"><td>TOTAL</td><td style="text-align:right">$${o.total.toLocaleString("es-AR")}</td></tr></table>
+<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();}}<\/script>
+</body></html>`;
+
+    const win = window.open("", "_blank", "width=400,height=600");
+    win.document.write(html);
+    win.document.close();
   }).catch(() => toast("Error al imprimir","error"));
 }
 
