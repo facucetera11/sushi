@@ -119,6 +119,14 @@ app.put("/orders/:id", async (req, res) => {
   } catch (err) { res.status(400).json({ error: "Error al actualizar pedido", detalle: err.message }); }
 });
 
+app.delete("/orders/:id", async (req, res) => {
+  try {
+    const o = await Order.findByIdAndDelete(req.params.id);
+    if (!o) return res.status(404).json({ error: "Pedido no encontrado" });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: "Error al eliminar pedido" }); }
+});
+
 app.use((req, res) => res.status(404).json({ error: "Ruta no encontrada" }));
 
 app.listen(process.env.PORT || 5000, () => {

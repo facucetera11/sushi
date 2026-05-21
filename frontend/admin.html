@@ -128,6 +128,24 @@ textarea{height:80px;resize:vertical;}
 .sound-btn{padding:8px 16px;border-radius:12px;border:1.5px solid rgba(22,32,74,.12);background:transparent;color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:6px;}
 .sound-btn.on{background:var(--navy);color:white;border-color:var(--navy);}
 
+.order-actions{display:flex;gap:8px;margin-top:12px;}
+.btn-print{flex:1;padding:9px;border:none;border-radius:11px;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
+.btn-print:hover{background:rgba(22,32,74,.15);}
+.btn-delete-order{flex:1;padding:9px;border:none;border-radius:11px;background:rgba(216,106,94,.1);color:var(--red);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
+.btn-delete-order:hover{background:var(--red);color:white;}
+
+@media print{
+  body *{visibility:hidden;}
+  #printArea,#printArea *{visibility:visible;}
+  #printArea{position:fixed;inset:0;padding:30px;font-family:'DM Sans',sans-serif;font-size:14px;color:#000;}
+  .print-logo{font-size:24px;font-weight:900;margin-bottom:4px;}
+  .print-divider{border:none;border-top:1.5px dashed #999;margin:10px 0;}
+  .print-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .print-items{margin:10px 0;}
+  .print-item{display:flex;justify-content:space-between;margin-bottom:3px;}
+  .print-total{font-size:20px;font-weight:900;margin-top:8px;}
+}
+
 @media(max-width:768px){
   #adminMain{padding:30px 4%;}
   #analytics{grid-template-columns:repeat(2,1fr);}
@@ -241,6 +259,7 @@ textarea{height:80px;resize:vertical;}
   </div>
 </div>
 
+<div id="printArea" style="display:none;"></div>
 <div id="toast"></div>
 
 <script>
@@ -414,6 +433,10 @@ function orderCardHTML(o, isDelivered) {
       <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
       <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
     </select>` : `<div style="font-size:12px;opacity:.4;margin-top:8px;">✓ Entregado</div>`}
+    <div class="order-actions">
+      <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Imprimir</button>
+      ${isDelivered ? `<button class="btn-delete-order" onclick="deleteOrder('${o._id}')">🗑️ Eliminar</button>` : ""}
+    </div>
   </div>`;
 }
 
@@ -449,6 +472,49 @@ function toggleHistory() {
 async function updateOrder(id, status) {
   await fetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
   toast("✓ Pedido actualizado", "success"); loadAll();
+}
+
+function printOrder(id) {
+  const allOrders = [...document.querySelectorAll(".order-card")];
+  // Buscamos el pedido en memoria (re-fetch para tener datos frescos)
+  fetch(`${API}/orders`).then(r => r.json()).then(orders => {
+    const o = orders.find(x => x._id === id);
+    if (!o) { toast("No se encontró el pedido","error"); return; }
+    const fecha = new Date(o.createdAt).toLocaleString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    const itemsHTML = o.items.map(i =>
+      `<div class="print-item"><span>${i.name} ×${i.qty}</span><span>$${(i.price * i.qty).toLocaleString("es-AR")}</span></div>`
+    ).join("");
+    const deliveryLine = o.deliveryType === "delivery"
+      ? `<div class="print-row"><span>Envío a:</span><span>${o.address || "—"}</span></div>`
+      : `<div class="print-row"><span>Modalidad:</span><span>Retiro en local</span></div>`;
+    const pagoLine = o.paymentMethod === "cash" ? "💵 Efectivo" : "🏦 Transferencia";
+    const schedLine = (o.scheduledDate && o.scheduledTime)
+      ? `<div class="print-row"><span>Programado:</span><span>${o.scheduledDate} ${o.scheduledTime}</span></div>` : "";
+
+    document.getElementById("printArea").innerHTML = `
+      <div class="print-logo">🍣 Kizuna Sushi</div>
+      <div style="font-size:12px;color:#666;margin-bottom:6px;">${fecha}</div>
+      <hr class="print-divider">
+      <div class="print-row"><span style="font-size:18px;font-weight:900;">Pedido #${o.number}</span><span>${o.clientName || ""}</span></div>
+      ${deliveryLine}
+      ${schedLine}
+      <div class="print-row"><span>Pago:</span><span>${pagoLine}</span></div>
+      <hr class="print-divider">
+      <div class="print-items">${itemsHTML}</div>
+      <hr class="print-divider">
+      <div class="print-row print-total"><span>TOTAL</span><span>$${o.total.toLocaleString("es-AR")}</span></div>
+    `;
+    window.print();
+  }).catch(() => toast("Error al imprimir","error"));
+}
+
+async function deleteOrder(id) {
+  if (!confirm("¿Eliminar este pedido del historial? Esta acción no se puede deshacer.")) return;
+  try {
+    const res = await fetch(`${API}/orders/${id}`, { method:"DELETE" });
+    if (res.ok) { toast("🗑️ Pedido eliminado", "success"); loadAll(); }
+    else { toast("Error al eliminar", "error"); }
+  } catch { toast("Error de conexión", "error"); }
 }
 
 /* ── SETTINGS ── */
