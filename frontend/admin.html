@@ -136,10 +136,9 @@ textarea{height:80px;resize:vertical;}
 .filter-btn.active{background:var(--navy);color:white;}
 .btn-csv{padding:8px 16px;border-radius:12px;border:none;background:rgba(46,139,87,.1);color:#2e8b57;font-weight:700;font-size:12px;cursor:pointer;transition:.2s;margin-left:auto;}
 .btn-csv:hover{background:#2e8b57;color:white;}
-.order-note{width:100%;padding:8px 12px;border-radius:10px;border:none;background:rgba(22,32,74,.05);color:var(--navy);font-size:12px;font-family:'DM Sans',sans-serif;resize:none;height:54px;margin-top:8px;transition:box-shadow .2s;}
-.order-note:focus{outline:none;box-shadow:0 0 0 2px var(--red);}
-.btn-save-note{width:100%;padding:7px;border:none;border-radius:10px;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:11px;cursor:pointer;margin-top:4px;transition:.2s;}
-.btn-save-note:hover{background:var(--navy);color:white;}
+.customer-note{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(216,106,94,.08);color:var(--navy);font-size:12px;line-height:1.5;}
+.customer-note strong{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--red);margin-bottom:4px;}
+.customer-note span{white-space:pre-wrap;}
 .product-card.stock-low{border:2px solid rgba(216,106,94,.5);background:#fff5f4;}
 .stock-low-badge{display:inline-block;background:rgba(216,106,94,.15);color:var(--red);font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;margin-bottom:8px;}
 .stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
@@ -480,6 +479,9 @@ function orderCardHTML(o, isDelivered) {
   const pagoTag = o.paymentMethod === "cash" ? `<span class="order-tag tag-cash">💵 Efectivo</span>` : `<span class="order-tag tag-transfer">🏦 Transferencia</span>`;
   const addressLine = isDelivery && o.address ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">📍 ${o.address}</div>` : "";
   const cardClass = isDelivered ? "order-card delivered" : "order-card";
+  const noteBlock = o.notes
+    ? `<div class="customer-note"><strong>Nota del cliente</strong><span>${escapeHtml(o.notes)}</span></div>`
+    : "";
 
   return `
   <div class="${cardClass}">
@@ -498,8 +500,7 @@ function orderCardHTML(o, isDelivered) {
       <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
       <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
     </select>
-    <textarea class="order-note" id="note-${o._id}" placeholder="Nota interna (ej: sin wasabi)…">${o.notes||""}</textarea>
-    <button class="btn-save-note" onclick="saveNote('${o._id}')">💾 Guardar nota</button>` : `<div style="font-size:12px;opacity:.4;margin-top:8px;">✓ Entregado${o.notes ? ` · 📝 ${o.notes}` : ""}</div>`}
+    ${noteBlock}` : `<div style="font-size:12px;opacity:.4;margin-top:8px;">✓ Entregado</div>${noteBlock}`}
     <div class="order-actions">
       <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Imprimir</button>
       ${isDelivered ? `<button class="btn-delete-order" onclick="deleteOrder('${o._id}')">🗑️ Eliminar</button>` : ""}
@@ -562,12 +563,6 @@ function exportCSV() {
   toast("✓ CSV descargado", "success");
 }
 
-async function saveNote(id) {
-  const notes = document.getElementById(`note-${id}`)?.value || "";
-  await fetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ notes }) });
-  toast("✓ Nota guardada", "success");
-}
-
 function printOrder(id) {
   const order = allOrders.find(o => o._id === id);
   if (!order) { toast("No encontre el pedido para imprimir", "error"); return; }
@@ -583,7 +578,7 @@ function printOrder(id) {
       <td class="right">$${Number(item.price * item.qty || 0).toLocaleString("es-AR")}</td>
     </tr>
   `).join("");
-  const notes = (document.getElementById(`note-${id}`)?.value || order.notes || "").trim();
+  const notes = (order.notes || "").trim();
 
   const html = `<!DOCTYPE html>
   <html lang="es">
