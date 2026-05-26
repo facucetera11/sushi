@@ -9,10 +9,39 @@ const Order = require("./models/Order");
 const Settings = require("./models/Settings");
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.disable("x-powered-by");
+app.use(cors({
+  origin: process.env.FRONTEND_ORIGIN ? process.env.FRONTEND_ORIGIN.split(",").map(origin => origin.trim()) : true
+}));
+app.use(express.json({ limit: "100kb" }));
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  next();
+});
 
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
+const authAttempts = new Map();
+const orderAttempts = new Map();
+
+function rateLimit(store, limit, windowMs) {
+  return (req, res, next) => {
+    const key = req.ip || req.socket.remoteAddress || "unknown";
+    const now = Date.now();
+    const current = store.get(key) || { count: 0, resetAt: now + windowMs };
+    if (current.resetAt <= now) {
+      current.count = 0;
+      current.resetAt = now + windowMs;
+    }
+    current.count += 1;
+    store.set(key, current);
+    if (current.count > limit) {
+      return res.status(429).json({ error: "Demasiados intentos. Proba de nuevo en unos minutos." });
+    }
+    next();
+  };
+}
 
 function base64url(value) {
   return Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -94,8 +123,19 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB conectado"))
   .catch((err) => { console.error("❌ Error conectando a MongoDB:", err.message); process.exit(1); });
 
+app.get("/health", (req, res) => {
+  const dbReady = mongoose.connection.readyState === 1;
+  res.status(dbReady ? 200 : 503).json({
+    ok: dbReady,
+    service: "kizuna-api",
+    database: dbReady ? "connected" : "disconnected",
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
 /* ── AUTH ── */
-app.post("/auth", async (req, res) => {
+app.post("/auth", rateLimit(authAttempts, 8, 15 * 60 * 1000), async (req, res) => {
   try {
     const { password } = req.body;
     if (!password) return res.status(400).json({ error: "Ingresa la contrasena" });
@@ -184,7 +224,7 @@ app.get("/orders", requireAdmin, async (req, res) => {
   catch (err) { res.status(500).json({ error: "Error al obtener pedidos" }); }
 });
 
-app.post("/orders", async (req, res) => {
+app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) => {
   try {
     const { items, total, deliveryType, address, clientName, clientPhone, notes, scheduledDate, scheduledTime, paymentMethod } = req.body;
 
