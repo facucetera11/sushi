@@ -418,8 +418,7 @@ nav a:hover { opacity: 1; }
   font-weight: 300; margin-bottom: 20px;
 }
 .whatsapp-confirm-actions { display: flex; gap: 10px; }
-.btn-whatsapp-confirm,
-.btn-whatsapp-later {
+.btn-whatsapp-confirm {
   min-height: 46px; border-radius: 6px; font-family: 'Jost', sans-serif;
   font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
   text-transform: uppercase; cursor: pointer; transition: .18s;
@@ -428,11 +427,6 @@ nav a:hover { opacity: 1; }
   flex: 1; border: none; background: var(--red); color: white;
 }
 .btn-whatsapp-confirm:hover { background: #a93226; }
-.btn-whatsapp-later {
-  padding: 0 16px; border: 0.5px solid rgba(0,0,0,.15);
-  background: transparent; color: var(--navy);
-}
-.btn-whatsapp-later:hover { border-color: var(--navy); }
 
 /* confirm btn */
 #btnCheckoutConfirm {
@@ -754,7 +748,6 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .whatsapp-confirm-modal { padding: 24px 18px calc(22px + env(safe-area-inset-bottom)); }
   .whatsapp-confirm-modal h2 { font-size: 28px; }
   .whatsapp-confirm-actions { flex-direction: column; }
-  .btn-whatsapp-later { width: 100%; }
   .modal-img { height: 210px; }
   .modal-body { padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); }
   .modal-body h2 { font-size: 28px; line-height: 1.05; }
@@ -1020,13 +1013,12 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 </div>
 
 <!-- CONFIRMAR WHATSAPP -->
-<div class="whatsapp-confirm-overlay" id="whatsappConfirmOverlay" onclick="onWhatsAppConfirmOverlayClick(event)">
+<div class="whatsapp-confirm-overlay" id="whatsappConfirmOverlay">
   <div class="whatsapp-confirm-modal">
     <div class="whatsapp-confirm-kicker">Pedido registrado</div>
     <h2 id="whatsappConfirmTitle">Pedido listo</h2>
     <p id="whatsappConfirmText">Ahora confirmalo por WhatsApp para coordinar la entrega.</p>
     <div class="whatsapp-confirm-actions">
-      <button class="btn-whatsapp-later" onclick="closeWhatsAppConfirm()">Ahora no</button>
       <button class="btn-whatsapp-confirm" onclick="confirmWhatsAppOrder()">Confirmar por WhatsApp</button>
     </div>
   </div>
@@ -1343,15 +1335,6 @@ function openWhatsAppConfirm(orderNumber, whatsappUrl) {
     "Tu pedido ya quedó cargado. Confirmalo por WhatsApp para que podamos coordinarlo.";
   document.getElementById("whatsappConfirmOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
-}
-
-function closeWhatsAppConfirm() {
-  document.getElementById("whatsappConfirmOverlay").classList.remove("open");
-  document.body.style.overflow = "";
-}
-
-function onWhatsAppConfirmOverlayClick(e) {
-  if (e.target === document.getElementById("whatsappConfirmOverlay")) closeWhatsAppConfirm();
 }
 
 function confirmWhatsAppOrder() {
