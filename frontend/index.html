@@ -767,6 +767,16 @@ const CATS = ["rolls","combos","veggie","bandejas","extras"];
 let products = [], cart = [], settings = {};
 let modalProduct = null, modalQty = 1;
 
+function getAvailableUnits(product) {
+  const recipe = product.stockItems || [];
+  if (!recipe.length) return Math.floor((product.stock || 0) / (product.piecesPerUnit || 1));
+  return Math.min(...recipe.map(item => {
+    const id = item.product?._id || item.product;
+    const stockProduct = products.find(p => p._id === id);
+    return stockProduct ? Math.floor((stockProduct.stock || 0) / item.pieces) : 0;
+  }));
+}
+
 /* ── SLIDESHOW ── */
 const slides = document.querySelectorAll(".hero-slide");
 let slideIdx = 0;
@@ -861,7 +871,8 @@ function renderCat(cat) {
   }
   if (countEl) countEl.textContent = `${filtered.length} opciones`;
   grid.innerHTML = filtered.map((p, i) => {
-    const sinStock = p.stock <= 0;
+    const available = getAvailableUnits(p);
+    const sinStock = available <= 0;
     const tag = i === 0 ? `<span class="card-tag">Popular</span>` : "";
     const desc = p.description || "";
     return `
@@ -895,19 +906,20 @@ function renderCat(cat) {
 function openModal(id) {
   const p = products.find(x => x._id === id);
   if (!p) return;
+  const available = getAvailableUnits(p);
   modalProduct = p; modalQty = 1;
   document.getElementById("modalImg").src = p.image || "https://images.unsplash.com/photo-1579871494447-9811cf80d66c";
   document.getElementById("modalImg").alt = p.name;
   document.getElementById("modalCat").textContent = p.category.toUpperCase();
   document.getElementById("modalName").textContent = p.name;
   document.getElementById("modalDesc").textContent = p.description || "";
-  document.getElementById("modalStock").textContent = p.stock > 0
-    ? `Stock disponible: ${p.stock} unidades` : "Sin stock disponible";
+  document.getElementById("modalStock").textContent = available > 0
+    ? `Stock disponible: ${available} unidades` : "Sin stock disponible";
   document.getElementById("modalQtyVal").textContent = "1";
   document.getElementById("modalPrice").textContent = `$${p.price.toLocaleString("es-AR")}`;
   document.getElementById("modalAdded").classList.remove("show");
-  document.getElementById("modalAddBtn").disabled = p.stock <= 0;
-  document.getElementById("modalAddBtn").textContent = p.stock <= 0 ? "Sin stock" : "Agregar al pedido";
+  document.getElementById("modalAddBtn").disabled = available <= 0;
+  document.getElementById("modalAddBtn").textContent = available <= 0 ? "Sin stock" : "Agregar al pedido";
   document.getElementById("modalOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
 }
@@ -923,18 +935,19 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal()
 
 function changeModalQty(d) {
   if (!modalProduct) return;
-  modalQty = Math.max(1, Math.min(modalProduct.stock, modalQty + d));
+  modalQty = Math.max(1, Math.min(getAvailableUnits(modalProduct), modalQty + d));
   document.getElementById("modalQtyVal").textContent = modalQty;
   document.getElementById("modalPrice").textContent =
     `$${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
 }
 
 function addFromModal() {
-  if (!modalProduct || modalProduct.stock <= 0) return;
+  if (!modalProduct || getAvailableUnits(modalProduct) <= 0) return;
   const p = modalProduct, qty = modalQty;
+  const available = getAvailableUnits(p);
   const found = cart.find(i => i._id === p._id);
   if (found) {
-    if (found.qty + qty > p.stock) { toast("Stock máximo alcanzado"); return; }
+    if (found.qty + qty > available) { toast("Stock máximo alcanzado"); return; }
     found.qty += qty;
   } else {
     cart.push({ ...p, qty });
@@ -978,6 +991,9 @@ function updateCart() {
 function changeCartQty(id, delta) {
   const item = cart.find(x => x._id === id);
   if (!item) return;
+  const product = products.find(p => p._id === id) || item;
+  const available = getAvailableUnits(product);
+  if (delta > 0 && item.qty >= available) { toast("Stock máximo alcanzado"); return; }
   item.qty += delta;
   if (item.qty <= 0) cart = cart.filter(x => x._id !== id);
   updateCart();
@@ -1245,10 +1261,11 @@ async function sendWhatsApp() {
 }
 function addToCartDirect(id) {
   const p = products.find(x => x._id === id);
-  if (!p || p.stock <= 0) return;
+  if (!p || getAvailableUnits(p) <= 0) return;
+  const available = getAvailableUnits(p);
   const found = cart.find(i => i._id === p._id);
   if (found) {
-    if (found.qty >= p.stock) { toast("Stock máximo alcanzado"); return; }
+    if (found.qty >= available) { toast("Stock máximo alcanzado"); return; }
     found.qty += 1;
   } else {
     cart.push({ ...p, qty: 1 });

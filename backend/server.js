@@ -11,6 +11,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+function getStockRecipe(product) {
+  const recipe = Array.isArray(product.stockItems)
+    ? product.stockItems.filter(item => item.product && item.pieces > 0)
+    : [];
+  if (recipe.length) return recipe;
+  return [{ product: product._id, pieces: product.piecesPerUnit || 1 }];
+}
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB conectado"))
   .catch((err) => { console.error("❌ Error conectando a MongoDB:", err.message); process.exit(1); });
@@ -81,14 +89,34 @@ app.post("/orders", async (req, res) => {
   try {
     const { items, total, deliveryType, address, clientName, scheduledDate, scheduledTime, paymentMethod } = req.body;
 
-    // Validar stock y calcular piezas a descontar
-    const stockDeductions = [];
+    if (!Array.isArray(items) || !items.length) {
+      return res.status(400).json({ error: "El pedido no tiene productos" });
+    }
+
+    // Validar stock y calcular piezas a descontar por tipo de sushi.
+    const stockDeductions = new Map();
     for (const item of items) {
       const product = await Product.findById(item._id);
       if (!product) return res.status(400).json({ error: `Producto no encontrado: ${item.name}` });
-      const pieces = (product.piecesPerUnit || 1) * item.qty;
-      if (product.stock < pieces) return res.status(400).json({ error: `Stock insuficiente para: ${item.name}` });
-      stockDeductions.push({ id: item._id, pieces });
+
+      const qty = Number(item.qty) || 0;
+      if (qty <= 0) return res.status(400).json({ error: `Cantidad invalida para: ${item.name}` });
+
+      for (const recipeItem of getStockRecipe(product)) {
+        const id = recipeItem.product.toString();
+        const pieces = (Number(recipeItem.pieces) || 0) * qty;
+        stockDeductions.set(id, (stockDeductions.get(id) || 0) + pieces);
+      }
+    }
+
+    const stockProducts = await Product.find({ _id: { $in: [...stockDeductions.keys()] } });
+    const stockById = new Map(stockProducts.map(product => [product._id.toString(), product]));
+    for (const [id, pieces] of stockDeductions) {
+      const product = stockById.get(id);
+      if (!product) return res.status(400).json({ error: "Producto de stock no encontrado" });
+      if (product.stock < pieces) {
+        return res.status(400).json({ error: `Stock insuficiente para: ${product.name}` });
+      }
     }
 
     const last = await Order.findOne().sort({ number: -1 });
@@ -105,8 +133,8 @@ app.post("/orders", async (req, res) => {
     });
     await order.save();
 
-    // Descontar stock en piezas
-    for (const { id, pieces } of stockDeductions) {
+    // Descontar stock en piezas por tipo de sushi.
+    for (const [id, pieces] of stockDeductions) {
       await Product.findByIdAndUpdate(id, { $inc: { stock: -pieces } });
     }
 

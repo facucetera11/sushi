@@ -31,6 +31,21 @@ const ProductSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: 1
+  },
+  stockItems: {
+    type: [{
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true
+      },
+      pieces: {
+        type: Number,
+        required: true,
+        min: 1
+      }
+    }],
+    default: []
   }
 });
 
