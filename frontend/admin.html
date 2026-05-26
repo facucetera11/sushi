@@ -257,10 +257,10 @@ textarea{height:80px;resize:vertical;}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div><div class="label">Nombre</div><input id="nameInput" placeholder="Ej: Dragon Roll"></div>
       <div><div class="label">Precio</div><input id="priceInput" type="number" placeholder="1500"></div>
-      <div><div class="label">Stock inicial (rolls/unidades)</div><input id="stockInput" type="number" placeholder="10"></div>
-      <div><div class="label">Piezas por unidad</div><input id="piecesInput" type="number" placeholder="Ej: 8 (roll), 4 (combo)"></div>
+      <div class="unit-stock-field"><div class="label">Stock inicial (rolls/unidades)</div><input id="stockInput" type="number" placeholder="10"></div>
+      <div class="unit-stock-field"><div class="label">Piezas por unidad</div><input id="piecesInput" type="number" placeholder="Ej: 8"></div>
       <div><div class="label">Categoría</div>
-        <select id="categoryInput" style="margin-bottom:10px;">
+        <select id="categoryInput" style="margin-bottom:10px;" onchange="toggleNewProductStockFields()">
           <option value="rolls">Rolls</option>
           <option value="combos">Combos</option>
           <option value="veggie">Veggie</option>
@@ -623,8 +623,19 @@ function isStockType(product) {
   return ["rolls", "veggie"].includes(product.category);
 }
 
+function usesRecipeStock(product) {
+  return ["combos", "bandejas"].includes(product.category);
+}
+
 function stockPiecesFromUnits(units, product) {
   return Math.max(0, Number(units) || 0) * (product.piecesPerUnit || 8);
+}
+
+function toggleNewProductStockFields() {
+  const category = document.getElementById("categoryInput").value;
+  document.querySelectorAll(".unit-stock-field").forEach(el => {
+    el.style.display = ["combos", "bandejas"].includes(category) ? "none" : "block";
+  });
 }
 
 function renderStockInventory(products) {
@@ -646,6 +657,7 @@ function renderStockInventory(products) {
 }
 
 function renderProducts(products) {
+  toggleNewProductStockFields();
   const cats = ["rolls","combos","veggie","bandejas","extras"];
   const catNames = { rolls:"🍣 Rolls", combos:"🎁 Combos", veggie:"🥗 Veggie Rolls", bandejas:"🍱 Bandejas", extras:"➕ Extras" };
   document.getElementById("productsGrid").innerHTML = cats.map(cat => {
@@ -659,6 +671,7 @@ function renderProducts(products) {
       </div>
       ${items.map(p => {
         const units = availableUnits(p, products);
+        const recipeStock = usesRecipeStock(p);
         return `
         <div class="product-card${units <= 3 ? ' stock-low' : ''}">
           ${units <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} unidades vendibles</div>` : ''}
@@ -666,7 +679,7 @@ function renderProducts(products) {
           <div class="label">${p.category}</div>
           <input id="n-${p._id}" value="${p.name}">
           <input id="pr-${p._id}" type="number" value="${p.price}" placeholder="Precio">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="display:${recipeStock ? "none" : "grid"};grid-template-columns:1fr 1fr;gap:6px;">
             <div><div class="label" style="font-size:11px;margin-bottom:4px;">Stock (${isStockType(p) ? "rolls" : "unidades"})</div><input id="st-${p._id}" type="number" value="${isStockType(p) ? units : p.stock}" placeholder="${isStockType(p) ? "Rolls" : "Unidades"}"></div>
             <div><div class="label" style="font-size:11px;margin-bottom:4px;">Piezas/unidad</div><input id="pp-${p._id}" type="number" value="${p.piecesPerUnit||1}" placeholder="Ej: 8"></div>
           </div>
@@ -674,7 +687,7 @@ function renderProducts(products) {
           <textarea id="de-${p._id}">${p.description||''}</textarea>
           <div class="label" style="font-size:11px;margin-bottom:4px;">Receta de stock (opcional)</div>
           <textarea id="si-${p._id}" placeholder="Philadelphia Roll: 5&#10;California Roll: 5">${getRecipeText(p, products)}</textarea>
-          <select id="ca-${p._id}">
+          <select id="ca-${p._id}" onchange="loadAll()">
             ${["rolls","combos","veggie","bandejas","extras"].map(c=>`<option ${p.category===c?"selected":""} value="${c}">${c}</option>`).join("")}
           </select>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
@@ -691,7 +704,7 @@ async function addProduct() {
   const category = document.getElementById("categoryInput").value;
   const piecesPerUnit = +document.getElementById("piecesInput").value || (["rolls","veggie"].includes(category) ? 8 : 1);
   const stockUnits = +document.getElementById("stockInput").value || 0;
-  const stock = ["rolls","veggie"].includes(category) ? stockUnits * piecesPerUnit : stockUnits;
+  const stock = ["combos","bandejas"].includes(category) ? 0 : ["rolls","veggie"].includes(category) ? stockUnits * piecesPerUnit : stockUnits;
   const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems:parseStockItems(document.getElementById("stockItemsInput").value, products), image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
   if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
   await fetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -704,7 +717,7 @@ async function updateProduct(id) {
   const category = document.getElementById(`ca-${id}`).value;
   const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (["rolls","veggie"].includes(category) ? 8 : 1);
   const stockUnits = +document.getElementById(`st-${id}`).value || 0;
-  const stock = current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
+  const stock = usesRecipeStock({ category }) ? 0 : current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
   await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems:parseStockItems(document.getElementById(`si-${id}`).value, products),image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
   toast("✓ Guardado","success"); loadAll();
 }
