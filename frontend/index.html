@@ -124,6 +124,9 @@ nav a:hover { opacity: 1; }
   transition: transform .25s, box-shadow .25s;
 }
 .card:hover { transform: translateY(-4px); box-shadow: 0 20px 48px rgba(0,0,0,.10); }
+.card.out-of-stock { opacity: .58; }
+.card.out-of-stock .card-img-wrap img { filter: grayscale(1); }
+.card.out-of-stock:hover { transform: none; box-shadow: var(--shadow-card); }
 
 .card-img-wrap { position: relative; overflow: hidden; height: 200px; }
 .card-img-wrap img {
@@ -148,6 +151,13 @@ nav a:hover { opacity: 1; }
   font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
   padding: 4px 10px; border-radius: 4px; background: var(--red); color: white;
 }
+.card-stock-tag {
+  position: absolute; right: 12px; top: 12px;
+  font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 5px 9px; border-radius: 4px; background: rgba(17,17,17,.82); color: white;
+}
+.card-stock-tag.low { background: #1a6b3a; }
+.card-stock-tag.empty { background: var(--red); }
 
 .card-body { padding: 20px 22px 22px; }
 .card-body h3 { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; margin-bottom: 5px; }
@@ -155,9 +165,11 @@ nav a:hover { opacity: 1; }
 .card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .price { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; white-space: nowrap; }
 .stock-badge {
+  display: inline-block; margin-top: 4px;
   font-size: 10px; font-weight: 500; letter-spacing: 1px; padding: 3px 9px; border-radius: 4px;
   background: rgba(192,57,43,.08); color: var(--red); text-transform: uppercase;
 }
+.stock-badge.ok { background: rgba(26,107,58,.08); color: #1a6b3a; }
 .btn-add {
   flex: 1; padding: 10px 0;
   border: 0.5px solid rgba(0,0,0,.2); border-radius: 4px;
@@ -368,6 +380,10 @@ nav a:hover { opacity: 1; }
 }
 #addressInput:focus { border-color: var(--navy); }
 #addressInput::placeholder { color: rgba(0,0,0,.28); }
+.checkout-hint {
+  font-size: 11px; color: rgba(0,0,0,.38); margin-top: -4px;
+  line-height: 1.45;
+}
 .checkout-textarea {
   width: 100%; min-height: 86px; padding: 12px 14px; border-radius: 6px;
   border: 0.5px solid rgba(0,0,0,.18); background: transparent;
@@ -425,6 +441,12 @@ nav a:hover { opacity: 1; }
   font-size: 13px; color: rgba(0,0,0,.55); line-height: 1.65;
   font-weight: 300; margin-bottom: 20px;
 }
+.whatsapp-confirm-summary {
+  background: rgba(0,0,0,.03); border-radius: 8px;
+  padding: 13px 15px; margin-bottom: 18px;
+  font-size: 12.5px; color: rgba(0,0,0,.58); line-height: 1.75;
+}
+.whatsapp-confirm-summary strong { color: var(--navy); font-weight: 600; }
 .whatsapp-confirm-actions { display: flex; gap: 10px; }
 .btn-whatsapp-confirm {
   min-height: 46px; border-radius: 6px; font-family: 'Jost', sans-serif;
@@ -649,6 +671,13 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
     left: 8px;
     padding: 3px 7px;
     font-size: 8px;
+  }
+  .card-stock-tag {
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    font-size: 8px;
+    padding: 4px 7px;
   }
   .card-body {
     padding: 13px 13px 12px;
@@ -962,7 +991,12 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
         </div>
         <div>
           <div class="checkout-label">Tu nombre</div>
-          <input id="clientName" type="text" placeholder="¿Cómo te llamás?">
+          <input id="clientName" type="text" autocomplete="name" placeholder="¿Cómo te llamás?">
+        </div>
+        <div>
+          <div class="checkout-label">Tu teléfono</div>
+          <input id="clientPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 11 2345 6789">
+          <div class="checkout-hint">Lo usamos solo para coordinar el pedido.</div>
         </div>
         <div>
           <div class="checkout-label">Nota especial</div>
@@ -1031,6 +1065,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
     <div class="whatsapp-confirm-kicker">Pedido registrado</div>
     <h2 id="whatsappConfirmTitle">Pedido listo</h2>
     <p id="whatsappConfirmText">Ahora confirmalo por WhatsApp para coordinar la entrega.</p>
+    <div class="whatsapp-confirm-summary" id="whatsappConfirmSummary"></div>
     <div class="whatsapp-confirm-actions">
       <button class="btn-whatsapp-confirm" onclick="confirmWhatsAppOrder()">Confirmar por WhatsApp</button>
     </div>
@@ -1122,6 +1157,25 @@ function escapeHtml(value) {
   }[ch]));
 }
 
+function normalizePhone(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function validateCheckoutFields() {
+  const clientName = document.getElementById("clientName").value.trim();
+  const clientPhone = document.getElementById("clientPhone").value.trim();
+  const address = document.getElementById("addressInput").value.trim();
+  const phoneDigits = normalizePhone(clientPhone);
+  const dateValue = document.getElementById("deliveryDate")?.value || "";
+  const timeValue = document.getElementById("deliveryTime")?.value || "";
+
+  if (clientName.length < 2) return "Ingresá tu nombre completo";
+  if (phoneDigits.length < 8) return "Ingresá un teléfono válido";
+  if (deliveryType === "delivery" && address.length < 6) return "Ingresá una dirección más completa";
+  if (!dateValue || !timeValue) return "Elegí día y horario";
+  return "";
+}
+
 /* ── LOAD ── */
 async function load() {
   CATS.forEach(cat => {
@@ -1176,15 +1230,26 @@ function renderCat(cat) {
   grid.innerHTML = filtered.map((p, i) => {
     const available = getAvailableUnits(p);
     const sinStock = available <= 0;
-    const tag = i === 0 ? `<span class="card-tag">Popular</span>` : "";
+    const stockTag = sinStock
+      ? `<span class="card-stock-tag empty">Agotado</span>`
+      : available <= 3
+        ? `<span class="card-stock-tag low">Quedan ${available}</span>`
+        : "";
+    const stockBadge = sinStock
+      ? `<div class="stock-badge">Sin stock</div>`
+      : available <= 3
+        ? `<div class="stock-badge">Últimas ${available}</div>`
+        : `<div class="stock-badge ok">Disponible</div>`;
+    const tag = i === 0 && !sinStock ? `<span class="card-tag">Popular</span>` : "";
     const desc = p.description || "";
     return `
-    <div class="card" onclick="openModal('${p._id}')">
+    <div class="card ${sinStock ? "out-of-stock" : ""}" onclick="openModal('${p._id}')">
       <div class="card-img-wrap">
         <img src="${p.image || 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c'}"
              alt="${p.name}" loading="lazy"
              onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
         ${tag}
+        ${stockTag}
         <div class="card-quick"><span>Vista rápida</span></div>
       </div>
       <div class="card-body">
@@ -1193,6 +1258,7 @@ function renderCat(cat) {
         <div class="card-bottom">
           <div>
             <div class="price">$${p.price.toLocaleString("es-AR")}</div>
+            ${stockBadge}
           </div>
           <button class="btn-add"
             onclick="event.stopPropagation(); addToCartDirect('${p._id}')"
@@ -1334,6 +1400,7 @@ function openCheckout() {
   document.getElementById("addressRow").classList.remove("show");
   document.getElementById("addressInput").value = "";
   document.getElementById("clientName").value = "";
+  document.getElementById("clientPhone").value = "";
   document.getElementById("orderNotes").value = "";
   populateDateTimeSelects();
   // Reset to step 1
@@ -1352,13 +1419,14 @@ function onCheckoutOverlayClick(e) {
   if (e.target === document.getElementById("checkoutOverlay")) closeCheckout();
 }
 
-function openWhatsAppConfirm(orderNumber, whatsappUrl, fallbackUrl) {
+function openWhatsAppConfirm(order, summaryHtml, whatsappUrl, fallbackUrl) {
   pendingWhatsAppUrl = whatsappUrl;
   pendingWhatsAppFallbackUrl = fallbackUrl || whatsappUrl;
   document.getElementById("whatsappConfirmTitle").textContent =
-    orderNumber ? `Pedido #${orderNumber} registrado` : "Pedido registrado";
+    order?.number ? `Pedido #${order.number} registrado` : "Pedido registrado";
   document.getElementById("whatsappConfirmText").textContent =
     "Tu pedido ya quedó cargado. Confirmalo por WhatsApp para que podamos coordinarlo.";
+  document.getElementById("whatsappConfirmSummary").innerHTML = summaryHtml;
   document.getElementById("whatsappConfirmOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
 }
@@ -1383,10 +1451,8 @@ function goToStep1(silent) {
 }
 
 function goToStep2() {
-  const clientName = document.getElementById("clientName").value.trim();
-  const address = document.getElementById("addressInput").value.trim();
-  if (!clientName) { toast("❌ Ingresá tu nombre"); return; }
-  if (deliveryType === "delivery" && !address) { toast("❌ Ingresá la dirección"); return; }
+  const validationError = validateCheckoutFields();
+  if (validationError) { toast(`❌ ${validationError}`); return; }
 
   // Preparar UI de pagos con los datos actuales de settings
   setupPaymentUI();
@@ -1500,6 +1566,7 @@ function populateDateTimeSelects() {
 
 function updateCheckoutSummary() {
   const name = (document.getElementById("clientName").value || "").trim();
+  const phone = (document.getElementById("clientPhone").value || "").trim();
   const notes = (document.getElementById("orderNotes").value || "").trim();
   const date = document.getElementById("deliveryDate")?.options[document.getElementById("deliveryDate").selectedIndex]?.text || "";
   const time = document.getElementById("deliveryTime")?.value || "";
@@ -1510,6 +1577,7 @@ function updateCheckoutSummary() {
   const saving = isCash ? Math.round(base * discount / 100) : 0;
   const final = base - saving;
   const safeName = escapeHtml(name);
+  const safePhone = escapeHtml(phone);
   const safeAddress = escapeHtml(address);
   const safeNotes = escapeHtml(notes);
 
@@ -1523,6 +1591,7 @@ function updateCheckoutSummary() {
 
   document.getElementById("checkoutSummary").innerHTML = `
     ${name ? `👤 <strong>${safeName}</strong><br>` : ""}
+    ${phone ? `📞 ${safePhone}<br>` : ""}
     ${entrega}<br>
     📅 ${date} a las ${time}<br>
     💳 ${pagoText}<br>
@@ -1533,7 +1602,7 @@ function updateCheckoutSummary() {
 }
 
 document.addEventListener("input", e => {
-  if (e.target.id === "clientName" || e.target.id === "addressInput" || e.target.id === "orderNotes") updateCheckoutSummary();
+  if (e.target.id === "clientName" || e.target.id === "clientPhone" || e.target.id === "addressInput" || e.target.id === "orderNotes") updateCheckoutSummary();
 });
 
 /* ── WHATSAPP ── */
@@ -1543,6 +1612,7 @@ async function sendWhatsApp() {
   if (!paymentMethod) { toast("❌ Elegí un método de pago"); return; }
 
   const clientName = document.getElementById("clientName").value.trim();
+  const clientPhone = document.getElementById("clientPhone").value.trim();
   const address = document.getElementById("addressInput").value.trim();
   const notes = document.getElementById("orderNotes").value.trim();
   const dateEl = document.getElementById("deliveryDate");
@@ -1550,8 +1620,8 @@ async function sendWhatsApp() {
   const dateText = dateEl?.options[dateEl.selectedIndex]?.text || "";
   const timeText = timeEl?.value || "";
 
-  if (!clientName) { toast("❌ Ingresá tu nombre"); return; }
-  if (deliveryType === "delivery" && !address) { toast("❌ Ingresá la dirección"); return; }
+  const validationError = validateCheckoutFields();
+  if (validationError) { toast(`❌ ${validationError}`); return; }
 
   const btn = document.getElementById("btnCheckoutConfirm");
   btn.disabled = true; btn.textContent = "Enviando pedido...";
@@ -1566,7 +1636,7 @@ async function sendWhatsApp() {
   const orderPayload = {
     items: snapshot, total,
     deliveryType, address: deliveryType === "delivery" ? address : "",
-    clientName, notes, scheduledDate: dateText, scheduledTime: timeText,
+    clientName, clientPhone, notes, scheduledDate: dateText, scheduledTime: timeText,
     paymentMethod
   };
 
@@ -1589,6 +1659,7 @@ async function sendWhatsApp() {
       let msg = `🍣 *Pedido Kizuna #${order.number || ""}*\n\n`;
       msg += `Hola, hice mi pedido por la web.\n\n`;
       msg += `👤 *${clientName}*\n`;
+      msg += `📞 ${clientPhone}\n`;
       msg += deliveryType === "delivery"
         ? `🛵 *Delivery* a: ${address}\n`
         : `🏃 *Retiro en local*\n`;
@@ -1610,8 +1681,16 @@ async function sendWhatsApp() {
 
       const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
       const whatsappText = enc(msg);
+      const confirmSummary = `
+        <strong>Total:</strong> $${total.toLocaleString("es-AR")}<br>
+        <strong>Entrega:</strong> ${deliveryType === "delivery" ? `Delivery a ${escapeHtml(address)}` : "Retiro en local"}<br>
+        <strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}<br>
+        <strong>Teléfono:</strong> ${escapeHtml(clientPhone)}
+        ${notes ? `<br><strong>Nota:</strong> ${escapeHtml(notes)}` : ""}
+      `;
       openWhatsAppConfirm(
-        order.number,
+        order,
+        confirmSummary,
         `whatsapp://send?phone=${whatsappNumber}&text=${whatsappText}`,
         `https://wa.me/${whatsappNumber}?text=${whatsappText}`
       );

@@ -476,6 +476,7 @@ function orderCardHTML(o, isDelivered) {
   const deliveryTag = isDelivery ? `<span class="order-tag tag-delivery">🛵 Delivery</span>` : `<span class="order-tag tag-retiro">🏃 Retiro</span>`;
   const schedTag = (o.scheduledDate && o.scheduledTime) ? `<span class="order-tag tag-scheduled">📅 ${o.scheduledDate} ${o.scheduledTime}</span>` : "";
   const clientTag = o.clientName ? `<span class="order-tag" style="background:rgba(0,0,0,.05);color:#333;">👤 ${o.clientName}</span>` : "";
+  const phoneTag = o.clientPhone ? `<span class="order-tag" style="background:rgba(22,32,74,.08);color:var(--navy);">📞 ${o.clientPhone}</span>` : "";
   const pagoTag = o.paymentMethod === "cash" ? `<span class="order-tag tag-cash">💵 Efectivo</span>` : `<span class="order-tag tag-transfer">🏦 Transferencia</span>`;
   const addressLine = isDelivery && o.address ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">📍 ${o.address}</div>` : "";
   const cardClass = isDelivered ? "order-card delivered" : "order-card";
@@ -486,7 +487,7 @@ function orderCardHTML(o, isDelivered) {
       <h3>Pedido #${o.number}</h3>
       <span class="status-badge status-${o.status}">${o.status}</span>
     </div>
-    <div class="order-meta">${clientTag}${deliveryTag}${pagoTag}${schedTag}</div>
+    <div class="order-meta">${clientTag}${phoneTag}${deliveryTag}${pagoTag}${schedTag}</div>
     ${addressLine}
     <div class="order-items">${itemsList}</div>
     ${orderDeductionsHTML(o)}
@@ -547,11 +548,11 @@ function exportCSV() {
   const today = new Date().toDateString();
   const todayOrders = allOrders.filter(o => new Date(o.createdAt).toDateString() === today);
   if (!todayOrders.length) { toast("No hay pedidos hoy para exportar", "error"); return; }
-  const rows = [["#","Cliente","Items","Total","Entrega","Dirección","Pago","Estado","Hora"]];
+  const rows = [["#","Cliente","Telefono","Items","Total","Entrega","Dirección","Pago","Estado","Hora"]];
   todayOrders.forEach(o => {
     const items = o.items.map(i => `${i.name} x${i.qty}`).join(" | ");
     const hora = new Date(o.createdAt).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-    rows.push([o.number, o.clientName||"—", items, o.total, o.deliveryType, o.address||"—", o.paymentMethod, o.status, hora]);
+    rows.push([o.number, o.clientName||"—", o.clientPhone||"—", items, o.total, o.deliveryType, o.address||"—", o.paymentMethod, o.status, hora]);
   });
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
@@ -617,6 +618,7 @@ function printOrder(id) {
       </div>
       <div class="line"></div>
       <div class="block"><span class="label">Cliente:</span> ${escapeHtml(order.clientName || "-")}</div>
+      ${order.clientPhone ? `<div class="block"><span class="label">Telefono:</span> ${escapeHtml(order.clientPhone)}</div>` : ""}
       <div class="block"><span class="label">Entrega:</span> ${delivery}</div>
       ${order.address ? `<div class="block"><span class="label">Direccion:</span> ${escapeHtml(order.address)}</div>` : ""}
       ${order.scheduledDate || order.scheduledTime ? `<div class="block"><span class="label">Horario:</span> ${escapeHtml(order.scheduledDate || "")} ${escapeHtml(order.scheduledTime || "")}</div>` : ""}
