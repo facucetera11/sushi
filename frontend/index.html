@@ -866,7 +866,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   </div>
   <div id="cartItems"></div>
   <div id="cartTotal">$0</div>
-  <button id="btnConfirm" onclick="openCheckout()" disabled>Confirmar por WhatsApp</button>
+  <button id="btnConfirm" onclick="openCheckout()" disabled>Finalizar pedido</button>
 </div>
 
 <!-- CHECKOUT MODAL -->
@@ -957,7 +957,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 
         <div class="btn-nav-row">
           <button class="btn-back" onclick="goToStep1()">← Volver</button>
-          <button id="btnCheckoutConfirm" onclick="sendWhatsApp()">Confirmar por WhatsApp 💬</button>
+          <button id="btnCheckoutConfirm" onclick="sendWhatsApp()">Enviar pedido</button>
         </div>
       </div>
 
@@ -1231,13 +1231,11 @@ function toggleCartMobile() {
 /* ── CHECKOUT ── */
 let deliveryType = "retiro";
 let paymentMethod = ""; // "transfer" | "cash"
-let pendingWhatsAppOrder = null;
 
 function resetCheckoutConfirmButton() {
-  pendingWhatsAppOrder = null;
   const btn = document.getElementById("btnCheckoutConfirm");
   btn.disabled = false;
-  btn.textContent = "Confirmar por WhatsApp 💬";
+  btn.textContent = "Enviar pedido";
 }
 
 function openCheckout() {
@@ -1429,11 +1427,6 @@ document.addEventListener("input", e => {
 
 /* ── WHATSAPP ── */
 async function sendWhatsApp() {
-  if (pendingWhatsAppOrder) {
-    await registerPendingWhatsAppOrder();
-    return;
-  }
-
   if (!cart.length) return;
 
   if (!paymentMethod) { toast("❌ Elegí un método de pago"); return; }
@@ -1449,7 +1442,7 @@ async function sendWhatsApp() {
   if (deliveryType === "delivery" && !address) { toast("❌ Ingresá la dirección"); return; }
 
   const btn = document.getElementById("btnCheckoutConfirm");
-  btn.disabled = true; btn.textContent = "Abriendo WhatsApp...";
+  btn.disabled = true; btn.textContent = "Enviando pedido...";
 
   const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
   const discount = settings.cashDiscount || 0;
@@ -1458,72 +1451,55 @@ async function sendWhatsApp() {
   const total = base - saving;
 
   const snapshot = cart.map(i => ({ _id: i._id, name: i.name, qty: i.qty, price: i.price }));
-
-  const enc = encodeURIComponent;
-  const pagoLabel = paymentMethod === "transfer" ? "Transferencia / Mercado Pago" : "Efectivo";
-  let msg = `🍣 *Pedido Kizuna*\n\n`;
-  msg += `👤 *${clientName}*\n`;
-  msg += deliveryType === "delivery"
-    ? `🛵 *Delivery* a: ${address}\n`
-    : `🏃 *Retiro en local*\n`;
-  msg += `📅 ${dateText} a las ${timeText}\n`;
-  msg += `💳 *Pago: ${pagoLabel}*\n\n`;
-  snapshot.forEach(i => {
-    msg += `• ${i.name} ×${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}\n`;
-  });
-  if (saving > 0) {
-    msg += `\n🎉 Descuento efectivo (${discount}%): − $${saving.toLocaleString("es-AR")}`;
-  }
-  msg += `\n\n💰 *Total: $${total.toLocaleString("es-AR")}*`;
-
-  pendingWhatsAppOrder = {
+  const orderPayload = {
     items: snapshot, total,
     deliveryType, address: deliveryType === "delivery" ? address : "",
     clientName, scheduledDate: dateText, scheduledTime: timeText,
     paymentMethod
   };
 
-  const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${enc(msg)}`;
-  const opened = window.open(whatsappUrl, "_blank", "noopener");
-  if (!opened) {
-    location.href = whatsappUrl;
-    return;
-  }
-
-  btn.disabled = false;
-  btn.textContent = "Ya envié el WhatsApp, registrar pedido";
-  toast("Cuando mandes el mensaje, volvé y registrá el pedido");
-}
-
-async function registerPendingWhatsAppOrder() {
-  if (!pendingWhatsAppOrder) return;
-
-  const btn = document.getElementById("btnCheckoutConfirm");
-  btn.disabled = true;
-  btn.textContent = "Registrando pedido...";
-
   try {
     const res = await fetch(`${API}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(pendingWhatsAppOrder)
+      body: JSON.stringify(orderPayload)
     });
     if (res.ok) {
-      pendingWhatsAppOrder = null;
+      const order = await res.json();
+      const enc = encodeURIComponent;
+      const pagoLabel = paymentMethod === "transfer" ? "Transferencia / Mercado Pago" : "Efectivo";
+      let msg = `🍣 *Pedido Kizuna #${order.number || ""}*\n\n`;
+      msg += `Hola, hice mi pedido por la web.\n\n`;
+      msg += `👤 *${clientName}*\n`;
+      msg += deliveryType === "delivery"
+        ? `🛵 *Delivery* a: ${address}\n`
+        : `🏃 *Retiro en local*\n`;
+      msg += `📅 ${dateText} a las ${timeText}\n`;
+      msg += `💳 *Pago: ${pagoLabel}*\n\n`;
+      snapshot.forEach(i => {
+        msg += `• ${i.name} ×${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}\n`;
+      });
+      if (saving > 0) {
+        msg += `\n🎉 Descuento efectivo (${discount}%): − $${saving.toLocaleString("es-AR")}`;
+      }
+      msg += `\n\n💰 *Total: $${total.toLocaleString("es-AR")}*`;
+
       cart = [];
       updateCart();
       closeCheckout();
-      toast("✅ Pedido registrado");
+      toast(`✅ Pedido #${order.number || ""} registrado`);
       load();
+
+      const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
+      location.href = `https://wa.me/${whatsappNumber}?text=${enc(msg)}`;
     } else {
       const data = await res.json();
       toast(`❌ ${data.error || "Error al registrar el pedido"}`);
-      btn.disabled = false; btn.textContent = "Ya envié el WhatsApp, registrar pedido";
+      btn.disabled = false; btn.textContent = "Enviar pedido";
     }
   } catch (err) {
     toast("❌ Error de conexión. Intentá de nuevo.");
-    btn.disabled = false; btn.textContent = "Ya envié el WhatsApp, registrar pedido";
+    btn.disabled = false; btn.textContent = "Enviar pedido";
   }
 }
 function addToCartDirect(id) {
