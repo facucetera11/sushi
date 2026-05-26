@@ -257,7 +257,7 @@ textarea{height:80px;resize:vertical;}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div><div class="label">Nombre</div><input id="nameInput" placeholder="Ej: Dragon Roll"></div>
       <div><div class="label">Precio</div><input id="priceInput" type="number" placeholder="1500"></div>
-      <div><div class="label">Stock (piezas disponibles)</div><input id="stockInput" type="number" placeholder="80"></div>
+      <div><div class="label">Stock inicial (rolls/unidades)</div><input id="stockInput" type="number" placeholder="10"></div>
       <div><div class="label">Piezas por unidad</div><input id="piecesInput" type="number" placeholder="Ej: 8 (roll), 4 (combo)"></div>
       <div><div class="label">Categoría</div>
         <select id="categoryInput" style="margin-bottom:10px;">
@@ -623,6 +623,10 @@ function isStockType(product) {
   return ["rolls", "veggie"].includes(product.category);
 }
 
+function stockPiecesFromUnits(units, product) {
+  return Math.max(0, Number(units) || 0) * (product.piecesPerUnit || 8);
+}
+
 function renderStockInventory(products) {
   const stockTypes = products.filter(isStockType);
   const grid = document.getElementById("stockGrid");
@@ -633,9 +637,9 @@ function renderStockInventory(products) {
     return `
       <div class="stock-card">
         <h3>${p.name}</h3>
-        <div class="label">Piezas disponibles</div>
-        <input id="stock-only-${p._id}" type="number" value="${p.stock || 0}">
-        <div class="stock-meta">${units} rolls completos de ${piecesPerUnit} piezas</div>
+        <div class="label">Rolls disponibles</div>
+        <input id="stock-only-${p._id}" type="number" value="${units}">
+        <div class="stock-meta">${p.stock || 0} piezas (${piecesPerUnit} por roll)</div>
         <button class="btn btn-success" onclick="updateStockOnly('${p._id}')">Guardar stock</button>
       </div>`;
   }).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay tipos de sushi cargados en Rolls o Veggie.</p>`;
@@ -663,7 +667,7 @@ function renderProducts(products) {
           <input id="n-${p._id}" value="${p.name}">
           <input id="pr-${p._id}" type="number" value="${p.price}" placeholder="Precio">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <div><div class="label" style="font-size:11px;margin-bottom:4px;">Stock (piezas)</div><input id="st-${p._id}" type="number" value="${p.stock}" placeholder="Piezas"></div>
+            <div><div class="label" style="font-size:11px;margin-bottom:4px;">Stock (${isStockType(p) ? "rolls" : "unidades"})</div><input id="st-${p._id}" type="number" value="${isStockType(p) ? units : p.stock}" placeholder="${isStockType(p) ? "Rolls" : "Unidades"}"></div>
             <div><div class="label" style="font-size:11px;margin-bottom:4px;">Piezas/unidad</div><input id="pp-${p._id}" type="number" value="${p.piecesPerUnit||1}" placeholder="Ej: 8"></div>
           </div>
           <input id="im-${p._id}" value="${p.image||''}" placeholder="URL imagen">
@@ -684,7 +688,11 @@ function renderProducts(products) {
 
 async function addProduct() {
   const products = await fetch(`${API}/products`).then(r => r.json());
-  const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock:+document.getElementById("stockInput").value, piecesPerUnit:+document.getElementById("piecesInput").value||1, stockItems:parseStockItems(document.getElementById("stockItemsInput").value, products), image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category:document.getElementById("categoryInput").value };
+  const category = document.getElementById("categoryInput").value;
+  const piecesPerUnit = +document.getElementById("piecesInput").value || (["rolls","veggie"].includes(category) ? 8 : 1);
+  const stockUnits = +document.getElementById("stockInput").value || 0;
+  const stock = ["rolls","veggie"].includes(category) ? stockUnits * piecesPerUnit : stockUnits;
+  const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems:parseStockItems(document.getElementById("stockItemsInput").value, products), image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
   if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
   await fetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   ["nameInput","priceInput","stockInput","piecesInput","stockItemsInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
@@ -692,12 +700,20 @@ async function addProduct() {
 }
 async function updateProduct(id) {
   const products = await fetch(`${API}/products`).then(r => r.json());
-  await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock:+document.getElementById(`st-${id}`).value,piecesPerUnit:+document.getElementById(`pp-${id}`).value||1,stockItems:parseStockItems(document.getElementById(`si-${id}`).value, products),image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category:document.getElementById(`ca-${id}`).value})});
+  const current = products.find(p => p._id === id);
+  const category = document.getElementById(`ca-${id}`).value;
+  const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (["rolls","veggie"].includes(category) ? 8 : 1);
+  const stockUnits = +document.getElementById(`st-${id}`).value || 0;
+  const stock = current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
+  await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems:parseStockItems(document.getElementById(`si-${id}`).value, products),image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
   toast("✓ Guardado","success"); loadAll();
 }
 async function updateStockOnly(id) {
-  const stock = +document.getElementById(`stock-only-${id}`).value;
-  if (isNaN(stock) || stock < 0) { toast("IngresÃ¡ un stock vÃ¡lido", "error"); return; }
+  const products = await fetch(`${API}/products`).then(r => r.json());
+  const product = products.find(p => p._id === id);
+  const units = +document.getElementById(`stock-only-${id}`).value;
+  if (isNaN(units) || units < 0 || !product) { toast("IngresÃ¡ un stock vÃ¡lido", "error"); return; }
+  const stock = stockPiecesFromUnits(units, product);
   await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
   toast("âœ“ Stock actualizado","success"); loadAll();
 }
