@@ -1248,7 +1248,8 @@ async function sendWhatsApp() {
     if (res.ok) {
       cart = []; updateCart();
       closeCheckout();
-      location.href = `https://wa.me/5491121734894?text=${enc(msg)}`;
+      const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
+      location.href = `https://wa.me/${whatsappNumber}?text=${enc(msg)}`;
     } else {
       const data = await res.json();
       toast(`❌ ${data.error || "Error al registrar el pedido"}`);

@@ -252,6 +252,7 @@ textarea{height:80px;resize:vertical;}
       <div class="settings-row">
         <div><div class="label">Alias (CBU / CVU / Cuenta DNI)</div><input id="transferAlias" placeholder="kizuna.sushi"></div>
         <div><div class="label">Link de Mercado Pago (opcional)</div><input id="mercadoPagoLink" placeholder="https://mpago.la/..."></div>
+        <div><div class="label">WhatsApp pedidos</div><input id="whatsappNumber" placeholder="5491121734894"></div>
       </div>
       <button class="btn btn-primary" style="max-width:260px;" onclick="saveTransfer()">Guardar datos de transferencia</button>
     </div>
@@ -575,6 +576,7 @@ function renderSettings(s) {
   document.getElementById("cashDiscount").value = s.cashDiscount ?? 0;
   document.getElementById("transferAlias").value = s.transferAlias || "";
   document.getElementById("mercadoPagoLink").value = s.mercadoPagoLink || "";
+  document.getElementById("whatsappNumber").value = s.whatsappNumber || "5491121734894";
   openDays = s.openDays || [];
   document.getElementById("daysGrid").innerHTML = DAYS.map((d, i) =>
     `<button class="day-btn ${openDays.includes(i)?"active":""}" onclick="toggleDay(${i},this)">${d}</button>`
@@ -598,7 +600,9 @@ async function saveDiscount() {
 async function saveTransfer() {
   const transferAlias = document.getElementById("transferAlias").value.trim();
   const mercadoPagoLink = document.getElementById("mercadoPagoLink").value.trim();
-  await fetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ transferAlias, mercadoPagoLink }) });
+  const whatsappNumber = document.getElementById("whatsappNumber").value.replace(/\D/g, "");
+  if (!whatsappNumber) { toast("IngresÃ¡ un WhatsApp vÃ¡lido", "error"); return; }
+  await fetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ transferAlias, mercadoPagoLink, whatsappNumber }) });
   toast("✓ Datos de transferencia guardados", "success");
 }
 

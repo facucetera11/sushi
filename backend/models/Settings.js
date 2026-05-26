@@ -6,7 +6,8 @@ const SettingsSchema = new mongoose.Schema({
   openDays: [Number],
   cashDiscount: { type: Number, default: 0 },
   transferAlias: { type: String, default: "" },
-  mercadoPagoLink: { type: String, default: "" }
+  mercadoPagoLink: { type: String, default: "" },
+  whatsappNumber: { type: String, default: "5491121734894" }
 });
 
 module.exports = mongoose.model("Settings", SettingsSchema);
