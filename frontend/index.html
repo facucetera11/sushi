@@ -389,6 +389,51 @@ nav a:hover { opacity: 1; }
 }
 .checkout-summary strong { font-weight: 600; color: var(--navy); }
 
+/* confirmacion whatsapp */
+.whatsapp-confirm-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  z-index: 700; display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; pointer-events: none; transition: opacity .28s ease;
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.whatsapp-confirm-overlay.open { opacity: 1; pointer-events: all; }
+.whatsapp-confirm-modal {
+  background: var(--white); border-radius: 14px;
+  width: 100%; max-width: 420px; padding: 28px;
+  border: 0.5px solid var(--border); box-shadow: 0 32px 80px rgba(0,0,0,.2);
+  transform: translateY(24px) scale(.96);
+  transition: transform .3s cubic-bezier(.34,1.4,.64,1);
+}
+.whatsapp-confirm-overlay.open .whatsapp-confirm-modal { transform: translateY(0) scale(1); }
+.whatsapp-confirm-kicker {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: #1a6b3a; font-weight: 600; margin-bottom: 8px;
+}
+.whatsapp-confirm-modal h2 {
+  font-family: 'Cormorant Garamond', serif; font-size: 30px;
+  font-weight: 700; line-height: 1.05; margin-bottom: 10px;
+}
+.whatsapp-confirm-modal p {
+  font-size: 13px; color: rgba(0,0,0,.55); line-height: 1.65;
+  font-weight: 300; margin-bottom: 20px;
+}
+.whatsapp-confirm-actions { display: flex; gap: 10px; }
+.btn-whatsapp-confirm,
+.btn-whatsapp-later {
+  min-height: 46px; border-radius: 6px; font-family: 'Jost', sans-serif;
+  font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
+  text-transform: uppercase; cursor: pointer; transition: .18s;
+}
+.btn-whatsapp-confirm {
+  flex: 1; border: none; background: var(--red); color: white;
+}
+.btn-whatsapp-confirm:hover { background: #a93226; }
+.btn-whatsapp-later {
+  padding: 0 16px; border: 0.5px solid rgba(0,0,0,.15);
+  background: transparent; color: var(--navy);
+}
+.btn-whatsapp-later:hover { border-color: var(--navy); }
+
 /* confirm btn */
 #btnCheckoutConfirm {
   width: 100%; padding: 15px; border: none; border-radius: 6px;
@@ -694,13 +739,22 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
     align-items: flex-end;
     padding: 0;
   }
+  .whatsapp-confirm-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
   .modal,
-  .checkout-modal {
+  .checkout-modal,
+  .whatsapp-confirm-modal {
     max-width: none;
     border-radius: 16px 16px 0 0;
     max-height: 92dvh;
     overflow-y: auto;
   }
+  .whatsapp-confirm-modal { padding: 24px 18px calc(22px + env(safe-area-inset-bottom)); }
+  .whatsapp-confirm-modal h2 { font-size: 28px; }
+  .whatsapp-confirm-actions { flex-direction: column; }
+  .btn-whatsapp-later { width: 100%; }
   .modal-img { height: 210px; }
   .modal-body { padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); }
   .modal-body h2 { font-size: 28px; line-height: 1.05; }
@@ -965,6 +1019,19 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   </div>
 </div>
 
+<!-- CONFIRMAR WHATSAPP -->
+<div class="whatsapp-confirm-overlay" id="whatsappConfirmOverlay" onclick="onWhatsAppConfirmOverlayClick(event)">
+  <div class="whatsapp-confirm-modal">
+    <div class="whatsapp-confirm-kicker">Pedido registrado</div>
+    <h2 id="whatsappConfirmTitle">Pedido listo</h2>
+    <p id="whatsappConfirmText">Ahora confirmalo por WhatsApp para coordinar la entrega.</p>
+    <div class="whatsapp-confirm-actions">
+      <button class="btn-whatsapp-later" onclick="closeWhatsAppConfirm()">Ahora no</button>
+      <button class="btn-whatsapp-confirm" onclick="confirmWhatsAppOrder()">Confirmar por WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <!-- FAB MOBILE -->
 <button id="cartFab" onclick="toggleCartMobile()">
   🛒
@@ -984,6 +1051,7 @@ const API = "https://kizuna-api-8ja8.onrender.com";
 const CATS = ["rolls","combos","veggie","bandejas","extras"];
 let products = [], cart = [], settings = {};
 let modalProduct = null, modalQty = 1;
+let pendingWhatsAppUrl = "";
 
 function getAvailableUnits(product) {
   const recipe = product.stockItems || [];
@@ -1267,6 +1335,30 @@ function onCheckoutOverlayClick(e) {
   if (e.target === document.getElementById("checkoutOverlay")) closeCheckout();
 }
 
+function openWhatsAppConfirm(orderNumber, whatsappUrl) {
+  pendingWhatsAppUrl = whatsappUrl;
+  document.getElementById("whatsappConfirmTitle").textContent =
+    orderNumber ? `Pedido #${orderNumber} registrado` : "Pedido registrado";
+  document.getElementById("whatsappConfirmText").textContent =
+    "Tu pedido ya quedó cargado. Confirmalo por WhatsApp para que podamos coordinarlo.";
+  document.getElementById("whatsappConfirmOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeWhatsAppConfirm() {
+  document.getElementById("whatsappConfirmOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function onWhatsAppConfirmOverlayClick(e) {
+  if (e.target === document.getElementById("whatsappConfirmOverlay")) closeWhatsAppConfirm();
+}
+
+function confirmWhatsAppOrder() {
+  if (!pendingWhatsAppUrl) return;
+  location.href = pendingWhatsAppUrl;
+}
+
 function goToStep1(silent) {
   document.getElementById("step1").classList.add("active");
   document.getElementById("step2").classList.remove("active");
@@ -1496,7 +1588,7 @@ async function sendWhatsApp() {
       toast(`✅ Pedido #${order.number || ""} registrado`);
 
       const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
-      location.href = `https://wa.me/${whatsappNumber}?text=${enc(msg)}`;
+      openWhatsAppConfirm(order.number, `https://wa.me/${whatsappNumber}?text=${enc(msg)}`);
     } else {
       const data = await res.json();
       toast(`❌ ${data.error || "Error al registrar el pedido"}`);
