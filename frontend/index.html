@@ -1458,12 +1458,18 @@ async function sendWhatsApp() {
     paymentMethod
   };
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 18000);
+
   try {
     const res = await fetch(`${API}/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderPayload)
+      body: JSON.stringify(orderPayload),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+
     if (res.ok) {
       const order = await res.json();
       const enc = encodeURIComponent;
@@ -1488,7 +1494,6 @@ async function sendWhatsApp() {
       updateCart();
       closeCheckout();
       toast(`✅ Pedido #${order.number || ""} registrado`);
-      load();
 
       const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
       location.href = `https://wa.me/${whatsappNumber}?text=${enc(msg)}`;
@@ -1498,7 +1503,11 @@ async function sendWhatsApp() {
       btn.disabled = false; btn.textContent = "Enviar pedido";
     }
   } catch (err) {
-    toast("❌ Error de conexión. Intentá de nuevo.");
+    clearTimeout(timeoutId);
+    const message = err.name === "AbortError"
+      ? "❌ El servidor tardó demasiado. Probá de nuevo."
+      : "❌ Error de conexión. Intentá de nuevo.";
+    toast(message);
     btn.disabled = false; btn.textContent = "Enviar pedido";
   }
 }
