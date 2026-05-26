@@ -518,18 +518,235 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px) {
-  header { padding: 14px 5%; }
-  nav { display: none; }
-  .hero h1 { font-size: 60px; letter-spacing: 4px; }
-  .tabs { padding: 0 5%; }
-  .menu-body { padding: 48px 5% 100px; }
-  .section-title { font-size: 34px; }
-  .grid { grid-template-columns: 1fr; }
-  #cart { display: none; }
-  #cart.mobile-open { display: block; width: 92%; right: 4%; bottom: 86px; max-height: 60vh; }
-  #cartFab { display: flex; }
-  .modal { border-radius: 14px 14px 0 0; }
-  .modal-overlay { align-items: flex-end; padding: 0; }
+  body.cart-open { overflow: hidden; }
+
+  header {
+    padding: 10px 4% 8px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  header > div {
+    justify-content: space-between;
+    min-height: 38px;
+  }
+  header > div img {
+    max-width: 152px;
+    height: auto !important;
+    margin-right: 8px !important;
+  }
+  #statusBadge {
+    margin-left: 8px !important;
+    padding: 4px 10px !important;
+    font-size: 10px !important;
+    white-space: nowrap;
+  }
+  nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 0 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav a {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    border: 0.5px solid rgba(0,0,0,.1);
+    border-radius: 999px;
+    background: rgba(255,255,255,.78);
+    font-size: 10px;
+    letter-spacing: 1px;
+    opacity: .72;
+  }
+
+  .hero {
+    height: 78vh;
+    min-height: 540px;
+    padding: 118px 8% 56px;
+  }
+  .hero-content img { width: min(330px, 82vw) !important; }
+  .hero h1 { font-size: 52px; letter-spacing: 3px; }
+  .hero p { font-size: 10px; letter-spacing: 3px; }
+  .hero-scroll { bottom: 18px; }
+
+  .tabs { padding: 0 4%; }
+  .menu-body { padding: 38px 4% 120px; }
+  .cat-section { scroll-margin-top: 112px; }
+  .cat-section + .cat-section { margin-top: 42px; }
+  .section-header {
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    justify-content: space-between;
+  }
+  .section-title { font-size: 32px; }
+  .section-count { font-size: 10px; letter-spacing: 1.4px; }
+  .grid { grid-template-columns: 1fr; gap: 12px; }
+  .skeleton { height: 148px; }
+
+  .card {
+    display: grid;
+    grid-template-columns: 118px minmax(0, 1fr);
+    min-height: 142px;
+    border-radius: 8px;
+  }
+  .card:hover { transform: none; box-shadow: var(--shadow-card); }
+  .card-img-wrap { height: 100%; min-height: 142px; }
+  .card-img-wrap img { transition: none; }
+  .card:hover .card-img-wrap img { transform: none; }
+  .card-quick { display: none; }
+  .card-tag {
+    top: 8px;
+    left: 8px;
+    padding: 3px 7px;
+    font-size: 8px;
+  }
+  .card-body {
+    padding: 13px 13px 12px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .card-body h3 {
+    font-size: 19px;
+    line-height: 1.08;
+    margin-bottom: 5px;
+  }
+  .card-desc {
+    font-size: 11.5px;
+    line-height: 1.45;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-bottom {
+    margin-top: auto;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .price { font-size: 22px; }
+  .btn-add {
+    min-height: 40px;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  #cart {
+    display: block;
+    width: 100%;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    max-height: min(74dvh, 620px);
+    padding: 20px 18px calc(22px + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+    transform: translateY(110%);
+    opacity: 1;
+    pointer-events: none;
+    z-index: 520;
+  }
+  #cart.mobile-open {
+    transform: translateY(0);
+    pointer-events: all;
+  }
+  .cart-header { margin-bottom: 12px; padding-bottom: 12px; }
+  .cart-item { gap: 12px; }
+  .cart-item-name { font-size: 14px; line-height: 1.25; }
+  .qty button { width: 34px; height: 34px; }
+  #btnConfirm { min-height: 48px; }
+
+  #cartFab {
+    display: flex;
+    right: 4%;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: 92%;
+    height: 54px;
+    border-radius: 999px;
+    gap: 8px;
+    font-size: 18px;
+    z-index: 510;
+    box-shadow: 0 12px 34px rgba(0,0,0,.28);
+  }
+  #cartFab::before {
+    content: "Ver pedido";
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+  }
+  #cartFab:hover { transform: none; }
+  #fabCount {
+    position: static;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .modal-overlay,
+  .checkout-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal,
+  .checkout-modal {
+    max-width: none;
+    border-radius: 16px 16px 0 0;
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+  .modal-img { height: 210px; }
+  .modal-body { padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); }
+  .modal-body h2 { font-size: 28px; line-height: 1.05; }
+  .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .modal-add-btn { min-height: 48px; }
+  .modal-added { text-align: center; }
+
+  .checkout-head { padding: 18px 18px 14px; }
+  .checkout-head h2 { font-size: 24px; }
+  .checkout-steps { margin: 0 18px 18px !important; }
+  .checkout-body { padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); }
+  .checkout-step { gap: 18px; }
+  .delivery-opt,
+  .payment-opt {
+    padding: 13px 8px;
+    min-height: 72px;
+  }
+  .datetime-row { grid-template-columns: 1fr; }
+  .checkout-select,
+  #addressInput,
+  #clientName {
+    min-height: 46px;
+    font-size: 16px;
+  }
+  .btn-nav-row {
+    position: sticky;
+    bottom: 0;
+    background: var(--white);
+    padding-top: 10px;
+  }
+  .btn-back,
+  .btn-next,
+  #btnCheckoutConfirm {
+    min-height: 48px;
+  }
+}
+
+@media(max-width:420px) {
+  .hero { min-height: 500px; }
+  .card { grid-template-columns: 106px minmax(0, 1fr); }
+  .card-img-wrap { min-height: 136px; }
+  .card-body h3 { font-size: 18px; }
+  .card-desc { font-size: 11px; }
 }
 </style>
 </head>
@@ -791,7 +1008,7 @@ const navLinks = document.querySelectorAll("nav a");
 const sections = CATS.map(cat => document.getElementById("cat-" + cat));
 
 function updateNavHighlight() {
-  const scrollY = window.scrollY + 100;
+  const scrollY = window.scrollY + (window.matchMedia("(max-width: 768px)").matches ? 132 : 100);
   let active = null;
   sections.forEach((sec, i) => {
     if (sec && sec.offsetTop <= scrollY) active = i;
@@ -806,7 +1023,8 @@ document.querySelectorAll("nav a").forEach(a => {
     e.preventDefault();
     const target = document.querySelector(a.getAttribute("href"));
     if (!target) return;
-    const offset = target.getBoundingClientRect().top + window.scrollY - 72;
+    const offset = target.getBoundingClientRect().top + window.scrollY -
+      (window.matchMedia("(max-width: 768px)").matches ? 112 : 72);
     window.scrollTo({ top: offset, behavior: "smooth" });
   });
 });
@@ -986,6 +1204,10 @@ function updateCart() {
   document.getElementById("cartCount").textContent = count;
   document.getElementById("fabCount").textContent = count;
   document.getElementById("btnConfirm").disabled = cart.length === 0;
+  if (!cart.length) {
+    document.getElementById("cart").classList.remove("mobile-open");
+    document.body.classList.remove("cart-open");
+  }
 }
 
 function changeCartQty(id, delta) {
@@ -1000,7 +1222,9 @@ function changeCartQty(id, delta) {
 }
 
 function toggleCartMobile() {
-  document.getElementById("cart").classList.toggle("mobile-open");
+  const cartEl = document.getElementById("cart");
+  cartEl.classList.toggle("mobile-open");
+  document.body.classList.toggle("cart-open", cartEl.classList.contains("mobile-open"));
 }
 
 /* ── CHECKOUT ── */
@@ -1009,6 +1233,8 @@ let paymentMethod = ""; // "transfer" | "cash"
 
 function openCheckout() {
   if (!cart.length) return;
+  document.getElementById("cart").classList.remove("mobile-open");
+  document.body.classList.remove("cart-open");
   deliveryType = "retiro";
   paymentMethod = "";
   document.getElementById("optRetiro").classList.add("selected");
