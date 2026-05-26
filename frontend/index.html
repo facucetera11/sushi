@@ -368,6 +368,14 @@ nav a:hover { opacity: 1; }
 }
 #addressInput:focus { border-color: var(--navy); }
 #addressInput::placeholder { color: rgba(0,0,0,.28); }
+.checkout-textarea {
+  width: 100%; min-height: 86px; padding: 12px 14px; border-radius: 6px;
+  border: 0.5px solid rgba(0,0,0,.18); background: transparent;
+  font-family: 'Jost', sans-serif; font-size: 13px; color: var(--navy);
+  resize: vertical; outline: none; transition: border-color .15s; line-height: 1.45;
+}
+.checkout-textarea:focus { border-color: var(--navy); }
+.checkout-textarea::placeholder { color: rgba(0,0,0,.28); }
 
 /* fecha y hora */
 .datetime-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -772,7 +780,8 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .datetime-row { grid-template-columns: 1fr; }
   .checkout-select,
   #addressInput,
-  #clientName {
+  #clientName,
+  .checkout-textarea {
     min-height: 46px;
     font-size: 16px;
   }
@@ -956,6 +965,10 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
           <input id="clientName" type="text" placeholder="¿Cómo te llamás?">
         </div>
         <div>
+          <div class="checkout-label">Nota especial</div>
+          <textarea id="orderNotes" class="checkout-textarea" maxlength="240" placeholder="Ej: sin salsa de soja, sin wasabi, aclaraciones del pedido..."></textarea>
+        </div>
+        <div>
           <div class="checkout-label">¿Cuándo querés recibirlo?</div>
           <div class="datetime-row">
             <select class="checkout-select" id="deliveryDate"></select>
@@ -1096,6 +1109,16 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function escapeHtml(value) {
+  return String(value || "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  }[ch]));
 }
 
 /* ── LOAD ── */
@@ -1310,6 +1333,7 @@ function openCheckout() {
   document.getElementById("addressRow").classList.remove("show");
   document.getElementById("addressInput").value = "";
   document.getElementById("clientName").value = "";
+  document.getElementById("orderNotes").value = "";
   populateDateTimeSelects();
   // Reset to step 1
   goToStep1(true);
@@ -1469,6 +1493,7 @@ function populateDateTimeSelects() {
 
 function updateCheckoutSummary() {
   const name = (document.getElementById("clientName").value || "").trim();
+  const notes = (document.getElementById("orderNotes").value || "").trim();
   const date = document.getElementById("deliveryDate")?.options[document.getElementById("deliveryDate").selectedIndex]?.text || "";
   const time = document.getElementById("deliveryTime")?.value || "";
   const address = document.getElementById("addressInput")?.value.trim() || "";
@@ -1477,27 +1502,31 @@ function updateCheckoutSummary() {
   const isCash = paymentMethod === "cash";
   const saving = isCash ? Math.round(base * discount / 100) : 0;
   const final = base - saving;
+  const safeName = escapeHtml(name);
+  const safeAddress = escapeHtml(address);
+  const safeNotes = escapeHtml(notes);
 
   const itemsText = cart.map(i => `<strong>${i.name}</strong> ×${i.qty}`).join(", ");
   const entrega = deliveryType === "delivery"
-    ? `🛵 Delivery${address ? ` a <strong>${address}</strong>` : ""}`
+    ? `🛵 Delivery${address ? ` a <strong>${safeAddress}</strong>` : ""}`
     : `🏃 Retiro en local`;
   const pagoText = paymentMethod === "transfer" ? "🏦 Transferencia / MP"
     : paymentMethod === "cash" ? "💵 Efectivo"
     : "—";
 
   document.getElementById("checkoutSummary").innerHTML = `
-    ${name ? `👤 <strong>${name}</strong><br>` : ""}
+    ${name ? `👤 <strong>${safeName}</strong><br>` : ""}
     ${entrega}<br>
     📅 ${date} a las ${time}<br>
     💳 ${pagoText}<br>
+    ${notes ? `📝 <strong>Nota:</strong> ${safeNotes}<br>` : ""}
     🛒 ${itemsText}<br>
     💰 Total: <strong>$${final.toLocaleString("es-AR")}</strong>${saving > 0 ? ` <span style="color:#1a6b3a;font-size:11px;">(ahorrás $${saving.toLocaleString("es-AR")})</span>` : ""}
   `;
 }
 
 document.addEventListener("input", e => {
-  if (e.target.id === "clientName" || e.target.id === "addressInput") updateCheckoutSummary();
+  if (e.target.id === "clientName" || e.target.id === "addressInput" || e.target.id === "orderNotes") updateCheckoutSummary();
 });
 
 /* ── WHATSAPP ── */
@@ -1508,6 +1537,7 @@ async function sendWhatsApp() {
 
   const clientName = document.getElementById("clientName").value.trim();
   const address = document.getElementById("addressInput").value.trim();
+  const notes = document.getElementById("orderNotes").value.trim();
   const dateEl = document.getElementById("deliveryDate");
   const timeEl = document.getElementById("deliveryTime");
   const dateText = dateEl?.options[dateEl.selectedIndex]?.text || "";
@@ -1529,7 +1559,7 @@ async function sendWhatsApp() {
   const orderPayload = {
     items: snapshot, total,
     deliveryType, address: deliveryType === "delivery" ? address : "",
-    clientName, scheduledDate: dateText, scheduledTime: timeText,
+    clientName, notes, scheduledDate: dateText, scheduledTime: timeText,
     paymentMethod
   };
 
@@ -1557,6 +1587,7 @@ async function sendWhatsApp() {
         : `🏃 *Retiro en local*\n`;
       msg += `📅 ${dateText} a las ${timeText}\n`;
       msg += `💳 *Pago: ${pagoLabel}*\n\n`;
+      if (notes) msg += `📝 *Nota:* ${notes}\n\n`;
       snapshot.forEach(i => {
         msg += `• ${i.name} ×${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}\n`;
       });

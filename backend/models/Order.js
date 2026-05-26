@@ -16,6 +16,7 @@ const OrderSchema=new mongoose.Schema({
   deliveryType: { type: String, default: "retiro" }, // "retiro" | "delivery"
   address: { type: String, default: "" },
   clientName: { type: String, default: "" },
+  notes: { type: String, default: "" },
   scheduledDate: { type: String, default: "" },
   scheduledTime: { type: String, default: "" },
   paymentMethod: { type: String, default: "transfer" }, // "transfer" | "cash"

@@ -87,7 +87,7 @@ app.get("/orders", async (req, res) => {
 
 app.post("/orders", async (req, res) => {
   try {
-    const { items, total, deliveryType, address, clientName, scheduledDate, scheduledTime, paymentMethod } = req.body;
+    const { items, total, deliveryType, address, clientName, notes, scheduledDate, scheduledTime, paymentMethod } = req.body;
 
     if (!Array.isArray(items) || !items.length) {
       return res.status(400).json({ error: "El pedido no tiene productos" });
@@ -129,6 +129,7 @@ app.post("/orders", async (req, res) => {
       deliveryType: deliveryType || "retiro",
       address: address || "",
       clientName: clientName || "",
+      notes: notes || "",
       scheduledDate: scheduledDate || "",
       scheduledTime: scheduledTime || "",
       paymentMethod: paymentMethod || "transfer",
