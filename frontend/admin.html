@@ -406,6 +406,16 @@ function toast(msg, type = "") {
   setTimeout(() => t.className = "", 2500);
 }
 
+function escapeHtml(value) {
+  return String(value || "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  }[ch]));
+}
+
 /* ── LOAD ALL ── */
 async function loadAll() {
   try {
@@ -555,6 +565,94 @@ async function saveNote(id) {
   const notes = document.getElementById(`note-${id}`)?.value || "";
   await fetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ notes }) });
   toast("✓ Nota guardada", "success");
+}
+
+function printOrder(id) {
+  const order = allOrders.find(o => o._id === id);
+  if (!order) { toast("No encontre el pedido para imprimir", "error"); return; }
+
+  const createdAt = new Date(order.createdAt);
+  const date = createdAt.toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"2-digit" });
+  const time = createdAt.toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
+  const delivery = order.deliveryType === "delivery" ? "Delivery" : "Retiro en local";
+  const payment = order.paymentMethod === "cash" ? "Efectivo" : "Transferencia";
+  const items = (order.items || []).map(item => `
+    <tr>
+      <td>${escapeHtml(item.name)} x${item.qty}</td>
+      <td class="right">$${Number(item.price * item.qty || 0).toLocaleString("es-AR")}</td>
+    </tr>
+  `).join("");
+  const notes = (document.getElementById(`note-${id}`)?.value || order.notes || "").trim();
+
+  const html = `<!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <title>Pedido #${order.number}</title>
+    <style>
+      @page { size: 80mm auto; margin: 5mm; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, sans-serif; color: #111; font-size: 12px; }
+      .ticket { width: 70mm; margin: 0 auto; }
+      .center { text-align: center; }
+      h1 { font-size: 19px; margin: 0 0 4px; }
+      h2 { font-size: 16px; margin: 8px 0 6px; }
+      .muted { color: #555; font-size: 11px; }
+      .line { border-top: 1px dashed #111; margin: 10px 0; }
+      table { width: 100%; border-collapse: collapse; }
+      td { padding: 3px 0; vertical-align: top; }
+      .right { text-align: right; white-space: nowrap; }
+      .total { font-size: 16px; font-weight: 700; }
+      .block { margin: 5px 0; }
+      .label { font-weight: 700; }
+      .note { white-space: pre-wrap; border: 1px dashed #111; padding: 6px; margin-top: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="ticket">
+      <div class="center">
+        <h1>Kizuna Sushi</h1>
+        <div class="muted">Pedido #${order.number}</div>
+        <div class="muted">${date} ${time}</div>
+      </div>
+      <div class="line"></div>
+      <div class="block"><span class="label">Cliente:</span> ${escapeHtml(order.clientName || "-")}</div>
+      <div class="block"><span class="label">Entrega:</span> ${delivery}</div>
+      ${order.address ? `<div class="block"><span class="label">Direccion:</span> ${escapeHtml(order.address)}</div>` : ""}
+      ${order.scheduledDate || order.scheduledTime ? `<div class="block"><span class="label">Horario:</span> ${escapeHtml(order.scheduledDate || "")} ${escapeHtml(order.scheduledTime || "")}</div>` : ""}
+      <div class="block"><span class="label">Pago:</span> ${payment}</div>
+      <div class="line"></div>
+      <h2>Items</h2>
+      <table>${items}</table>
+      <div class="line"></div>
+      <table>
+        <tr class="total">
+          <td>Total</td>
+          <td class="right">$${Number(order.total || 0).toLocaleString("es-AR")}</td>
+        </tr>
+      </table>
+      ${notes ? `<div class="line"></div><div class="label">Nota</div><div class="note">${escapeHtml(notes)}</div>` : ""}
+      <div class="line"></div>
+      <div class="center muted">Gracias por tu pedido</div>
+    </div>
+    <script>
+      window.onload = () => {
+        window.focus();
+        window.print();
+        setTimeout(() => window.close(), 400);
+      };
+    <\/script>
+  </body>
+  </html>`;
+
+  const printWindow = window.open("", "_blank", "width=420,height=700");
+  if (!printWindow) {
+    toast("El navegador bloqueo la ventana de impresion", "error");
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 }
 
 function toggleHistory() {
