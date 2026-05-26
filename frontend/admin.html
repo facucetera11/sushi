@@ -592,28 +592,50 @@ async function saveTransfer() {
 function getRecipeText(product, products) {
   const recipe = product.stockItems || [];
   return recipe.map(item => {
-    const id = item.product?._id || item.product;
+    const id = String(item.product?._id || item.product);
     const stockProduct = products.find(p => p._id === id);
     return `${stockProduct?.name || id}: ${item.pieces}`;
   }).join("\n");
 }
 
+function normalizeName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function findRecipeProduct(productNameOrId, products) {
+  const wanted = normalizeName(productNameOrId);
+  return products.find(p => p._id === productNameOrId)
+    || products.find(p => normalizeName(p.name) === wanted)
+    || products.find(p => normalizeName(p.name).includes(wanted) || wanted.includes(normalizeName(p.name)));
+}
+
 function parseStockItems(text, products) {
-  return text.split("\n").map(line => line.trim()).filter(Boolean).map(line => {
+  const invalid = [];
+  const items = text.split("\n").map(line => line.trim()).filter(Boolean).map(line => {
     const match = line.match(/^(.+?)(?::|=|-)\s*(\d+)$/);
-    if (!match) return null;
+    if (!match) { invalid.push(line); return null; }
     const productNameOrId = match[1].trim();
-    const product = products.find(p => p.name.trim().toLowerCase() === productNameOrId.toLowerCase() || p._id === productNameOrId);
+    const product = findRecipeProduct(productNameOrId, products);
     const pieces = Number(match[2]);
+    if (!product || pieces <= 0) invalid.push(line);
     return product && pieces > 0 ? { product: product._id, pieces } : null;
   }).filter(Boolean);
+  if (invalid.length) {
+    throw new Error(`No pude guardar estas lineas de receta: ${invalid.join(", ")}`);
+  }
+  return items;
 }
 
 function availableUnits(product, products) {
   const recipe = product.stockItems || [];
   if (!recipe.length) return Math.floor((product.stock || 0) / (product.piecesPerUnit || 1));
   return Math.min(...recipe.map(item => {
-    const id = item.product?._id || item.product;
+    const id = String(item.product?._id || item.product);
     const stockProduct = products.find(p => p._id === id);
     return stockProduct ? Math.floor((stockProduct.stock || 0) / item.pieces) : 0;
   }));
@@ -687,7 +709,7 @@ function renderProducts(products) {
           <textarea id="de-${p._id}">${p.description||''}</textarea>
           <div class="label" style="font-size:11px;margin-bottom:4px;">Receta de stock (opcional)</div>
           <textarea id="si-${p._id}" placeholder="Philadelphia Roll: 5&#10;California Roll: 5">${getRecipeText(p, products)}</textarea>
-          <select id="ca-${p._id}" onchange="loadAll()">
+          <select id="ca-${p._id}">
             ${["rolls","combos","veggie","bandejas","extras"].map(c=>`<option ${p.category===c?"selected":""} value="${c}">${c}</option>`).join("")}
           </select>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
@@ -700,6 +722,7 @@ function renderProducts(products) {
 }
 
 async function addProduct() {
+  try {
   const products = await fetch(`${API}/products`).then(r => r.json());
   const category = document.getElementById("categoryInput").value;
   const piecesPerUnit = +document.getElementById("piecesInput").value || (["rolls","veggie"].includes(category) ? 8 : 1);
@@ -710,8 +733,12 @@ async function addProduct() {
   await fetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   ["nameInput","priceInput","stockInput","piecesInput","stockItemsInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
   toast("✓ Producto agregado","success"); loadAll();
+  } catch (err) {
+    toast(err.message || "Error al guardar receta", "error");
+  }
 }
 async function updateProduct(id) {
+  try {
   const products = await fetch(`${API}/products`).then(r => r.json());
   const current = products.find(p => p._id === id);
   const category = document.getElementById(`ca-${id}`).value;
@@ -720,6 +747,9 @@ async function updateProduct(id) {
   const stock = usesRecipeStock({ category }) ? 0 : current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
   await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems:parseStockItems(document.getElementById(`si-${id}`).value, products),image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
   toast("✓ Guardado","success"); loadAll();
+  } catch (err) {
+    toast(err.message || "Error al guardar receta", "error");
+  }
 }
 async function updateStockOnly(id) {
   const products = await fetch(`${API}/products`).then(r => r.json());
