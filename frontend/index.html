@@ -1057,6 +1057,7 @@ const CATS = ["rolls","combos","veggie","bandejas","extras"];
 let products = [], cart = [], settings = {};
 let modalProduct = null, modalQty = 1;
 let pendingWhatsAppUrl = "";
+let pendingWhatsAppFallbackUrl = "";
 
 function getAvailableUnits(product) {
   const recipe = product.stockItems || [];
@@ -1351,8 +1352,9 @@ function onCheckoutOverlayClick(e) {
   if (e.target === document.getElementById("checkoutOverlay")) closeCheckout();
 }
 
-function openWhatsAppConfirm(orderNumber, whatsappUrl) {
+function openWhatsAppConfirm(orderNumber, whatsappUrl, fallbackUrl) {
   pendingWhatsAppUrl = whatsappUrl;
+  pendingWhatsAppFallbackUrl = fallbackUrl || whatsappUrl;
   document.getElementById("whatsappConfirmTitle").textContent =
     orderNumber ? `Pedido #${orderNumber} registrado` : "Pedido registrado";
   document.getElementById("whatsappConfirmText").textContent =
@@ -1364,6 +1366,11 @@ function openWhatsAppConfirm(orderNumber, whatsappUrl) {
 function confirmWhatsAppOrder() {
   if (!pendingWhatsAppUrl) return;
   location.href = pendingWhatsAppUrl;
+  setTimeout(() => {
+    if (document.visibilityState === "visible" && pendingWhatsAppFallbackUrl) {
+      location.href = pendingWhatsAppFallbackUrl;
+    }
+  }, 1200);
 }
 
 function goToStep1(silent) {
@@ -1602,7 +1609,12 @@ async function sendWhatsApp() {
       toast(`✅ Pedido #${order.number || ""} registrado`);
 
       const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
-      openWhatsAppConfirm(order.number, `https://wa.me/${whatsappNumber}?text=${enc(msg)}`);
+      const whatsappText = enc(msg);
+      openWhatsAppConfirm(
+        order.number,
+        `whatsapp://send?phone=${whatsappNumber}&text=${whatsappText}`,
+        `https://wa.me/${whatsappNumber}?text=${whatsappText}`
+      );
     } else {
       const data = await res.json();
       toast(`❌ ${data.error || "Error al registrar el pedido"}`);
