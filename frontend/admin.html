@@ -149,6 +149,12 @@ textarea{height:80px;resize:vertical;}
 .stock-card .stock-meta{font-size:12px;opacity:.5;margin-bottom:10px;}
 .stock-deductions{margin:10px 0 12px;padding:10px 12px;background:rgba(216,106,94,.06);border-radius:12px;font-size:12px;color:rgba(22,32,74,.72);line-height:1.6;}
 .stock-deductions strong{display:block;color:var(--red);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.recipe-editor{display:flex;flex-direction:column;gap:8px;margin:8px 0 10px;}
+.recipe-row{display:grid;grid-template-columns:1fr 78px 34px;gap:7px;align-items:center;}
+.recipe-row select,.recipe-row input{margin-bottom:0;padding:10px 11px;font-size:12px;}
+.recipe-remove{width:34px;height:34px;border:none;border-radius:10px;background:rgba(216,106,94,.12);color:var(--red);font-weight:900;cursor:pointer;}
+.recipe-add{width:100%;padding:10px;border:none;border-radius:12px;background:rgba(22,32,74,.07);color:var(--navy);font-weight:800;font-size:12px;cursor:pointer;}
+.recipe-add:hover{background:rgba(22,32,74,.13);}
 
 @media(max-width:768px){
   #adminMain{padding:30px 4%;}
@@ -271,7 +277,13 @@ textarea{height:80px;resize:vertical;}
     </div>
     <div><div class="label">URL imagen</div><input id="imageInput" placeholder="https://..."></div>
     <div><div class="label">Descripción</div><textarea id="descInput" placeholder="Descripción del producto..."></textarea></div>
-    <div><div class="label">Receta de stock (opcional)</div><textarea id="stockItemsInput" placeholder="Ej:&#10;Philadelphia Roll: 5&#10;California Roll: 5"></textarea></div>
+    <div class="new-recipe-field" style="display:none;">
+      <div class="label">Componentes de stock</div>
+      <div class="recipe-editor">
+        <div id="recipeRows-new"></div>
+        <button class="recipe-add" onclick="addRecipeRow('new')">Agregar roll al combo</button>
+      </div>
+    </div>
     <button class="btn btn-primary" onclick="addProduct()">Agregar producto</button>
   </div>
 
@@ -289,6 +301,7 @@ const API = "https://kizuna-api-8ja8.onrender.com";
 const SESSION_KEY = "kizuna_admin_auth";
 const DAYS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 let openDays = [], refreshTimer = null;
+let allProducts = [];
 let lastOrderCount = null;
 let soundEnabled = localStorage.getItem("kizuna_sound") !== "off";
 let audioCtx = null;
@@ -400,6 +413,7 @@ async function loadAll() {
       fetch(`${API}/orders`).then(r => r.json()),
       fetch(`${API}/settings`).then(r => r.json())
     ]);
+    allProducts = products;
 
     // Detectar pedidos nuevos
     const activeCount = orders.filter(o => o.status !== "Entregado").length;
@@ -631,6 +645,55 @@ function parseStockItems(text, products) {
   return items;
 }
 
+function recipeProductOptions(selectedId = "") {
+  const stockProducts = allProducts.filter(isStockType);
+  return `<option value="">Elegir roll</option>` + stockProducts.map(p =>
+    `<option value="${p._id}" ${p._id === selectedId ? "selected" : ""}>${p.name}</option>`
+  ).join("");
+}
+
+function recipeRowHTML(productId, selectedId = "", pieces = 5) {
+  return `<div class="recipe-row" data-recipe-row="${productId}">
+    <select data-recipe-product>${recipeProductOptions(selectedId)}</select>
+    <input data-recipe-pieces type="number" min="1" value="${pieces || 1}" title="Piezas">
+    <button class="recipe-remove" onclick="removeRecipeRow(this)">×</button>
+  </div>`;
+}
+
+function recipeEditorHTML(product) {
+  if (!usesRecipeStock(product)) return "";
+  const rows = (product.stockItems || []).map(item => {
+    const id = String(item.product?._id || item.product);
+    return recipeRowHTML(product._id, id, item.pieces);
+  }).join("");
+  return `<div class="label" style="font-size:11px;margin-bottom:4px;">Componentes de stock</div>
+    <div class="recipe-editor">
+      <div id="recipeRows-${product._id}">${rows}</div>
+      <button class="recipe-add" onclick="addRecipeRow('${product._id}')">Agregar roll al combo</button>
+    </div>`;
+}
+
+function addRecipeRow(productId) {
+  document.getElementById(`recipeRows-${productId}`).insertAdjacentHTML("beforeend", recipeRowHTML(productId));
+}
+
+function removeRecipeRow(btn) {
+  btn.closest(".recipe-row").remove();
+}
+
+function getRecipeFromEditor(productId) {
+  const rows = [...document.querySelectorAll(`[data-recipe-row="${productId}"]`)];
+  const totals = new Map();
+  rows.forEach(row => {
+    const product = row.querySelector("[data-recipe-product]").value;
+    const pieces = +row.querySelector("[data-recipe-pieces]").value;
+    if (!product && !pieces) return;
+    if (!product || !pieces || pieces <= 0) throw new Error("Completá roll y piezas en la receta");
+    totals.set(product, (totals.get(product) || 0) + pieces);
+  });
+  return [...totals].map(([product, pieces]) => ({ product, pieces }));
+}
+
 function availableUnits(product, products) {
   const recipe = product.stockItems || [];
   if (!recipe.length) return Math.floor((product.stock || 0) / (product.piecesPerUnit || 1));
@@ -657,6 +720,9 @@ function toggleNewProductStockFields() {
   const category = document.getElementById("categoryInput").value;
   document.querySelectorAll(".unit-stock-field").forEach(el => {
     el.style.display = ["combos", "bandejas"].includes(category) ? "none" : "block";
+  });
+  document.querySelectorAll(".new-recipe-field").forEach(el => {
+    el.style.display = ["combos", "bandejas"].includes(category) ? "block" : "none";
   });
 }
 
@@ -707,8 +773,7 @@ function renderProducts(products) {
           </div>
           <input id="im-${p._id}" value="${p.image||''}" placeholder="URL imagen">
           <textarea id="de-${p._id}">${p.description||''}</textarea>
-          <div class="label" style="font-size:11px;margin-bottom:4px;">Receta de stock (opcional)</div>
-          <textarea id="si-${p._id}" placeholder="Philadelphia Roll: 5&#10;California Roll: 5">${getRecipeText(p, products)}</textarea>
+          ${recipeEditorHTML(p)}
           <select id="ca-${p._id}">
             ${["rolls","combos","veggie","bandejas","extras"].map(c=>`<option ${p.category===c?"selected":""} value="${c}">${c}</option>`).join("")}
           </select>
@@ -728,10 +793,13 @@ async function addProduct() {
   const piecesPerUnit = +document.getElementById("piecesInput").value || (["rolls","veggie"].includes(category) ? 8 : 1);
   const stockUnits = +document.getElementById("stockInput").value || 0;
   const stock = ["combos","bandejas"].includes(category) ? 0 : ["rolls","veggie"].includes(category) ? stockUnits * piecesPerUnit : stockUnits;
-  const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems:parseStockItems(document.getElementById("stockItemsInput").value, products), image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
+    const stockItems = ["combos","bandejas"].includes(category) ? getRecipeFromEditor("new") : [];
+    if (["combos","bandejas"].includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
+    const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems, image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
   if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
   await fetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  ["nameInput","priceInput","stockInput","piecesInput","stockItemsInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
+    ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("recipeRows-new").innerHTML = "";
   toast("✓ Producto agregado","success"); loadAll();
   } catch (err) {
     toast(err.message || "Error al guardar receta", "error");
@@ -745,7 +813,9 @@ async function updateProduct(id) {
   const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (["rolls","veggie"].includes(category) ? 8 : 1);
   const stockUnits = +document.getElementById(`st-${id}`).value || 0;
   const stock = usesRecipeStock({ category }) ? 0 : current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
-  await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems:parseStockItems(document.getElementById(`si-${id}`).value, products),image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
+    const stockItems = usesRecipeStock({ category }) ? getRecipeFromEditor(id) : [];
+    if (usesRecipeStock({ category }) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
+    await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
   toast("✓ Guardado","success"); loadAll();
   } catch (err) {
     toast(err.message || "Error al guardar receta", "error");
