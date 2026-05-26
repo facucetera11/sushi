@@ -142,6 +142,13 @@ textarea{height:80px;resize:vertical;}
 .btn-save-note:hover{background:var(--navy);color:white;}
 .product-card.stock-low{border:2px solid rgba(216,106,94,.5);background:#fff5f4;}
 .stock-low-badge{display:inline-block;background:rgba(216,106,94,.15);color:var(--red);font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;margin-bottom:8px;}
+.stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.stock-card{background:#f4f5f8;border-radius:16px;padding:16px;border:1px solid rgba(22,32,74,.06);}
+.stock-card h3{font-size:15px;font-weight:800;margin-bottom:10px;}
+.stock-card input{font-size:22px;font-weight:900;color:var(--navy);text-align:center;margin-bottom:8px;}
+.stock-card .stock-meta{font-size:12px;opacity:.5;margin-bottom:10px;}
+.stock-deductions{margin:10px 0 12px;padding:10px 12px;background:rgba(216,106,94,.06);border-radius:12px;font-size:12px;color:rgba(22,32,74,.72);line-height:1.6;}
+.stock-deductions strong{display:block;color:var(--red);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
 
 @media(max-width:768px){
   #adminMain{padding:30px 4%;}
@@ -182,6 +189,12 @@ textarea{height:80px;resize:vertical;}
     <div class="metric"><div class="metric-value" id="mStock">—</div><div class="metric-label">Piezas en stock</div></div>
     <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
     <div class="metric"><div class="metric-value" id="mLowStock" style="color:var(--red)">—</div><div class="metric-label">⚠️ Stock bajo (≤3)</div></div>
+  </div>
+
+  <!-- STOCK POR TIPO -->
+  <div class="panel">
+    <h2>Stock por tipo de sushi</h2>
+    <div class="stock-grid" id="stockGrid"></div>
   </div>
 
   <!-- PEDIDOS ACTIVOS -->
@@ -396,6 +409,7 @@ async function loadAll() {
     lastOrderCount = activeCount;
 
     renderMetrics(products, orders);
+    renderStockInventory(products);
     renderOrders(orders);
     renderSettings(settings);
     renderProducts(products);
@@ -407,18 +421,28 @@ function renderMetrics(products, orders) {
   const today = new Date().toDateString();
   const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
   const revenue = todayOrders.reduce((a, o) => a + o.total, 0);
-  const lowStock = products.filter(p => {
+  const stockTypes = products.filter(isStockType);
+  const lowStock = stockTypes.filter(p => {
     const units = availableUnits(p, products);
     return units > 0 && units <= 3;
   }).length;
   document.getElementById("mProducts").textContent = products.length;
   document.getElementById("mOrders").textContent = todayOrders.length;
-  document.getElementById("mStock").textContent = products.reduce((a, p) => a + p.stock, 0);
+  document.getElementById("mStock").textContent = stockTypes.reduce((a, p) => a + p.stock, 0);
   document.getElementById("mRevenue").textContent = `$${revenue.toLocaleString("es-AR")}`;
   document.getElementById("mLowStock").textContent = lowStock || "—";
 }
 
 /* ── ORDERS ── */
+function orderDeductionsHTML(o) {
+  const deductions = o.stockDeductions || [];
+  if (!deductions.length) return "";
+  return `<div class="stock-deductions">
+    <strong>Piezas descontadas</strong>
+    ${deductions.map(d => `${d.name}: ${d.pieces} piezas`).join("<br>")}
+  </div>`;
+}
+
 function orderCardHTML(o, isDelivered) {
   const fecha = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
   const fechaDia = new Date(o.createdAt).toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit" });
@@ -440,6 +464,7 @@ function orderCardHTML(o, isDelivered) {
     <div class="order-meta">${clientTag}${deliveryTag}${pagoTag}${schedTag}</div>
     ${addressLine}
     <div class="order-items">${itemsList}</div>
+    ${orderDeductionsHTML(o)}
     <div class="order-total">$${o.total.toLocaleString("es-AR")}</div>
     <div class="order-time">🕐 ${fechaDia} · ${fecha}</div>
     ${!isDelivered ? `<select onchange="updateOrder('${o._id}', this.value)">
@@ -594,6 +619,28 @@ function availableUnits(product, products) {
   }));
 }
 
+function isStockType(product) {
+  return ["rolls", "veggie"].includes(product.category);
+}
+
+function renderStockInventory(products) {
+  const stockTypes = products.filter(isStockType);
+  const grid = document.getElementById("stockGrid");
+  if (!grid) return;
+  grid.innerHTML = stockTypes.length ? stockTypes.map(p => {
+    const piecesPerUnit = p.piecesPerUnit || 8;
+    const units = Math.floor((p.stock || 0) / piecesPerUnit);
+    return `
+      <div class="stock-card">
+        <h3>${p.name}</h3>
+        <div class="label">Piezas disponibles</div>
+        <input id="stock-only-${p._id}" type="number" value="${p.stock || 0}">
+        <div class="stock-meta">${units} rolls completos de ${piecesPerUnit} piezas</div>
+        <button class="btn btn-success" onclick="updateStockOnly('${p._id}')">Guardar stock</button>
+      </div>`;
+  }).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay tipos de sushi cargados en Rolls o Veggie.</p>`;
+}
+
 function renderProducts(products) {
   const cats = ["rolls","combos","veggie","bandejas","extras"];
   const catNames = { rolls:"🍣 Rolls", combos:"🎁 Combos", veggie:"🥗 Veggie Rolls", bandejas:"🍱 Bandejas", extras:"➕ Extras" };
@@ -647,6 +694,12 @@ async function updateProduct(id) {
   const products = await fetch(`${API}/products`).then(r => r.json());
   await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock:+document.getElementById(`st-${id}`).value,piecesPerUnit:+document.getElementById(`pp-${id}`).value||1,stockItems:parseStockItems(document.getElementById(`si-${id}`).value, products),image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category:document.getElementById(`ca-${id}`).value})});
   toast("✓ Guardado","success"); loadAll();
+}
+async function updateStockOnly(id) {
+  const stock = +document.getElementById(`stock-only-${id}`).value;
+  if (isNaN(stock) || stock < 0) { toast("IngresÃ¡ un stock vÃ¡lido", "error"); return; }
+  await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
+  toast("âœ“ Stock actualizado","success"); loadAll();
 }
 async function deleteProduct(id) {
   if (!confirm("¿Eliminar este producto?")) return;

@@ -111,12 +111,14 @@ app.post("/orders", async (req, res) => {
 
     const stockProducts = await Product.find({ _id: { $in: [...stockDeductions.keys()] } });
     const stockById = new Map(stockProducts.map(product => [product._id.toString(), product]));
+    const stockDeductionDetails = [];
     for (const [id, pieces] of stockDeductions) {
       const product = stockById.get(id);
       if (!product) return res.status(400).json({ error: "Producto de stock no encontrado" });
       if (product.stock < pieces) {
         return res.status(400).json({ error: `Stock insuficiente para: ${product.name}` });
       }
+      stockDeductionDetails.push({ product: id, name: product.name, pieces });
     }
 
     const last = await Order.findOne().sort({ number: -1 });
@@ -129,7 +131,8 @@ app.post("/orders", async (req, res) => {
       clientName: clientName || "",
       scheduledDate: scheduledDate || "",
       scheduledTime: scheduledTime || "",
-      paymentMethod: paymentMethod || "transfer"
+      paymentMethod: paymentMethod || "transfer",
+      stockDeductions: stockDeductionDetails
     });
     await order.save();
 

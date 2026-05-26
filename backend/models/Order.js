@@ -3,6 +3,14 @@ const mongoose=require("mongoose");
 const OrderSchema=new mongoose.Schema({
   number: Number,
   items: Array,
+  stockDeductions: {
+    type: [{
+      product: String,
+      name: String,
+      pieces: Number
+    }],
+    default: []
+  },
   total: Number,
   status: { type: String, default: "Pendiente" },
   deliveryType: { type: String, default: "retiro" }, // "retiro" | "delivery"
