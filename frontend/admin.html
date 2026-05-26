@@ -92,6 +92,10 @@ select:focus{outline:2px solid var(--red);}
 .day-btn{padding:8px 16px;border-radius:12px;border:none;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:13px;cursor:pointer;transition:.2s;}
 .day-btn.active{background:var(--navy);color:white;}
 .day-btn:hover:not(.active){background:rgba(22,32,74,.14);}
+.store-status-box{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:18px 20px;border-radius:16px;background:rgba(22,32,74,.04);border:1.5px solid rgba(22,32,74,.08);margin-bottom:18px;}
+.store-status-box strong{font-size:15px;font-weight:800;display:block;margin-bottom:3px;}
+.store-status-box span{font-size:12px;opacity:.5;}
+.store-status-box select{width:220px;margin-bottom:0;}
 
 .discount-box{display:flex;align-items:center;gap:14px;margin-top:20px;padding:18px 20px;background:rgba(46,139,87,.05);border-radius:16px;border:1.5px solid rgba(46,139,87,.18);}
 .discount-box input{width:80px;margin-bottom:0;text-align:center;font-size:20px;font-weight:800;color:var(--green);}
@@ -116,7 +120,11 @@ textarea{height:80px;resize:vertical;}
 
 .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;}
 .product-card{background:#f4f5f8;border-radius:18px;padding:20px;}
+.product-card.inactive{opacity:.68;background:#eef0f4;}
 .product-card img{width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:12px;}
+.product-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.65);}
+.product-status-row label{font-size:12px;font-weight:800;color:var(--navy);}
+.product-status-row select{width:132px;margin-bottom:0;padding:9px 10px;font-size:12px;}
 
 #toast{position:fixed;bottom:30px;right:30px;background:var(--navy);color:white;padding:15px 24px;border-radius:16px;font-weight:700;font-size:14px;opacity:0;transition:.3s;z-index:9999;pointer-events:none;}
 #toast.show{opacity:1;}
@@ -228,6 +236,16 @@ textarea{height:80px;resize:vertical;}
   <!-- HORARIO Y PAGOS -->
   <div class="panel">
     <h2>🕐 Horario y pagos</h2>
+    <div class="store-status-box">
+      <div>
+        <strong>Estado del local</strong>
+        <span>Cuando esta cerrado, la web muestra cerrado y no deja registrar pedidos.</span>
+      </div>
+      <select id="acceptingOrders">
+        <option value="true">Abierto</option>
+        <option value="false">Cerrado</option>
+      </select>
+    </div>
     <div class="settings-row">
       <div><div class="label">Hora apertura</div><input id="openHour" type="number" min="0" max="23" placeholder="19"></div>
       <div><div class="label">Hora cierre</div><input id="closeHour" type="number" min="0" max="23" placeholder="23"></div>
@@ -672,6 +690,7 @@ function renderSettings(s) {
   document.getElementById("transferAlias").value = s.transferAlias || "";
   document.getElementById("mercadoPagoLink").value = s.mercadoPagoLink || "";
   document.getElementById("whatsappNumber").value = s.whatsappNumber || "5491121734894";
+  document.getElementById("acceptingOrders").value = s.acceptingOrders === false ? "false" : "true";
   openDays = s.openDays || [];
   document.getElementById("daysGrid").innerHTML = DAYS.map((d, i) =>
     `<button class="day-btn ${openDays.includes(i)?"active":""}" onclick="toggleDay(${i},this)">${d}</button>`
@@ -683,7 +702,12 @@ function toggleDay(day, btn) {
 }
 async function saveSettings() {
   await fetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ openHour:+document.getElementById("openHour").value, closeHour:+document.getElementById("closeHour").value, openDays }) });
+    body:JSON.stringify({
+      acceptingOrders: document.getElementById("acceptingOrders").value === "true",
+      openHour:+document.getElementById("openHour").value,
+      closeHour:+document.getElementById("closeHour").value,
+      openDays
+    }) });
   toast("✓ Horario guardado", "success");
 }
 async function saveDiscount() {
@@ -860,10 +884,17 @@ function renderProducts(products) {
         const units = availableUnits(p, products);
         const recipeStock = usesRecipeStock(p);
         return `
-        <div class="product-card${units <= 3 ? ' stock-low' : ''}">
+        <div class="product-card${units <= 3 ? ' stock-low' : ''}${p.active === false ? ' inactive' : ''}">
           ${units <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} unidades vendibles</div>` : ''}
           <img src="${p.image||''}" alt="${p.name}" onerror="this.style.display='none'">
           <div class="label">${p.category}</div>
+          <div class="product-status-row">
+            <label>Visible en la web</label>
+            <select id="ac-${p._id}">
+              <option value="true" ${p.active !== false ? "selected" : ""}>Activo</option>
+              <option value="false" ${p.active === false ? "selected" : ""}>Oculto</option>
+            </select>
+          </div>
           <input id="n-${p._id}" value="${p.name}">
           <input id="pr-${p._id}" type="number" value="${p.price}" placeholder="Precio">
           <div style="display:${recipeStock ? "none" : "grid"};grid-template-columns:1fr 1fr;gap:6px;">
@@ -894,7 +925,7 @@ async function addProduct() {
   const stock = ["combos","bandejas"].includes(category) ? 0 : ["rolls","veggie"].includes(category) ? stockUnits * piecesPerUnit : stockUnits;
     const stockItems = ["combos","bandejas"].includes(category) ? getRecipeFromEditor("new") : [];
     if (["combos","bandejas"].includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
-    const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems, image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
+    const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems, active:true, image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
   if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
   await fetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
@@ -914,7 +945,8 @@ async function updateProduct(id) {
   const stock = usesRecipeStock({ category }) ? 0 : current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
     const stockItems = usesRecipeStock({ category }) ? getRecipeFromEditor(id) : [];
     if (usesRecipeStock({ category }) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
-    await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
+    const active = document.getElementById(`ac-${id}`).value === "true";
+    await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems,active,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
   toast("✓ Guardado","success"); loadAll();
   } catch (err) {
     toast(err.message || "Error al guardar receta", "error");

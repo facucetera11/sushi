@@ -1104,6 +1104,10 @@ function getAvailableUnits(product) {
   }));
 }
 
+function isAcceptingOrders() {
+  return settings.acceptingOrders !== false;
+}
+
 /* ── SLIDESHOW ── */
 const slides = document.querySelectorAll(".hero-slide");
 let slideIdx = 0;
@@ -1201,6 +1205,11 @@ async function load() {
 function updateStatus() {
   const now = new Date();
   const badge = document.getElementById("statusBadge");
+  if (!isAcceptingOrders()) {
+    badge.textContent = "Cerrado";
+    badge.style.cssText = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
+    return;
+  }
   if (!settings.openDays?.includes(now.getDay())) {
     badge.textContent = "Cerrado hoy";
     badge.style.cssText = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
@@ -1218,7 +1227,7 @@ function updateStatus() {
 
 /* ── RENDER CATEGORÍA ── */
 function renderCat(cat) {
-  const filtered = products.filter(p => p.category === cat);
+  const filtered = products.filter(p => p.category === cat && p.active !== false);
   const grid = document.getElementById("grid-" + cat);
   const countEl = document.getElementById("count-" + cat);
   if (!filtered.length) {
@@ -1229,14 +1238,19 @@ function renderCat(cat) {
   if (countEl) countEl.textContent = `${filtered.length} opciones`;
   grid.innerHTML = filtered.map((p, i) => {
     const available = getAvailableUnits(p);
+    const closed = !isAcceptingOrders();
     const sinStock = available <= 0;
     const stockTag = sinStock
       ? `<span class="card-stock-tag empty">Agotado</span>`
+      : closed
+        ? `<span class="card-stock-tag empty">Cerrado</span>`
       : available <= 3
         ? `<span class="card-stock-tag low">Quedan ${available}</span>`
         : "";
     const stockBadge = sinStock
       ? `<div class="stock-badge">Sin stock</div>`
+      : closed
+        ? `<div class="stock-badge">Local cerrado</div>`
       : available <= 3
         ? `<div class="stock-badge">Últimas ${available}</div>`
         : `<div class="stock-badge ok">Disponible</div>`;
@@ -1262,8 +1276,8 @@ function renderCat(cat) {
           </div>
           <button class="btn-add"
             onclick="event.stopPropagation(); addToCartDirect('${p._id}')"
-            ${sinStock ? "disabled" : ""}>
-            ${sinStock ? "Agotado" : "Agregar al carrito"}
+            ${sinStock || closed ? "disabled" : ""}>
+            ${closed ? "Cerrado" : sinStock ? "Agotado" : "Agregar al carrito"}
           </button>
         </div>
       </div>
@@ -1287,8 +1301,8 @@ function openModal(id) {
   document.getElementById("modalQtyVal").textContent = "1";
   document.getElementById("modalPrice").textContent = `$${p.price.toLocaleString("es-AR")}`;
   document.getElementById("modalAdded").classList.remove("show");
-  document.getElementById("modalAddBtn").disabled = available <= 0;
-  document.getElementById("modalAddBtn").textContent = available <= 0 ? "Sin stock" : "Agregar al pedido";
+  document.getElementById("modalAddBtn").disabled = available <= 0 || !isAcceptingOrders();
+  document.getElementById("modalAddBtn").textContent = !isAcceptingOrders() ? "Local cerrado" : available <= 0 ? "Sin stock" : "Agregar al pedido";
   document.getElementById("modalOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
 }
@@ -1311,7 +1325,7 @@ function changeModalQty(d) {
 }
 
 function addFromModal() {
-  if (!modalProduct || getAvailableUnits(modalProduct) <= 0) return;
+  if (!modalProduct || modalProduct.active === false || getAvailableUnits(modalProduct) <= 0 || !isAcceptingOrders()) return;
   const p = modalProduct, qty = modalQty;
   const available = getAvailableUnits(p);
   const found = cart.find(i => i._id === p._id);
@@ -1354,7 +1368,7 @@ function updateCart() {
   document.getElementById("cartTotal").textContent = `$${total.toLocaleString("es-AR")}`;
   document.getElementById("cartCount").textContent = count;
   document.getElementById("fabCount").textContent = count;
-  document.getElementById("btnConfirm").disabled = cart.length === 0;
+  document.getElementById("btnConfirm").disabled = cart.length === 0 || !isAcceptingOrders();
   if (!cart.length) {
     document.getElementById("cart").classList.remove("mobile-open");
     document.body.classList.remove("cart-open");
@@ -1390,6 +1404,7 @@ function resetCheckoutConfirmButton() {
 
 function openCheckout() {
   if (!cart.length) return;
+  if (!isAcceptingOrders()) { toast("El local esta cerrado en este momento"); return; }
   document.getElementById("cart").classList.remove("mobile-open");
   document.body.classList.remove("cart-open");
   resetCheckoutConfirmButton();
@@ -1608,6 +1623,7 @@ document.addEventListener("input", e => {
 /* ── WHATSAPP ── */
 async function sendWhatsApp() {
   if (!cart.length) return;
+  if (!isAcceptingOrders()) { toast("El local esta cerrado en este momento"); return; }
 
   if (!paymentMethod) { toast("❌ Elegí un método de pago"); return; }
 
@@ -1710,7 +1726,7 @@ async function sendWhatsApp() {
 }
 function addToCartDirect(id) {
   const p = products.find(x => x._id === id);
-  if (!p || getAvailableUnits(p) <= 0) return;
+  if (!p || p.active === false || getAvailableUnits(p) <= 0 || !isAcceptingOrders()) return;
   const available = getAvailableUnits(p);
   const found = cart.find(i => i._id === p._id);
   if (found) {

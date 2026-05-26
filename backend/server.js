@@ -64,7 +64,7 @@ app.delete("/products/:id", async (req, res) => {
 app.get("/settings", async (req, res) => {
   try {
     let s = await Settings.findOne();
-    if (!s) s = await Settings.create({ openHour: 19, closeHour: 23, openDays: [1,2,3,4,5,6], cashDiscount: 0, transferAlias: "", mercadoPagoLink: "", whatsappNumber: "5491121734894" });
+    if (!s) s = await Settings.create({ openHour: 19, closeHour: 23, openDays: [1,2,3,4,5,6], cashDiscount: 0, transferAlias: "", mercadoPagoLink: "", whatsappNumber: "5491121734894", acceptingOrders: true });
     res.json(s);
   } catch (err) { res.status(500).json({ error: "Error al obtener configuración" }); }
 });
@@ -93,11 +93,17 @@ app.post("/orders", async (req, res) => {
       return res.status(400).json({ error: "El pedido no tiene productos" });
     }
 
+    const settings = await Settings.findOne();
+    if (settings && settings.acceptingOrders === false) {
+      return res.status(403).json({ error: "El local esta cerrado y no esta aceptando pedidos en este momento" });
+    }
+
     // Validar stock y calcular piezas a descontar por tipo de sushi.
     const stockDeductions = new Map();
     for (const item of items) {
       const product = await Product.findById(item._id);
       if (!product) return res.status(400).json({ error: `Producto no encontrado: ${item.name}` });
+      if (product.active === false) return res.status(400).json({ error: `Producto no disponible: ${product.name}` });
 
       const qty = Number(item.qty) || 0;
       if (qty <= 0) return res.status(400).json({ error: `Cantidad invalida para: ${item.name}` });

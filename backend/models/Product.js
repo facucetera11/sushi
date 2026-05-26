@@ -27,6 +27,10 @@ const ProductSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  active: {
+    type: Boolean,
+    default: true
+  },
   piecesPerUnit: {
     type: Number,
     required: true,
