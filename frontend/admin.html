@@ -275,6 +275,16 @@ textarea{height:80px;resize:vertical;}
     </div>
   </div>
 
+  <!-- SEGURIDAD -->
+  <div class="panel">
+    <h2>Seguridad</h2>
+    <div class="settings-row">
+      <div><div class="label">Contraseña actual</div><input id="currentPassword" type="password" autocomplete="current-password"></div>
+      <div><div class="label">Nueva contraseña</div><input id="newPassword" type="password" autocomplete="new-password" placeholder="Minimo 8 caracteres"></div>
+    </div>
+    <button class="btn btn-primary" style="max-width:260px;" onclick="changePassword()">Cambiar contraseña</button>
+  </div>
+
   <!-- NUEVO PRODUCTO -->
   <div class="panel">
     <h2>➕ Agregar producto</h2>
@@ -323,6 +333,25 @@ let allProducts = [];
 let lastOrderCount = null;
 let soundEnabled = localStorage.getItem("kizuna_sound") !== "off";
 let audioCtx = null;
+
+function authToken() {
+  return sessionStorage.getItem(SESSION_KEY) || "";
+}
+
+function authHeaders(extra = {}) {
+  return { ...extra, Authorization: `Bearer ${authToken()}` };
+}
+
+async function authFetch(url, options = {}) {
+  const headers = authHeaders(options.headers || {});
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    logout();
+    toast("Sesion vencida. Volve a ingresar.", "error");
+    throw new Error("Sesion vencida");
+  }
+  return res;
+}
 
 /* ── SONIDO ── */
 function initAudio() {
@@ -384,7 +413,8 @@ async function login() {
   try {
     const res = await fetch(`${API}/auth`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ password: pw }) });
     if (res.ok) {
-      sessionStorage.setItem(SESSION_KEY, "1");
+      const data = await res.json();
+      sessionStorage.setItem(SESSION_KEY, data.token);
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("adminMain").style.display = "block";
       // Activar audio en gesto de usuario
@@ -409,7 +439,7 @@ function logout() {
   document.getElementById("pwInput").value = "";
   lastOrderCount = null;
 }
-if (sessionStorage.getItem(SESSION_KEY)) {
+if (authToken()) {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("adminMain").style.display = "block";
   loadAll(); startAutoRefresh();
@@ -421,6 +451,24 @@ function toast(msg, type = "") {
   const t = document.getElementById("toast");
   t.textContent = msg; t.className = `show ${type}`;
   setTimeout(() => t.className = "", 2500);
+}
+
+async function changePassword() {
+  const currentPassword = document.getElementById("currentPassword").value;
+  const newPassword = document.getElementById("newPassword").value;
+  if (!currentPassword || !newPassword) { toast("Completa ambas contrasenas", "error"); return; }
+  if (newPassword.length < 8) { toast("La nueva contrasena debe tener al menos 8 caracteres", "error"); return; }
+  const res = await authFetch(`${API}/auth/change-password`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+  const data = await res.json();
+  if (!res.ok) { toast(data.error || "No se pudo cambiar la contrasena", "error"); return; }
+  sessionStorage.setItem(SESSION_KEY, data.token);
+  document.getElementById("currentPassword").value = "";
+  document.getElementById("newPassword").value = "";
+  toast("Contrasena actualizada", "success");
 }
 
 function escapeHtml(value) {
@@ -437,9 +485,9 @@ function escapeHtml(value) {
 async function loadAll() {
   try {
     const [products, orders, settings] = await Promise.all([
-      fetch(`${API}/products`).then(r => r.json()),
-      fetch(`${API}/orders`).then(r => r.json()),
-      fetch(`${API}/settings`).then(r => r.json())
+      authFetch(`${API}/products`).then(r => r.json()),
+      authFetch(`${API}/orders`).then(r => r.json()),
+      authFetch(`${API}/settings`).then(r => r.json())
     ]);
     allProducts = products;
 
@@ -678,8 +726,15 @@ function toggleHistory() {
 }
 
 async function updateOrder(id, status) {
-  await fetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
+  await authFetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
   toast("✓ Pedido actualizado", "success"); loadAll();
+}
+
+async function deleteOrder(id) {
+  if (!confirm("Eliminar este pedido del historial?")) return;
+  await authFetch(`${API}/orders/${id}`, { method:"DELETE" });
+  toast("Pedido eliminado", "success");
+  loadAll();
 }
 
 /* ── SETTINGS ── */
@@ -701,7 +756,7 @@ function toggleDay(day, btn) {
   else { openDays.push(day); btn.classList.add("active"); }
 }
 async function saveSettings() {
-  await fetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"},
+  await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       acceptingOrders: document.getElementById("acceptingOrders").value === "true",
       openHour:+document.getElementById("openHour").value,
@@ -713,7 +768,7 @@ async function saveSettings() {
 async function saveDiscount() {
   const discount = +document.getElementById("cashDiscount").value;
   if (isNaN(discount) || discount < 0 || discount > 100) { toast("Ingresá un % entre 0 y 100", "error"); return; }
-  await fetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ cashDiscount: discount }) });
+  await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ cashDiscount: discount }) });
   toast(`✓ Descuento ${discount}% guardado`, "success");
 }
 async function saveTransfer() {
@@ -721,7 +776,7 @@ async function saveTransfer() {
   const mercadoPagoLink = document.getElementById("mercadoPagoLink").value.trim();
   const whatsappNumber = document.getElementById("whatsappNumber").value.replace(/\D/g, "");
   if (!whatsappNumber) { toast("IngresÃ¡ un WhatsApp vÃ¡lido", "error"); return; }
-  await fetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ transferAlias, mercadoPagoLink, whatsappNumber }) });
+  await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ transferAlias, mercadoPagoLink, whatsappNumber }) });
   toast("✓ Datos de transferencia guardados", "success");
 }
 
@@ -918,7 +973,7 @@ function renderProducts(products) {
 
 async function addProduct() {
   try {
-  const products = await fetch(`${API}/products`).then(r => r.json());
+  const products = await authFetch(`${API}/products`).then(r => r.json());
   const category = document.getElementById("categoryInput").value;
   const piecesPerUnit = +document.getElementById("piecesInput").value || (["rolls","veggie"].includes(category) ? 8 : 1);
   const stockUnits = +document.getElementById("stockInput").value || 0;
@@ -927,7 +982,7 @@ async function addProduct() {
     if (["combos","bandejas"].includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
     const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems, active:true, image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
   if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
-  await fetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  await authFetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
     document.getElementById("recipeRows-new").innerHTML = "";
   toast("✓ Producto agregado","success"); loadAll();
@@ -937,7 +992,7 @@ async function addProduct() {
 }
 async function updateProduct(id) {
   try {
-  const products = await fetch(`${API}/products`).then(r => r.json());
+  const products = await authFetch(`${API}/products`).then(r => r.json());
   const current = products.find(p => p._id === id);
   const category = document.getElementById(`ca-${id}`).value;
   const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (["rolls","veggie"].includes(category) ? 8 : 1);
@@ -946,24 +1001,24 @@ async function updateProduct(id) {
     const stockItems = usesRecipeStock({ category }) ? getRecipeFromEditor(id) : [];
     if (usesRecipeStock({ category }) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
     const active = document.getElementById(`ac-${id}`).value === "true";
-    await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems,active,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
+    await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems,active,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
   toast("✓ Guardado","success"); loadAll();
   } catch (err) {
     toast(err.message || "Error al guardar receta", "error");
   }
 }
 async function updateStockOnly(id) {
-  const products = await fetch(`${API}/products`).then(r => r.json());
+  const products = await authFetch(`${API}/products`).then(r => r.json());
   const product = products.find(p => p._id === id);
   const units = +document.getElementById(`stock-only-${id}`).value;
   if (isNaN(units) || units < 0 || !product) { toast("IngresÃ¡ un stock vÃ¡lido", "error"); return; }
   const stock = stockPiecesFromUnits(units, product);
-  await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
+  await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
   toast("âœ“ Stock actualizado","success"); loadAll();
 }
 async function deleteProduct(id) {
   if (!confirm("¿Eliminar este producto?")) return;
-  await fetch(`${API}/products/${id}`,{method:"DELETE"});
+  await authFetch(`${API}/products/${id}`,{method:"DELETE"});
   toast("Eliminado","error"); loadAll();
 }
 </script>
