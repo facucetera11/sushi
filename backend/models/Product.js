@@ -26,6 +26,11 @@ const ProductSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true
+  },
+  piecesPerUnit: {
+    type: Number,
+    required: true,
+    default: 1
   }
 });
 

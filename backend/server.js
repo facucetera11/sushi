@@ -81,11 +81,14 @@ app.post("/orders", async (req, res) => {
   try {
     const { items, total, deliveryType, address, clientName, scheduledDate, scheduledTime, paymentMethod } = req.body;
 
-    // Validar stock
+    // Validar stock y calcular piezas a descontar
+    const stockDeductions = [];
     for (const item of items) {
       const product = await Product.findById(item._id);
       if (!product) return res.status(400).json({ error: `Producto no encontrado: ${item.name}` });
-      if (product.stock < item.qty) return res.status(400).json({ error: `Stock insuficiente para: ${item.name}` });
+      const pieces = (product.piecesPerUnit || 1) * item.qty;
+      if (product.stock < pieces) return res.status(400).json({ error: `Stock insuficiente para: ${item.name}` });
+      stockDeductions.push({ id: item._id, pieces });
     }
 
     const last = await Order.findOne().sort({ number: -1 });
@@ -102,9 +105,9 @@ app.post("/orders", async (req, res) => {
     });
     await order.save();
 
-    // Descontar stock
-    for (const item of items) {
-      await Product.findByIdAndUpdate(item._id, { $inc: { stock: -item.qty } });
+    // Descontar stock en piezas
+    for (const { id, pieces } of stockDeductions) {
+      await Product.findByIdAndUpdate(id, { $inc: { stock: -pieces } });
     }
 
     res.json(order);

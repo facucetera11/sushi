@@ -28,7 +28,7 @@ body{background:#f4f5f8;color:var(--navy);font-family:'DM Sans',sans-serif;min-h
 #logoutBtn{padding:10px 20px;border-radius:12px;border:none;background:rgba(22,32,74,.08);color:var(--navy);font-weight:700;font-size:13px;cursor:pointer;transition:.2s;}
 #logoutBtn:hover{background:var(--red);color:white;}
 
-#analytics{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:36px;}
+#analytics{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-bottom:36px;}
 .metric{background:white;padding:26px 22px;border-radius:22px;box-shadow:var(--shadow);text-align:center;}
 .metric-value{font-size:36px;font-weight:900;color:var(--red);font-family:'Playfair Display',serif;}
 .metric-label{font-size:13px;opacity:.55;margin-top:4px;font-weight:600;}
@@ -128,17 +128,24 @@ textarea{height:80px;resize:vertical;}
 .sound-btn{padding:8px 16px;border-radius:12px;border:1.5px solid rgba(22,32,74,.12);background:transparent;color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:6px;}
 .sound-btn.on{background:var(--navy);color:white;border-color:var(--navy);}
 
-.order-actions{display:flex;gap:8px;margin-top:12px;}
-.btn-print{flex:1;padding:9px;border:none;border-radius:11px;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
-.btn-print:hover{background:rgba(22,32,74,.15);}
-.btn-delete-order{flex:1;padding:9px;border:none;border-radius:11px;background:rgba(216,106,94,.1);color:var(--red);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
-.btn-delete-order:hover{background:var(--red);color:white;}
-
-
+.filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;align-items:center;}
+.filter-bar input{width:220px;margin-bottom:0;padding:10px 14px;font-size:13px;}
+.filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-btn{padding:8px 16px;border-radius:12px;border:none;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
+.filter-btn:hover{background:rgba(22,32,74,.13);}
+.filter-btn.active{background:var(--navy);color:white;}
+.btn-csv{padding:8px 16px;border-radius:12px;border:none;background:rgba(46,139,87,.1);color:#2e8b57;font-weight:700;font-size:12px;cursor:pointer;transition:.2s;margin-left:auto;}
+.btn-csv:hover{background:#2e8b57;color:white;}
+.order-note{width:100%;padding:8px 12px;border-radius:10px;border:none;background:rgba(22,32,74,.05);color:var(--navy);font-size:12px;font-family:'DM Sans',sans-serif;resize:none;height:54px;margin-top:8px;transition:box-shadow .2s;}
+.order-note:focus{outline:none;box-shadow:0 0 0 2px var(--red);}
+.btn-save-note{width:100%;padding:7px;border:none;border-radius:10px;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:11px;cursor:pointer;margin-top:4px;transition:.2s;}
+.btn-save-note:hover{background:var(--navy);color:white;}
+.product-card.stock-low{border:2px solid rgba(216,106,94,.5);background:#fff5f4;}
+.stock-low-badge{display:inline-block;background:rgba(216,106,94,.15);color:var(--red);font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;margin-bottom:8px;}
 
 @media(max-width:768px){
   #adminMain{padding:30px 4%;}
-  #analytics{grid-template-columns:repeat(2,1fr);}
+  #analytics{grid-template-columns:repeat(3,1fr);}
   .settings-row{grid-template-columns:1fr;}
   .orders-grid,.products-grid,#historyGrid{grid-template-columns:1fr;}
   .discount-box{flex-direction:column;align-items:flex-start;}
@@ -172,13 +179,24 @@ textarea{height:80px;resize:vertical;}
   <div id="analytics">
     <div class="metric"><div class="metric-value" id="mProducts">—</div><div class="metric-label">Productos</div></div>
     <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
-    <div class="metric"><div class="metric-value" id="mStock">—</div><div class="metric-label">Unidades en stock</div></div>
+    <div class="metric"><div class="metric-value" id="mStock">—</div><div class="metric-label">Piezas en stock</div></div>
     <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
+    <div class="metric"><div class="metric-value" id="mLowStock" style="color:var(--red)">—</div><div class="metric-label">⚠️ Stock bajo (≤3)</div></div>
   </div>
 
   <!-- PEDIDOS ACTIVOS -->
   <div class="panel">
     <h2>📋 Pedidos activos</h2>
+    <div class="filter-bar">
+      <input type="text" id="orderSearch" placeholder="🔍 Buscar por cliente…" oninput="applyFilters()">
+      <div class="filter-btns">
+        <button class="filter-btn active" data-filter="Todos" onclick="setFilter(this)">Todos</button>
+        <button class="filter-btn" data-filter="Pendiente" onclick="setFilter(this)">🟡 Pendiente</button>
+        <button class="filter-btn" data-filter="Preparando" onclick="setFilter(this)">🟠 Preparando</button>
+        <button class="filter-btn" data-filter="Entregado" onclick="setFilter(this)">🟢 Entregado</button>
+      </div>
+      <button class="btn-csv" onclick="exportCSV()">⬇️ Exportar CSV</button>
+    </div>
     <div class="orders-grid" id="ordersGrid"></div>
 
     <!-- HISTORIAL -->
@@ -226,7 +244,8 @@ textarea{height:80px;resize:vertical;}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div><div class="label">Nombre</div><input id="nameInput" placeholder="Ej: Dragon Roll"></div>
       <div><div class="label">Precio</div><input id="priceInput" type="number" placeholder="1500"></div>
-      <div><div class="label">Stock</div><input id="stockInput" type="number" placeholder="20"></div>
+      <div><div class="label">Stock (piezas disponibles)</div><input id="stockInput" type="number" placeholder="80"></div>
+      <div><div class="label">Piezas por unidad</div><input id="piecesInput" type="number" placeholder="Ej: 8 (roll), 4 (combo)"></div>
       <div><div class="label">Categoría</div>
         <select id="categoryInput" style="margin-bottom:10px;">
           <option value="rolls">Rolls</option>
@@ -387,10 +406,12 @@ function renderMetrics(products, orders) {
   const today = new Date().toDateString();
   const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
   const revenue = todayOrders.reduce((a, o) => a + o.total, 0);
+  const lowStock = products.filter(p => p.stock > 0 && p.stock <= 3).length;
   document.getElementById("mProducts").textContent = products.length;
   document.getElementById("mOrders").textContent = todayOrders.length;
   document.getElementById("mStock").textContent = products.reduce((a, p) => a + p.stock, 0);
   document.getElementById("mRevenue").textContent = `$${revenue.toLocaleString("es-AR")}`;
+  document.getElementById("mLowStock").textContent = lowStock || "—";
 }
 
 /* ── ORDERS ── */
@@ -421,7 +442,9 @@ function orderCardHTML(o, isDelivered) {
       <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
       <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
       <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
-    </select>` : `<div style="font-size:12px;opacity:.4;margin-top:8px;">✓ Entregado</div>`}
+    </select>
+    <textarea class="order-note" id="note-${o._id}" placeholder="Nota interna (ej: sin wasabi)…">${o.notes||""}</textarea>
+    <button class="btn-save-note" onclick="saveNote('${o._id}')">💾 Guardar nota</button>` : `<div style="font-size:12px;opacity:.4;margin-top:8px;">✓ Entregado${o.notes ? ` · 📝 ${o.notes}` : ""}</div>`}
     <div class="order-actions">
       <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Imprimir</button>
       ${isDelivered ? `<button class="btn-delete-order" onclick="deleteOrder('${o._id}')">🗑️ Eliminar</button>` : ""}
@@ -429,26 +452,65 @@ function orderCardHTML(o, isDelivered) {
   </div>`;
 }
 
-function renderOrders(orders) {
-  const active = orders.filter(o => o.status !== "Entregado");
-  const delivered = orders.filter(o => o.status === "Entregado");
+let allOrders = [];
+let activeFilter = "Todos";
+
+function setFilter(btn) {
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  activeFilter = btn.dataset.filter;
+  applyFilters();
+}
+
+function applyFilters() {
+  const search = (document.getElementById("orderSearch")?.value || "").toLowerCase();
+  let filtered = allOrders;
+  if (activeFilter !== "Todos") filtered = filtered.filter(o => o.status === activeFilter);
+  if (search) filtered = filtered.filter(o => (o.clientName||"").toLowerCase().includes(search) || String(o.number).includes(search));
+
+  const active = filtered.filter(o => o.status !== "Entregado");
+  const delivered = filtered.filter(o => o.status === "Entregado");
 
   const grid = document.getElementById("ordersGrid");
-  if (!active.length) {
-    grid.innerHTML = `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
-  } else {
-    grid.innerHTML = active.map(o => orderCardHTML(o, false)).join("");
-  }
+  grid.innerHTML = active.length
+    ? active.map(o => orderCardHTML(o, false)).join("")
+    : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
 
-  // Historial
   const histGrid = document.getElementById("historyGrid");
   const countEl = document.getElementById("historyCount");
   countEl.textContent = delivered.length ? `(${delivered.length})` : "";
-  if (delivered.length) {
-    histGrid.innerHTML = delivered.map(o => orderCardHTML(o, true)).join("");
-  } else {
-    histGrid.innerHTML = `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
-  }
+  histGrid.innerHTML = delivered.length
+    ? delivered.map(o => orderCardHTML(o, true)).join("")
+    : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+}
+
+function renderOrders(orders) {
+  allOrders = orders;
+  applyFilters();
+}
+
+function exportCSV() {
+  const today = new Date().toDateString();
+  const todayOrders = allOrders.filter(o => new Date(o.createdAt).toDateString() === today);
+  if (!todayOrders.length) { toast("No hay pedidos hoy para exportar", "error"); return; }
+  const rows = [["#","Cliente","Items","Total","Entrega","Dirección","Pago","Estado","Hora"]];
+  todayOrders.forEach(o => {
+    const items = o.items.map(i => `${i.name} x${i.qty}`).join(" | ");
+    const hora = new Date(o.createdAt).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+    rows.push([o.number, o.clientName||"—", items, o.total, o.deliveryType, o.address||"—", o.paymentMethod, o.status, hora]);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `kizuna-pedidos-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast("✓ CSV descargado", "success");
+}
+
+async function saveNote(id) {
+  const notes = document.getElementById(`note-${id}`)?.value || "";
+  await fetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ notes }) });
+  toast("✓ Nota guardada", "success");
 }
 
 function toggleHistory() {
@@ -461,68 +523,6 @@ function toggleHistory() {
 async function updateOrder(id, status) {
   await fetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
   toast("✓ Pedido actualizado", "success"); loadAll();
-}
-
-function printOrder(id) {
-  fetch(`${API}/orders`).then(r => r.json()).then(orders => {
-    const o = orders.find(x => x._id === id);
-    if (!o) { toast("No se encontró el pedido","error"); return; }
-    const fecha = new Date(o.createdAt).toLocaleString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
-    const itemsHTML = o.items.map(i =>
-      `<tr><td>${i.name} ×${i.qty}</td><td style="text-align:right">$${(i.price * i.qty).toLocaleString("es-AR")}</td></tr>`
-    ).join("");
-    const deliveryLine = o.deliveryType === "delivery"
-      ? `<tr><td>Envío a</td><td>${o.address || "—"}</td></tr>`
-      : `<tr><td>Modalidad</td><td>Retiro en local</td></tr>`;
-    const pagoLine = o.paymentMethod === "cash" ? "Efectivo" : "Transferencia";
-    const schedLine = (o.scheduledDate && o.scheduledTime)
-      ? `<tr><td>Programado</td><td>${o.scheduledDate} ${o.scheduledTime}</td></tr>` : "";
-
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>
-  body{font-family:Arial,sans-serif;font-size:13px;color:#000;padding:20px;max-width:320px;margin:auto;}
-  h1{font-size:20px;margin:0 0 2px;}
-  .sub{font-size:11px;color:#666;margin-bottom:10px;}
-  hr{border:none;border-top:1px dashed #999;margin:10px 0;}
-  table{width:100%;border-collapse:collapse;}
-  td{padding:3px 0;vertical-align:top;}
-  .section-title{font-weight:bold;font-size:11px;text-transform:uppercase;color:#666;margin:8px 0 4px;}
-  .total-row td{font-size:18px;font-weight:900;padding-top:8px;}
-  .numero{font-size:17px;font-weight:900;}
-</style>
-</head><body>
-<h1>🍣 Kizuna Sushi</h1>
-<div class="sub">${fecha}</div>
-<hr>
-<div class="numero">Pedido #${o.number}${o.clientName ? " — " + o.clientName : ""}</div>
-<hr>
-<div class="section-title">Datos</div>
-<table>
-  ${deliveryLine}
-  ${schedLine}
-  <tr><td>Pago</td><td>${pagoLine}</td></tr>
-</table>
-<hr>
-<div class="section-title">Items</div>
-<table>${itemsHTML}</table>
-<hr>
-<table><tr class="total-row"><td>TOTAL</td><td style="text-align:right">$${o.total.toLocaleString("es-AR")}</td></tr></table>
-<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();}}<\/script>
-</body></html>`;
-
-    const win = window.open("", "_blank", "width=400,height=600");
-    win.document.write(html);
-    win.document.close();
-  }).catch(() => toast("Error al imprimir","error"));
-}
-
-async function deleteOrder(id) {
-  if (!confirm("¿Eliminar este pedido del historial? Esta acción no se puede deshacer.")) return;
-  try {
-    const res = await fetch(`${API}/orders/${id}`, { method:"DELETE" });
-    if (res.ok) { toast("🗑️ Pedido eliminado", "success"); loadAll(); }
-    else { toast("Error al eliminar", "error"); }
-  } catch { toast("Error de conexión", "error"); }
 }
 
 /* ── SETTINGS ── */
@@ -573,12 +573,16 @@ function renderProducts(products) {
         </h3>
       </div>
       ${items.map(p => `
-        <div class="product-card">
+        <div class="product-card${p.stock <= 3 ? ' stock-low' : ''}">
+          ${p.stock <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${p.stock} piezas</div>` : ''}
           <img src="${p.image||''}" alt="${p.name}" onerror="this.style.display='none'">
           <div class="label">${p.category}</div>
           <input id="n-${p._id}" value="${p.name}">
           <input id="pr-${p._id}" type="number" value="${p.price}" placeholder="Precio">
-          <input id="st-${p._id}" type="number" value="${p.stock}" placeholder="Stock">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div><div class="label" style="font-size:11px;margin-bottom:4px;">Stock (piezas)</div><input id="st-${p._id}" type="number" value="${p.stock}" placeholder="Piezas"></div>
+            <div><div class="label" style="font-size:11px;margin-bottom:4px;">Piezas/unidad</div><input id="pp-${p._id}" type="number" value="${p.piecesPerUnit||1}" placeholder="Ej: 8"></div>
+          </div>
           <input id="im-${p._id}" value="${p.image||''}" placeholder="URL imagen">
           <textarea id="de-${p._id}">${p.description||''}</textarea>
           <select id="ca-${p._id}">
@@ -594,14 +598,14 @@ function renderProducts(products) {
 }
 
 async function addProduct() {
-  const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock:+document.getElementById("stockInput").value, image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category:document.getElementById("categoryInput").value };
+  const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock:+document.getElementById("stockInput").value, piecesPerUnit:+document.getElementById("piecesInput").value||1, image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category:document.getElementById("categoryInput").value };
   if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
   await fetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  ["nameInput","priceInput","stockInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
+  ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
   toast("✓ Producto agregado","success"); loadAll();
 }
 async function updateProduct(id) {
-  await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock:+document.getElementById(`st-${id}`).value,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category:document.getElementById(`ca-${id}`).value})});
+  await fetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock:+document.getElementById(`st-${id}`).value,piecesPerUnit:+document.getElementById(`pp-${id}`).value||1,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category:document.getElementById(`ca-${id}`).value})});
   toast("✓ Guardado","success"); loadAll();
 }
 async function deleteProduct(id) {
