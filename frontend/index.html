@@ -940,84 +940,47 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 
 /* ── COMBO ELECCIÓN CARD ── */
 .combo-eleccion-card {
-  background: var(--navy);
-  border-radius: 10px;
-  overflow: hidden;
-  border: 0.5px solid rgba(255,255,255,.08);
-  cursor: pointer;
-  transition: transform .25s, box-shadow .25s;
-  position: relative;
+  background: var(--navy); border-radius: 10px; overflow: hidden;
+  border: 0.5px solid rgba(255,255,255,.08); cursor: pointer;
+  transition: transform .25s, box-shadow .25s; position: relative;
   grid-column: 1 / -1;
 }
 .combo-eleccion-card:hover { transform: translateY(-4px); box-shadow: 0 20px 48px rgba(0,0,0,.22); }
-.combo-eleccion-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 200px;
-}
+.combo-eleccion-inner { display: grid; grid-template-columns: 1fr 1fr; min-height: 200px; }
 .combo-eleccion-left {
-  padding: 32px 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 12px;
+  padding: 32px 28px; display: flex; flex-direction: column; justify-content: center; gap: 12px;
 }
-.combo-eleccion-kicker {
-  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--red); font-weight: 600;
-}
-.combo-eleccion-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 36px; font-weight: 700; color: white; line-height: 1;
-}
-.combo-eleccion-desc {
-  font-size: 12px; color: rgba(255,255,255,.52);
-  line-height: 1.6; font-weight: 300;
-}
+.combo-eleccion-kicker { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--red); font-weight: 600; }
+.combo-eleccion-title { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 700; color: white; line-height: 1; }
+.combo-eleccion-desc { font-size: 12px; color: rgba(255,255,255,.52); line-height: 1.6; font-weight: 300; }
 .combo-eleccion-cta {
-  display: inline-flex; align-items: center; gap: 8px;
-  margin-top: 8px;
-  border: 0.5px solid rgba(255,255,255,.25);
-  border-radius: 4px; padding: 11px 18px;
-  font-size: 10px; font-weight: 500; letter-spacing: 1.8px;
-  text-transform: uppercase; color: white;
-  background: transparent; cursor: pointer;
-  font-family: 'Jost', sans-serif;
-  transition: background .18s, border-color .18s;
-  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
+  border: 0.5px solid rgba(255,255,255,.25); border-radius: 4px; padding: 11px 18px;
+  font-size: 10px; font-weight: 500; letter-spacing: 1.8px; text-transform: uppercase; color: white;
+  background: transparent; cursor: pointer; font-family: 'Jost', sans-serif;
+  transition: background .18s, border-color .18s; align-self: flex-start;
 }
 .combo-eleccion-cta:hover { background: var(--red); border-color: var(--red); }
-.combo-eleccion-right {
-  position: relative; overflow: hidden;
-}
-.combo-eleccion-right img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  transition: transform .4s ease;
-  filter: brightness(.65);
-}
+.combo-eleccion-cta:disabled { opacity: .4; cursor: not-allowed; }
+.combo-eleccion-right { position: relative; overflow: hidden; }
+.combo-eleccion-right img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; filter: brightness(.6); }
 .combo-eleccion-card:hover .combo-eleccion-right img { transform: scale(1.04); }
-.combo-eleccion-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to right, var(--navy) 0%, transparent 60%);
-  pointer-events: none;
-}
+.combo-eleccion-overlay { position: absolute; inset: 0; background: linear-gradient(to right, var(--navy) 0%, transparent 65%); pointer-events: none; }
 .combo-eleccion-pieces-badge {
-  position: absolute; bottom: 16px; right: 16px;
-  background: rgba(0,0,0,.65); color: white;
-  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
-  padding: 6px 12px; border-radius: 4px; font-weight: 500;
+  position: absolute; bottom: 16px; right: 16px; background: rgba(0,0,0,.65); color: white;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 6px 12px; border-radius: 4px; font-weight: 500;
 }
 @media(max-width:768px) {
   .combo-eleccion-inner { grid-template-columns: 1fr; }
-  .combo-eleccion-right { height: 160px; }
-  .combo-eleccion-overlay { background: linear-gradient(to bottom, var(--navy) 0%, transparent 60%); }
-  .combo-eleccion-left { padding: 22px 18px 18px; }
+  .combo-eleccion-right { height: 150px; }
+  .combo-eleccion-overlay { background: linear-gradient(to bottom, var(--navy) 0%, transparent 70%); }
+  .combo-eleccion-left { padding: 22px 18px 16px; }
   .combo-eleccion-title { font-size: 28px; }
 }
 
 /* ── MODAL COMBO ELECCIÓN ── */
 .combo-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  position: fixed; inset: 0; background: rgba(0,0,0,.62);
   z-index: 550; display: flex; align-items: center; justify-content: center; padding: 20px;
   opacity: 0; pointer-events: none; transition: opacity .28s ease;
   backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
@@ -1025,198 +988,130 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 .combo-modal-overlay.open { opacity: 1; pointer-events: all; }
 .combo-modal {
   background: var(--white); border-radius: 16px;
-  width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto;
+  width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto;
   border: 0.5px solid var(--border); box-shadow: 0 32px 80px rgba(0,0,0,.22);
-  transform: translateY(24px) scale(.96);
-  transition: transform .3s cubic-bezier(.34,1.4,.64,1);
+  transform: translateY(24px) scale(.96); transition: transform .3s cubic-bezier(.34,1.4,.64,1);
+  display: flex; flex-direction: column;
 }
 .combo-modal-overlay.open .combo-modal { transform: translateY(0) scale(1); }
 
 .combo-modal-head {
-  position: sticky; top: 0; z-index: 10;
-  background: var(--white);
-  padding: 22px 26px 16px;
-  border-bottom: 0.5px solid var(--border);
-  display: flex; justify-content: space-between; align-items: flex-start;
+  position: sticky; top: 0; z-index: 10; background: var(--white);
+  padding: 22px 26px 16px; border-bottom: 0.5px solid var(--border);
+  display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0;
 }
-.combo-modal-head-text {}
-.combo-modal-kicker {
-  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--red); font-weight: 600; margin-bottom: 4px;
-}
-.combo-modal-head h2 {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 28px; font-weight: 700; line-height: 1;
-}
+.combo-modal-kicker { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--red); font-weight: 600; margin-bottom: 4px; }
+.combo-modal-head h2 { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; line-height: 1; }
 .combo-modal-close {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(0,0,0,.06); border: none; cursor: pointer;
-  font-size: 18px; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; margin-left: 12px; color: var(--navy);
-  transition: background .15s;
+  width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,.06); border: none;
+  cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-left: 12px; color: var(--navy); transition: background .15s;
 }
 .combo-modal-close:hover { background: rgba(0,0,0,.13); }
 
-.combo-modal-body { padding: 20px 26px 26px; }
-.combo-modal-desc {
-  font-size: 13px; color: rgba(0,0,0,.5); line-height: 1.7;
-  margin-bottom: 22px; font-weight: 300;
-}
+.combo-modal-body { padding: 20px 26px 10px; flex: 1; }
+.combo-modal-desc { font-size: 13px; color: rgba(0,0,0,.5); line-height: 1.7; margin-bottom: 22px; font-weight: 300; }
 
-/* Size selector */
-.combo-size-label {
-  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-  color: rgba(0,0,0,.38); font-weight: 500; margin-bottom: 10px;
-}
-.combo-size-row {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px;
-}
+/* Tamaño */
+.combo-size-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,0,0,.38); font-weight: 500; margin-bottom: 10px; }
+.combo-size-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 .combo-size-btn {
-  border: 0.5px solid rgba(0,0,0,.18); border-radius: 6px;
-  background: transparent; cursor: pointer;
-  padding: 10px 16px; text-align: center;
-  font-family: 'Jost', sans-serif; transition: .18s;
+  border: 0.5px solid rgba(0,0,0,.16); border-radius: 8px; background: transparent; cursor: pointer;
+  padding: 12px 16px; text-align: center; font-family: 'Jost', sans-serif; transition: .18s; min-width: 80px;
 }
 .combo-size-btn:hover { border-color: var(--navy); }
 .combo-size-btn.active { background: var(--navy); border-color: var(--navy); color: white; }
-.combo-size-btn .csb-pieces { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; display: block; line-height: 1; }
-.combo-size-btn .csb-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-top: 3px; opacity: .6; }
-.combo-size-btn.active .csb-label { opacity: .7; }
-.combo-size-btn .csb-price { font-size: 11px; font-weight: 600; display: block; margin-top: 4px; color: var(--red); }
-.combo-size-btn.active .csb-price { color: rgba(255,255,255,.8); }
+.combo-size-btn .csb-pieces { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; display: block; line-height: 1; }
+.combo-size-btn .csb-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-top: 3px; opacity: .55; }
+.combo-size-btn.active .csb-label { opacity: .65; }
+.combo-size-btn .csb-price { font-size: 11px; font-weight: 600; display: block; margin-top: 5px; color: var(--red); }
+.combo-size-btn.active .csb-price { color: rgba(255,255,255,.75); }
 
-/* Progress bar */
+/* Barra de progreso */
 .combo-progress-wrap {
-  background: rgba(0,0,0,.06); border-radius: 8px;
-  padding: 14px 16px; margin-bottom: 20px;
-  display: flex; align-items: center; gap: 12px;
+  background: rgba(0,0,0,.04); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
 }
-.combo-progress-bar-track {
-  flex: 1; height: 6px; background: rgba(0,0,0,.08); border-radius: 99px; overflow: hidden;
-}
-.combo-progress-bar-fill {
-  height: 100%; background: var(--red); border-radius: 99px;
-  transition: width .3s ease; width: 0%;
-}
+.combo-progress-bar-track { flex: 1; height: 6px; background: rgba(0,0,0,.08); border-radius: 99px; overflow: hidden; }
+.combo-progress-bar-fill { height: 100%; background: var(--red); border-radius: 99px; transition: width .25s ease; width: 0%; }
 .combo-progress-bar-fill.full { background: #1a6b3a; }
-.combo-progress-text {
-  font-size: 11px; letter-spacing: 1px; font-weight: 500; white-space: nowrap;
-}
+.combo-progress-text { font-size: 11px; letter-spacing: .5px; font-weight: 500; white-space: nowrap; color: rgba(0,0,0,.6); }
 
-/* Product picker grid */
-.combo-picker-label {
-  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-  color: rgba(0,0,0,.38); font-weight: 500; margin-bottom: 12px;
-}
+/* Grilla de productos */
+.combo-picker-section-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,0,0,.38); font-weight: 500; margin-bottom: 10px; }
 .combo-picker-cats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
 .combo-picker-cat-chip {
-  border: 0.5px solid rgba(0,0,0,.14); border-radius: 999px;
-  background: white; color: var(--navy); padding: 6px 12px;
-  font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 500;
-  letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer;
-  transition: .15s;
+  border: 0.5px solid rgba(0,0,0,.14); border-radius: 999px; background: white; color: var(--navy);
+  padding: 6px 12px; font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 500;
+  letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer; transition: .15s;
 }
 .combo-picker-cat-chip.active { background: var(--navy); color: white; border-color: var(--navy); }
 
 .combo-picker-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;
-  max-height: 340px; overflow-y: auto; padding-right: 2px;
-  scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.12) transparent;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px;
+  max-height: 320px; overflow-y: auto; padding-bottom: 4px;
+  scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.1) transparent;
 }
 .combo-picker-grid::-webkit-scrollbar { width: 4px; }
-.combo-picker-grid::-webkit-scrollbar-thumb { background: rgba(0,0,0,.12); border-radius: 99px; }
+.combo-picker-grid::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); border-radius: 99px; }
 
 .combo-item-btn {
-  border: 0.5px solid var(--border); border-radius: 8px;
-  background: white; cursor: pointer; text-align: left;
-  overflow: hidden; transition: border-color .18s, box-shadow .18s;
+  border: 0.5px solid var(--border); border-radius: 8px; background: white; cursor: pointer;
+  text-align: left; overflow: hidden; transition: border-color .18s, box-shadow .18s;
   position: relative; display: flex; flex-direction: column;
 }
-.combo-item-btn:hover:not(:disabled) { border-color: rgba(0,0,0,.24); box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+.combo-item-btn:hover:not(:disabled) { border-color: rgba(0,0,0,.22); box-shadow: 0 4px 14px rgba(0,0,0,.07); }
 .combo-item-btn.selected { border-color: var(--navy); border-width: 1.5px; }
-.combo-item-btn:disabled { opacity: .42; cursor: not-allowed; }
-.combo-item-btn.out-of-stock { opacity: .38; cursor: not-allowed; }
+.combo-item-btn:disabled { opacity: .38; cursor: not-allowed; }
 
-.combo-item-img { width: 100%; height: 90px; object-fit: cover; display: block; }
-.combo-item-body { padding: 8px 10px 10px; flex: 1; }
-.combo-item-name {
-  font-size: 12px; font-weight: 500; line-height: 1.3;
-  font-family: 'Cormorant Garamond', serif; font-size: 14px;
-}
-.combo-item-stock {
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-  color: rgba(0,0,0,.35); margin-top: 3px;
-}
-.combo-item-stock.low { color: #c87400; }
-.combo-item-stock.out { color: var(--red); }
+.combo-item-img { width: 100%; height: 86px; object-fit: cover; display: block; }
+.combo-item-body { padding: 8px 10px 6px; flex: 1; }
+.combo-item-name { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 600; line-height: 1.25; }
+.combo-item-meta { font-size: 10px; color: rgba(0,0,0,.38); margin-top: 3px; display: flex; flex-direction: column; gap: 1px; }
+.combo-item-meta .ppu { font-weight: 500; color: rgba(0,0,0,.55); letter-spacing: .3px; }
+.combo-item-meta .stock-low { color: #c87400; }
+.combo-item-meta .stock-out { color: var(--red); }
 
-/* Selected indicator */
+/* Check badge */
 .combo-item-check {
-  position: absolute; top: 7px; right: 7px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--navy); color: white;
-  font-size: 12px; display: none;
+  position: absolute; top: 7px; right: 7px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--navy); color: white; font-size: 11px; display: none;
   align-items: center; justify-content: center;
 }
 .combo-item-btn.selected .combo-item-check { display: flex; }
 
-/* Qty badge */
-.combo-item-qty-badge {
-  position: absolute; top: 7px; left: 7px;
-  background: var(--red); color: white;
-  font-size: 10px; font-weight: 700;
-  min-width: 20px; height: 20px; border-radius: 10px;
-  padding: 0 5px;
-  display: none; align-items: center; justify-content: center;
-}
-.combo-item-btn.selected .combo-item-qty-badge { display: flex; }
-
-/* Qty controls overlay */
+/* Qty row at bottom of card */
 .combo-item-qty-row {
   display: none; align-items: center; justify-content: space-between;
-  gap: 4px; padding: 6px 10px;
-  border-top: 0.5px solid var(--border);
-  background: rgba(0,0,0,.02);
+  padding: 7px 10px; border-top: 0.5px solid var(--border); background: rgba(0,0,0,.02);
 }
 .combo-item-btn.selected .combo-item-qty-row { display: flex; }
 .combo-item-qty-row button {
-  width: 26px; height: 26px; border: 0.5px solid rgba(0,0,0,.16);
-  border-radius: 4px; background: white; color: var(--navy);
-  font-size: 15px; cursor: pointer; display: flex;
-  align-items: center; justify-content: center; transition: .13s;
-  font-family: 'Jost', sans-serif;
+  width: 27px; height: 27px; border: 0.5px solid rgba(0,0,0,.16); border-radius: 4px;
+  background: white; color: var(--navy); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Jost', sans-serif; transition: .13s; flex-shrink: 0;
 }
-.combo-item-qty-row button:hover { border-color: var(--red); color: var(--red); }
-.combo-item-qty-row .ciqr-count {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 18px; font-weight: 700; min-width: 20px; text-align: center;
-}
+.combo-item-qty-row button:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+.combo-item-qty-row button:disabled { opacity: .35; cursor: not-allowed; }
+.combo-item-qty-info { display: flex; flex-direction: column; align-items: center; }
+.combo-item-qty-pieces { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; line-height: 1; }
+.combo-item-qty-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: rgba(0,0,0,.38); }
 
-/* Footer */
+/* Footer sticky */
 .combo-modal-footer {
-  position: sticky; bottom: 0; z-index: 10;
-  background: var(--white);
-  padding: 16px 26px 20px;
-  border-top: 0.5px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  position: sticky; bottom: 0; z-index: 10; background: var(--white);
+  padding: 14px 26px 20px; border-top: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-shrink: 0;
 }
-.combo-footer-total {
-  display: flex; flex-direction: column;
-}
-.combo-footer-total-label {
-  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-  color: rgba(0,0,0,.38); font-weight: 500;
-}
-.combo-footer-total-amount {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 28px; font-weight: 700; line-height: 1;
-}
+.combo-footer-total { display: flex; flex-direction: column; }
+.combo-footer-total-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,0,0,.38); font-weight: 500; }
+.combo-footer-total-amount { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; line-height: 1; }
 .combo-footer-add-btn {
-  flex: 1; max-width: 220px; padding: 14px;
-  border: none; border-radius: 6px;
-  background: var(--navy); color: white;
-  font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase;
-  cursor: pointer; font-family: 'Jost', sans-serif; transition: background .18s;
+  flex: 1; max-width: 220px; padding: 14px; border: none; border-radius: 6px;
+  background: var(--navy); color: white; font-size: 10px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  font-family: 'Jost', sans-serif; transition: background .18s;
 }
 .combo-footer-add-btn:hover:not(:disabled) { background: var(--red); }
 .combo-footer-add-btn:disabled { background: #e0e0e0; color: #aaa; cursor: not-allowed; }
@@ -1224,11 +1119,11 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 @media(max-width:768px) {
   .combo-modal { max-height: 92dvh; border-radius: 16px 16px 0 0; }
   .combo-modal-overlay { align-items: flex-end; padding: 0; }
-  .combo-modal-body { padding: 16px 18px 18px; }
+  .combo-modal-body { padding: 16px 18px 10px; }
   .combo-modal-head { padding: 18px 18px 14px; }
   .combo-modal-footer { padding: 14px 18px calc(18px + env(safe-area-inset-bottom)); }
   .combo-picker-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); max-height: 260px; }
-  .combo-item-img { height: 76px; }
+  .combo-item-img { height: 74px; }
 }
 </style>
 </head>
@@ -1480,14 +1375,14 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 <div class="combo-modal-overlay" id="comboModalOverlay" onclick="onComboOverlayClick(event)">
   <div class="combo-modal" id="comboModal">
     <div class="combo-modal-head">
-      <div class="combo-modal-head-text">
-        <div class="combo-modal-kicker">Armá tu combo</div>
+      <div>
+        <div class="combo-modal-kicker">✦ Armá tu combo</div>
         <h2>Combo Elección</h2>
       </div>
       <button class="combo-modal-close" onclick="closeComboModal()">×</button>
     </div>
     <div class="combo-modal-body">
-      <p class="combo-modal-desc">Elegí cuántas piezas querés y seleccioná tus rolls favoritos. Podés mezclar lo que quieras del menú.</p>
+      <p class="combo-modal-desc">Elegí cuántas piezas querés y sumá de cada roll lo que más te guste. El precio se ajusta al promedio de lo que armes.</p>
 
       <div class="combo-size-label">¿Cuántas piezas?</div>
       <div class="combo-size-row" id="comboSizeRow"></div>
@@ -1499,7 +1394,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
         <div class="combo-progress-text" id="comboProgressText">Elegí un tamaño</div>
       </div>
 
-      <div class="combo-picker-label">Elegí tus rolls</div>
+      <div class="combo-picker-section-label">Elegí tus rolls</div>
       <div class="combo-picker-cats" id="comboPickerCats"></div>
       <div class="combo-picker-grid" id="comboPickerGrid"></div>
     </div>
@@ -2061,31 +1956,6 @@ function renderAllCats() {
   updateNavHighlight();
 }
 
-function renderComboEleccionCard() {
-  const closed = !isAcceptingOrders();
-  const eligible = getEligibleProducts();
-  const avgPrice = eligible.length ? eligible.reduce((a, p) => a + p.price, 0) / eligible.length : 0;
-  const est30 = avgPrice ? Math.round(avgPrice * 30 * 0.92).toLocaleString("es-AR") : "";
-  return `
-  <div class="combo-eleccion-card" onclick="openComboModal()">
-    <div class="combo-eleccion-inner">
-      <div class="combo-eleccion-left">
-        <div class="combo-eleccion-kicker">✦ Nuevo</div>
-        <div class="combo-eleccion-title">Combo<br>Elección</div>
-        <div class="combo-eleccion-desc">Armá tu combo a medida. Elegís el tamaño y combinás los rolls que más te gusten.${est30 ? ` Desde ~${est30}.` : ""}</div>
-        <button class="combo-eleccion-cta" onclick="event.stopPropagation(); openComboModal()" ${closed ? "disabled" : ""}>
-          ${closed ? "Local cerrado" : "Armar combo →"}
-        </button>
-      </div>
-      <div class="combo-eleccion-right">
-        <img src="https://images.unsplash.com/photo-1617196034183-421b4040ed20" alt="Combo Elección" loading="lazy">
-        <div class="combo-eleccion-overlay"></div>
-        <div class="combo-eleccion-pieces-badge">20 / 30 / 40 / 50 pz</div>
-      </div>
-    </div>
-  </div>`;
-}
-
 function renderCat(cat) {
   const q = searchQuery.trim().toLowerCase();
   const filtered = products.filter(p => {
@@ -2197,28 +2067,31 @@ function updateCart() {
       total += i.price * i.qty;
       count += i.qty;
       const lineId = escapeAttr(i.lineId);
-      const isCombo = i.isComboEleccion;
-      const subLabel = isCombo
-        ? `<div class="cart-item-sub" style="color:var(--red);font-size:10px;letter-spacing:.5px;">Combo personalizado</div>`
-        : `<div class="cart-item-sub">${i.price.toLocaleString("es-AR")} c/u</div>`;
-      const noteRow = isCombo
-        ? `<div class="cart-item-note" style="cursor:default;background:rgba(0,0,0,.02);color:rgba(0,0,0,.45);font-size:11px;padding:7px 10px;border-radius:6px;border:0.5px solid rgba(0,0,0,.07);margin-top:6px;line-height:1.5;">${escapeHtml(i.note || "")}</div>`
-        : `<input class="cart-item-note" type="text" maxlength="120" value="${escapeAttr(i.note || "")}" placeholder="Nota: sin palta, sin sésamo..." oninput="updateCartNote('${lineId}', this.value)">`;
-      const qtyRow = isCombo
-        ? `<div class="qty"><button onclick="changeCartQty('${lineId}',-1)">🗑</button></div>`
-        : `<div class="qty">
-          <button onclick="changeCartQty('${lineId}',-1)">−</button>
-          <span>${i.qty}</span>
-          <button onclick="changeCartQty('${lineId}',1)">+</button>
+      if (i.isComboEleccion) {
+        return `
+        <div class="cart-item">
+          <div class="cart-item-main">
+            <div class="cart-item-name">${escapeHtml(i.name)}</div>
+            <div class="cart-item-sub" style="color:var(--red);font-size:10px;letter-spacing:.4px;">Combo personalizado</div>
+            <div class="cart-item-note" style="cursor:default;background:rgba(0,0,0,.02);color:rgba(0,0,0,.42);font-size:11px;padding:7px 10px;border-radius:6px;border:0.5px solid rgba(0,0,0,.07);margin-top:6px;line-height:1.6;">${escapeHtml(i.note || "")}</div>
+          </div>
+          <div class="qty">
+            <button onclick="changeCartQty('${lineId}',-1)" title="Eliminar">🗑</button>
+          </div>
         </div>`;
+      }
       return `
       <div class="cart-item">
         <div class="cart-item-main">
           <div class="cart-item-name">${escapeHtml(i.name)}</div>
-          ${subLabel}
-          ${noteRow}
+          <div class="cart-item-sub">${i.price.toLocaleString("es-AR")} c/u</div>
+          <input class="cart-item-note" type="text" maxlength="120" value="${escapeAttr(i.note || "")}" placeholder="Nota: sin palta, sin sésamo..." oninput="updateCartNote('${lineId}', this.value)">
         </div>
-        ${qtyRow}
+        <div class="qty">
+          <button onclick="changeCartQty('${lineId}',-1)">−</button>
+          <span>${i.qty}</span>
+          <button onclick="changeCartQty('${lineId}',1)">+</button>
+        </div>
       </div>`;
     }).join("");
   }
@@ -2312,12 +2185,11 @@ function buildOrderMessage(orderNumber, clientName, clientPhone, address, notes,
   if (notes) msg += `📝 *Nota general:* ${notes}\n\n`;
   cart.forEach(i => {
     if (i.isComboEleccion && i.comboSelections) {
-      msg += `• ${i.name} — ${(i.price).toLocaleString("es-AR")}\n`;
-      const detail = Object.entries(i.comboSelections).map(([id, qty]) => {
+      msg += `• ${i.name} — ${i.price.toLocaleString("es-AR")}\n`;
+      Object.entries(i.comboSelections).forEach(([id, pieces]) => {
         const p = products.find(x => x._id === id);
-        return p ? `  · ${p.name} ×${qty}` : "";
-      }).filter(Boolean).join("\n");
-      if (detail) msg += detail + "\n";
+        if (p) msg += `  · ${p.name}: ${pieces} pz\n`;
+      });
     } else {
       msg += `• ${i.name} ×${i.qty} — ${(i.price * i.qty).toLocaleString("es-AR")}\n`;
       if (i.note) msg += `  Nota: ${i.note}\n`;
@@ -2403,56 +2275,74 @@ document.getElementById("menuSearch").addEventListener("input", e => {
 });
 
 /* ══════════════════════════════════════════════
-   COMBO ELECCIÓN — builder interactivo
+   COMBO ELECCIÓN — armado por piezas
+   ══════════════════════════════════════════════
+
+   Cada producto tiene piecesPerUnit (ej: un roll = 8 piezas).
+   El cliente suma PIEZAS. El backend recibe UNIDADES completas
+   (piezas elegidas / piecesPerUnit, redondeado arriba).
+   El stock se descuenta en unidades, igual que siempre.
    ══════════════════════════════════════════════ */
 
-// Sizes: { pieces, label, pricePerPiece } — price se calcula dinámicamente
 const COMBO_SIZES = [
-  { pieces: 20, label: "Chico" },
-  { pieces: 30, label: "Mediano" },
-  { pieces: 40, label: "Grande" },
-  { pieces: 50, label: "Jumbo" },
+  { pieces: 20, label: "Chico",   discountPct: 0.05 },
+  { pieces: 30, label: "Mediano", discountPct: 0.08 },
+  { pieces: 40, label: "Grande",  discountPct: 0.10 },
+  { pieces: 50, label: "Jumbo",   discountPct: 0.12 },
 ];
 
-// Categorías que pueden ir en un combo (excluimos extras/bandejas normalmente)
 const COMBO_ELIGIBLE_CATS = ["rolls", "veggie"];
 
-let comboSelectedSize = null; // { pieces, label }
-let comboSelections = {};     // { productId: qty }
+let comboSelectedSize = null;   // objeto de COMBO_SIZES
+// comboSelections[productId] = cantidad de PIEZAS elegidas (múltiplo de piecesPerUnit)
+let comboSelections = {};
 let comboFilterCat = "todos";
 
-// Precio promedio ponderado del combo según lo que seleccionó el cliente
-function getComboPrice() {
-  if (!comboSelectedSize) return 0;
-  const entries = Object.entries(comboSelections);
-  if (!entries.length) return 0;
-  let totalPieces = 0, totalValue = 0;
-  for (const [id, qty] of entries) {
-    const p = products.find(x => x._id === id);
-    if (!p) continue;
-    totalPieces += qty;
-    totalValue += p.price * qty;
-  }
-  if (!totalPieces) return 0;
-  const avgPrice = totalValue / totalPieces;
-  // Aplicar descuento progresivo por volumen
-  const discount = comboSelectedSize.pieces >= 50 ? 0.12
-    : comboSelectedSize.pieces >= 40 ? 0.10
-    : comboSelectedSize.pieces >= 30 ? 0.08
-    : 0.05;
-  return Math.round(avgPrice * comboSelectedSize.pieces * (1 - discount));
-}
-
-function getComboTotalPieces() {
-  return Object.values(comboSelections).reduce((a, b) => a + b, 0);
-}
+/* ── helpers ── */
 
 function getEligibleProducts() {
   return products.filter(p =>
     p.active !== false &&
-    COMBO_ELIGIBLE_CATS.includes(normalizeCategory(p.category))
+    COMBO_ELIGIBLE_CATS.includes(normalizeCategory(p.category)) &&
+    getAvailableUnits(p) > 0
   );
 }
+
+// Piezas totales actualmente elegidas
+function getComboPiecesTotal() {
+  return Object.values(comboSelections).reduce((a, b) => a + b, 0);
+}
+
+// Precio del combo: promedio ponderado de los productos elegidos × total piezas × (1 - descuento)
+function getComboPrice() {
+  if (!comboSelectedSize) return 0;
+  const entries = Object.entries(comboSelections);
+  if (!entries.length) return 0;
+  let sumValue = 0, sumPieces = 0;
+  for (const [id, pieces] of entries) {
+    const p = products.find(x => x._id === id);
+    if (!p || !p.piecesPerUnit) continue;
+    // precio por pieza = precio del roll / piezas por unidad
+    const pricePerPiece = p.price / p.piecesPerUnit;
+    sumValue  += pricePerPiece * pieces;
+    sumPieces += pieces;
+  }
+  if (!sumPieces) return 0;
+  const totalPieces = comboSelectedSize.pieces;
+  const avgPricePerPiece = sumValue / sumPieces;
+  return Math.round(avgPricePerPiece * totalPieces * (1 - comboSelectedSize.discountPct));
+}
+
+// Estima precio sin selecciones (para mostrar en botones de tamaño)
+function estimateComboPriceForSize(size) {
+  const eligible = getEligibleProducts();
+  if (!eligible.length) return 0;
+  const totalPieces = eligible.reduce((a, p) => a + p.piecesPerUnit, 0);
+  const avgPricePerPiece = eligible.reduce((a, p) => a + (p.price / p.piecesPerUnit) * p.piecesPerUnit, 0) / totalPieces;
+  return Math.round(avgPricePerPiece * size.pieces * (1 - size.discountPct));
+}
+
+/* ── open / close ── */
 
 function openComboModal() {
   if (!isAcceptingOrders()) { toast("El local está cerrado en este momento"); return; }
@@ -2463,7 +2353,7 @@ function openComboModal() {
   renderComboPickerCats();
   renderComboGrid();
   updateComboProgress();
-  updateComboTotal();
+  updateComboFooter();
   document.getElementById("comboModalOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
 }
@@ -2477,51 +2367,51 @@ function onComboOverlayClick(e) {
   if (e.target === document.getElementById("comboModalOverlay")) closeComboModal();
 }
 
+/* ── renders ── */
+
 function renderComboSizes() {
-  const row = document.getElementById("comboSizeRow");
-  row.innerHTML = COMBO_SIZES.map(size => {
-    // Precio estimado con descuento — usamos precio promedio de productos elegibles
-    const eligible = getEligibleProducts();
-    const avgPrice = eligible.length
-      ? eligible.reduce((a, p) => a + p.price, 0) / eligible.length : 0;
-    const discount = size.pieces >= 50 ? 0.12 : size.pieces >= 40 ? 0.10 : size.pieces >= 30 ? 0.08 : 0.05;
-    const estPrice = Math.round(avgPrice * size.pieces * (1 - discount));
+  document.getElementById("comboSizeRow").innerHTML = COMBO_SIZES.map(size => {
+    const est = estimateComboPriceForSize(size);
     const active = comboSelectedSize?.pieces === size.pieces ? "active" : "";
     return `
-      <button class="combo-size-btn ${active}" onclick="selectComboSize(${size.pieces}, '${size.label}')">
+      <button class="combo-size-btn ${active}" onclick="selectComboSize(${COMBO_SIZES.indexOf(size)})">
         <span class="csb-pieces">${size.pieces}</span>
         <span class="csb-label">${size.label}</span>
-        <span class="csb-price">${estPrice ? "~" + estPrice.toLocaleString("es-AR") : "—"}</span>
+        <span class="csb-price">${est ? "~" + est.toLocaleString("es-AR") : "—"}</span>
       </button>`;
   }).join("");
 }
 
-function selectComboSize(pieces, label) {
-  comboSelectedSize = { pieces, label };
-  // Si ya eligió más piezas de las que entran en el nuevo tamaño, recortar
-  const total = getComboTotalPieces();
-  if (total > pieces) {
-    // recortar desde el final
-    let remaining = pieces;
-    const newSel = {};
-    for (const [id, qty] of Object.entries(comboSelections)) {
-      if (remaining <= 0) break;
-      newSel[id] = Math.min(qty, remaining);
-      remaining -= newSel[id];
+function selectComboSize(idx) {
+  comboSelectedSize = COMBO_SIZES[idx];
+  // Recortar selecciones si superan el nuevo límite
+  const max = comboSelectedSize.pieces;
+  let total = getComboPiecesTotal();
+  if (total > max) {
+    for (const id of Object.keys(comboSelections)) {
+      if (total <= max) break;
+      const excess = total - max;
+      const current = comboSelections[id];
+      const p = products.find(x => x._id === id);
+      const step = p?.piecesPerUnit || 1;
+      // Cuántos steps podemos quitar
+      const stepsToRemove = Math.min(Math.floor(current / step), Math.ceil(excess / step));
+      comboSelections[id] = current - stepsToRemove * step;
+      if (comboSelections[id] <= 0) delete comboSelections[id];
+      total = getComboPiecesTotal();
     }
-    comboSelections = newSel;
   }
   renderComboSizes();
   renderComboGrid();
   updateComboProgress();
-  updateComboTotal();
+  updateComboFooter();
 }
 
 function renderComboPickerCats() {
   const eligible = getEligibleProducts();
-  const cats = ["todos", ...new Set(eligible.map(p => normalizeCategory(p.category)))];
-  const row = document.getElementById("comboPickerCats");
-  row.innerHTML = cats.map(cat => {
+  const cats = [...new Set(eligible.map(p => normalizeCategory(p.category)))];
+  const all = ["todos", ...cats];
+  document.getElementById("comboPickerCats").innerHTML = all.map(cat => {
     const label = cat === "todos" ? "Todos" : categoryLabel(cat);
     return `<button class="combo-picker-cat-chip ${comboFilterCat === cat ? "active" : ""}" onclick="setComboFilter('${cat}')">${label}</button>`;
   }).join("");
@@ -2529,9 +2419,7 @@ function renderComboPickerCats() {
 
 function setComboFilter(cat) {
   comboFilterCat = cat;
-  document.querySelectorAll(".combo-picker-cat-chip").forEach(el =>
-    el.classList.toggle("active", el.textContent === (cat === "todos" ? "Todos" : categoryLabel(cat)))
-  );
+  renderComboPickerCats();
   renderComboGrid();
 }
 
@@ -2540,92 +2428,113 @@ function renderComboGrid() {
   let eligible = getEligibleProducts();
   if (comboFilterCat !== "todos") eligible = eligible.filter(p => normalizeCategory(p.category) === comboFilterCat);
 
-  const totalPieces = getComboTotalPieces();
+  const totalPieces = getComboPiecesTotal();
   const maxPieces = comboSelectedSize?.pieces || 0;
+  const remaining = Math.max(0, maxPieces - totalPieces);
+
+  if (!eligible.length) {
+    grid.innerHTML = `<p style="opacity:.38;font-size:13px;grid-column:1/-1;padding:8px 0;">Sin productos disponibles.</p>`;
+    return;
+  }
 
   grid.innerHTML = eligible.map(p => {
-    const available = getAvailableUnits(p);
-    const isOut = available <= 0;
-    const qty = comboSelections[p._id] || 0;
-    const isSelected = qty > 0;
+    const ppu = p.piecesPerUnit || 1;
+    const availableUnits = getAvailableUnits(p);
+    const availablePieces = availableUnits * ppu;
+    const selectedPieces = comboSelections[p._id] || 0;
+    const isSelected = selectedPieces > 0;
     const img = escapeAttr(p.image || "https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
-    const atMax = maxPieces > 0 && totalPieces >= maxPieces && !isSelected;
-    const stockLabel = isOut ? `<span class="combo-item-stock out">Agotado</span>`
-      : available <= 3 ? `<span class="combo-item-stock low">Quedan ${available}</span>`
-      : `<span class="combo-item-stock">${p.price.toLocaleString("es-AR")} c/u</span>`;
+
+    // El botón + sólo habilitado si hay hueco Y hay stock
+    const canAddMore = remaining >= ppu && selectedPieces < availablePieces;
+    // Si no está seleccionado y no hay lugar para ni una unidad, deshabilitar card
+    const cantSelect = !isSelected && (!comboSelectedSize || remaining < ppu);
+
+    const stockMeta = availableUnits <= 2
+      ? `<span class="stock-low">Últimas ${availableUnits} unidades</span>`
+      : "";
 
     return `
-      <button class="combo-item-btn ${isSelected ? "selected" : ""} ${isOut ? "out-of-stock" : ""}"
-        ${isOut || (atMax && !isSelected) ? "disabled" : ""}
+      <button class="combo-item-btn ${isSelected ? "selected" : ""}"
+        ${cantSelect ? "disabled" : ""}
         onclick="toggleComboItem('${escapeAttr(p._id)}')"
         id="combo-btn-${escapeAttr(p._id)}">
         <span class="combo-item-check">✓</span>
-        <span class="combo-item-qty-badge">${qty || ""}</span>
-        <img class="combo-item-img" src="${img}" alt="${escapeAttr(p.name)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
+        <img class="combo-item-img" src="${img}" alt="${escapeAttr(p.name)}" loading="lazy"
+          onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
         <div class="combo-item-body">
           <div class="combo-item-name">${escapeHtml(p.name)}</div>
-          ${stockLabel}
+          <div class="combo-item-meta">
+            <span class="ppu">${ppu} piezas por unidad</span>
+            ${stockMeta}
+          </div>
         </div>
         ${isSelected ? `
         <div class="combo-item-qty-row" onclick="event.stopPropagation()">
-          <button onclick="adjustComboItemQty('${escapeAttr(p._id)}', -1)">−</button>
-          <span class="ciqr-count">${qty}</span>
-          <button onclick="adjustComboItemQty('${escapeAttr(p._id)}', 1)" ${totalPieces >= maxPieces ? "disabled" : ""}>+</button>
+          <button onclick="adjustComboPieces('${escapeAttr(p._id)}', -1)">−</button>
+          <div class="combo-item-qty-info">
+            <span class="combo-item-qty-pieces">${selectedPieces}</span>
+            <span class="combo-item-qty-label">piezas</span>
+          </div>
+          <button onclick="adjustComboPieces('${escapeAttr(p._id)}', 1)" ${!canAddMore ? "disabled" : ""}>+</button>
         </div>` : ""}
       </button>`;
   }).join("");
-
-  if (!eligible.length) {
-    grid.innerHTML = `<p style="opacity:.38;font-size:13px;grid-column:1/-1;">No hay productos en esta categoría.</p>`;
-  }
 }
+
+/* ── interacciones ── */
 
 function toggleComboItem(productId) {
   if (!comboSelectedSize) { toast("Primero elegí el tamaño del combo"); return; }
-  const totalPieces = getComboTotalPieces();
-  const maxPieces = comboSelectedSize.pieces;
   const p = products.find(x => x._id === productId);
   if (!p) return;
-  const available = getAvailableUnits(p);
+  const ppu = p.piecesPerUnit || 1;
+  const remaining = comboSelectedSize.pieces - getComboPiecesTotal();
 
   if (comboSelections[productId]) {
-    // Deselect
+    // Deseleccionar — sacar todas las piezas de este producto
     delete comboSelections[productId];
   } else {
-    // Select — agregar 1 pieza si hay lugar
-    if (totalPieces >= maxPieces) { toast(`El combo ya tiene ${maxPieces} piezas`); return; }
-    if (available <= 0) { toast("Sin stock disponible"); return; }
-    comboSelections[productId] = 1;
+    // Seleccionar — agregar una unidad (ppu piezas)
+    if (remaining < ppu) {
+      toast(`No hay lugar para ${ppu} piezas más (quedan ${remaining})`);
+      return;
+    }
+    const availablePieces = getAvailableUnits(p) * ppu;
+    if (availablePieces <= 0) { toast("Sin stock"); return; }
+    comboSelections[productId] = ppu;
   }
   renderComboGrid();
   updateComboProgress();
-  updateComboTotal();
+  updateComboFooter();
 }
 
-function adjustComboItemQty(productId, delta) {
+function adjustComboPieces(productId, delta) {
   if (!comboSelectedSize) return;
-  const maxPieces = comboSelectedSize.pieces;
   const p = products.find(x => x._id === productId);
   if (!p) return;
-  const available = getAvailableUnits(p);
+  const ppu = p.piecesPerUnit || 1;
   const current = comboSelections[productId] || 0;
-  const totalPieces = getComboTotalPieces();
+  const remaining = comboSelectedSize.pieces - getComboPiecesTotal();
+  const availableUnits = getAvailableUnits(p);
 
   if (delta > 0) {
-    if (totalPieces >= maxPieces) { toast(`El combo ya tiene ${maxPieces} piezas`); return; }
-    // No pueden poner más unidades de lo que hay en stock
-    if (current >= available) { toast("Stock máximo para este producto"); return; }
-    comboSelections[productId] = current + 1;
+    // Sumar una unidad (ppu piezas)
+    if (remaining < ppu) { toast(`Solo quedan ${remaining} piezas disponibles en el combo`); return; }
+    if (current / ppu >= availableUnits) { toast(`Stock máximo para ${p.name}`); return; }
+    comboSelections[productId] = current + ppu;
   } else {
-    if (current <= 1) {
+    // Restar una unidad
+    const newVal = current - ppu;
+    if (newVal <= 0) {
       delete comboSelections[productId];
     } else {
-      comboSelections[productId] = current - 1;
+      comboSelections[productId] = newVal;
     }
   }
   renderComboGrid();
   updateComboProgress();
-  updateComboTotal();
+  updateComboFooter();
 }
 
 function updateComboProgress() {
@@ -2634,103 +2543,128 @@ function updateComboProgress() {
   if (!comboSelectedSize) {
     fill.style.width = "0%";
     fill.classList.remove("full");
-    text.textContent = "Elegí un tamaño para comenzar";
+    text.textContent = "Elegí un tamaño para empezar";
     return;
   }
-  const total = getComboTotalPieces();
+  const total = getComboPiecesTotal();
   const max = comboSelectedSize.pieces;
-  const pct = Math.min(100, Math.round(total / max * 100));
+  const pct = Math.min(100, Math.round((total / max) * 100));
   fill.style.width = pct + "%";
   fill.classList.toggle("full", total >= max);
-  if (total === 0) text.textContent = `Agregá piezas — quedan ${max}`;
+  if (total === 0) text.textContent = `Sumá piezas — quedan ${max}`;
   else if (total < max) text.textContent = `${total} de ${max} piezas — faltan ${max - total}`;
-  else text.textContent = `✓ Combo completo — ${max} piezas`;
+  else text.textContent = `✓ Combo completo · ${max} piezas`;
 }
 
-function updateComboTotal() {
+function updateComboFooter() {
   const amountEl = document.getElementById("comboTotalAmount");
   const btn = document.getElementById("comboAddBtn");
+  const total = getComboPiecesTotal();
   const price = getComboPrice();
-  const total = getComboTotalPieces();
-  const max = comboSelectedSize?.pieces || 0;
   amountEl.textContent = price ? price.toLocaleString("es-AR") : "—";
-  btn.disabled = !comboSelectedSize || total < 1;
-  btn.textContent = total < max && total > 0
-    ? `Agregar ${total} piezas`
-    : total >= max
-    ? `Agregar combo completo`
-    : "Agregar al pedido";
+  const canAdd = comboSelectedSize && total > 0;
+  btn.disabled = !canAdd;
+  if (!comboSelectedSize) btn.textContent = "Elegí un tamaño";
+  else if (total === 0) btn.textContent = "Sumá piezas";
+  else btn.textContent = total < comboSelectedSize.pieces
+    ? `Agregar (${total} pz)`
+    : "Agregar combo completo";
 }
 
-function addComboToCart() {
-  if (!comboSelectedSize || !Object.keys(comboSelections).length) return;
-  if (!isAcceptingOrders()) { toast("El local está cerrado"); return; }
-  const totalPieces = getComboTotalPieces();
-  const price = getComboPrice();
+/* ── agregar al carrito ── */
 
-  // Verificar stock de cada producto elegido
-  for (const [id, qty] of Object.entries(comboSelections)) {
+function addComboToCart() {
+  if (!comboSelectedSize || getComboPiecesTotal() === 0) return;
+  if (!isAcceptingOrders()) { toast("El local está cerrado"); return; }
+
+  // Verificar stock: cada producto elegido requiere ceil(piezas / ppu) unidades
+  for (const [id, pieces] of Object.entries(comboSelections)) {
     const p = products.find(x => x._id === id);
     if (!p) continue;
+    const ppu = p.piecesPerUnit || 1;
+    const unitsNeeded = Math.ceil(pieces / ppu);
     const available = getAvailableUnits(p);
     const inCart = getCartQtyForProduct(p._id);
-    if (inCart + qty > available) {
-      toast(`Stock insuficiente para ${p.name}`);
+    if (inCart + unitsNeeded > available) {
+      toast(`Stock insuficiente para "${p.name}"`);
       return;
     }
   }
 
-  // Construir nombre del combo y nota con el detalle
+  const price = getComboPrice();
+  const totalPieces = getComboPiecesTotal();
   const sizeLabel = comboSelectedSize.label;
-  const pieceCount = comboSelectedSize.pieces;
-  const contentParts = Object.entries(comboSelections).map(([id, qty]) => {
-    const p = products.find(x => x._id === id);
-    return p ? `${p.name} ×${qty}` : "";
-  }).filter(Boolean);
-  const comboNote = contentParts.join(", ");
 
-  // Agregar al carrito como un ítem especial con _id compuesto
+  // Nota legible con el detalle de piezas por producto
+  const contentParts = Object.entries(comboSelections).map(([id, pieces]) => {
+    const p = products.find(x => x._id === id);
+    return p ? `${p.name} ×${pieces}pz` : "";
+  }).filter(Boolean);
+
   const comboLineId = makeLineId();
-  const comboItem = {
+  cart.push({
     _id: `combo-eleccion-${comboLineId}`,
-    name: `Combo Elección ${sizeLabel} (${totalPieces}pz)`,
+    name: `Combo Elección ${sizeLabel} (${totalPieces} pz)`,
     price,
     qty: 1,
-    note: comboNote,
+    note: contentParts.join(", "),
     lineId: comboLineId,
     category: "combos",
     isComboEleccion: true,
-    // Guardamos las selecciones para el stock
-    comboSelections: { ...comboSelections },
-  };
+    comboSelections: { ...comboSelections }, // { productId: piezas }
+  });
 
-  cart.push(comboItem);
   updateCart();
   closeComboModal();
-  toast(`✓ Combo Elección ${sizeLabel} agregado al pedido`);
+  toast(`✓ Combo Elección ${sizeLabel} — ${totalPieces} piezas`);
 }
 
-// Override de sendWhatsApp para manejar combo elección en el payload
-// El combo elección se envía como items individuales al backend para que descuente stock correctamente
-const _originalSendWhatsApp = sendWhatsApp;
-// Patcheamos el snapshot antes de enviarlo al backend
+/* ── snapshot para backend: expande combo en unidades reales ── */
+
 function buildOrderSnapshot() {
   const snapshot = [];
   for (const item of cart) {
     if (item.isComboEleccion && item.comboSelections) {
-      // Expandir en items individuales
-      for (const [id, qty] of Object.entries(item.comboSelections)) {
+      for (const [id, pieces] of Object.entries(item.comboSelections)) {
         const p = products.find(x => x._id === id);
         if (!p) continue;
+        const ppu = p.piecesPerUnit || 1;
+        const unitsNeeded = Math.ceil(pieces / ppu);
         const existing = snapshot.find(s => s._id === id);
-        if (existing) existing.qty += qty;
-        else snapshot.push({ _id: id, name: p.name, qty, price: p.price, note: `(parte de ${item.name})` });
+        if (existing) existing.qty += unitsNeeded;
+        else snapshot.push({ _id: id, name: p.name, qty: unitsNeeded, price: p.price, note: `Combo Elección` });
       }
     } else {
       snapshot.push({ _id: item._id, name: item.name, qty: item.qty, price: item.price, note: item.note || "" });
     }
   }
   return snapshot;
+}
+
+/* ── card en grilla de combos ── */
+
+function renderComboEleccionCard() {
+  const closed = !isAcceptingOrders();
+  const eligible = getEligibleProducts();
+  const est = eligible.length ? estimateComboPriceForSize(COMBO_SIZES[1]) : 0; // precio mediano
+  return `
+  <div class="combo-eleccion-card" onclick="openComboModal()">
+    <div class="combo-eleccion-inner">
+      <div class="combo-eleccion-left">
+        <div class="combo-eleccion-kicker">✦ Nuevo</div>
+        <div class="combo-eleccion-title">Combo<br>Elección</div>
+        <div class="combo-eleccion-desc">Elegís cuántas piezas querés y combinás los rolls que más te gusten.${est ? ` Desde ~${est.toLocaleString("es-AR")}.` : ""}</div>
+        <button class="combo-eleccion-cta" onclick="event.stopPropagation();openComboModal()" ${closed ? "disabled" : ""}>
+          ${closed ? "Local cerrado" : "Armar combo →"}
+        </button>
+      </div>
+      <div class="combo-eleccion-right">
+        <img src="https://images.unsplash.com/photo-1617196034183-421b4040ed20" alt="Combo Elección" loading="lazy">
+        <div class="combo-eleccion-overlay"></div>
+        <div class="combo-eleccion-pieces-badge">20 · 30 · 40 · 50 pz</div>
+      </div>
+    </div>
+  </div>`;
 }
 
 loadSavedCart();
