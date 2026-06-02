@@ -13,7 +13,7 @@ app.disable("x-powered-by");
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN ? process.env.FRONTEND_ORIGIN.split(",").map(origin => origin.trim()) : true
 }));
-app.use(express.json({ limit: "100kb" }));
+app.use(express.json({ limit: "6mb" }));
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
