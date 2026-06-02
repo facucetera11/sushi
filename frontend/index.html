@@ -1222,9 +1222,14 @@ function isAcceptingOrders() {
   return settings.acceptingOrders !== false;
 }
 
+function normalizeCategory(cat) {
+  return String(cat || "").trim().toLowerCase() === "pancho" ? "panchos" : String(cat || "").trim().toLowerCase();
+}
+
 function categoryLabel(cat) {
-  const labels = { rolls: "Rolls", combos: "Combos", veggie: "Veggie", bandejas: "Bandejas", extras: "Extras" };
-  return labels[cat] || String(cat || "").replace(/[-_]/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
+  const key = normalizeCategory(cat);
+  const labels = { rolls: "Rolls", combos: "Combos", veggie: "Veggie", bandejas: "Bandejas", extras: "Extras", panchos: "Panchos" };
+  return labels[key] || key.replace(/[-_]/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
 }
 
 function makeLineId() {
@@ -1628,7 +1633,8 @@ function buildMenuCats() {
   const primary = CATS.filter(cat => cat !== "extras");
   const custom = [];
   products.forEach(p => {
-    if (p.category && !CATS.includes(p.category) && !custom.includes(p.category)) custom.push(p.category);
+    const cat = normalizeCategory(p.category);
+    if (cat && !CATS.includes(cat) && !custom.includes(cat)) custom.push(cat);
   });
   return [...primary, ...custom, "extras"];
 }
@@ -1732,9 +1738,9 @@ function renderAllCats() {
 function renderCat(cat) {
   const q = searchQuery.trim().toLowerCase();
   const filtered = products.filter(p => {
-    if (p.category !== cat || p.active === false) return false;
+    if (normalizeCategory(p.category) !== cat || p.active === false) return false;
     if (!q) return true;
-    return [p.name, p.description, p.category].some(value => String(value || "").toLowerCase().includes(q));
+    return [p.name, p.description, categoryLabel(p.category)].some(value => String(value || "").toLowerCase().includes(q));
   });
   const grid = document.getElementById("grid-" + cat);
   const countEl = document.getElementById("count-" + cat);
