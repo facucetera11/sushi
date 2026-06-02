@@ -111,7 +111,11 @@ async function requireAdmin(req, res, next) {
   }
 }
 
-function getStockRecipe(product) {
+function getStockRecipe(product, itemOverride) {
+  // Si el item trae _piecesOverride, descontamos exactamente esas piezas (para combos libres)
+  if (itemOverride && itemOverride._piecesOverride > 0) {
+    return [{ product: product._id, pieces: itemOverride._piecesOverride }];
+  }
   const recipe = Array.isArray(product.stockItems)
     ? product.stockItems.filter(item => item.product && item.pieces > 0)
     : [];
@@ -251,7 +255,7 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
       const qty = Number(item.qty) || 0;
       if (qty <= 0) return res.status(400).json({ error: `Cantidad invalida para: ${item.name}` });
 
-      for (const recipeItem of getStockRecipe(product)) {
+      for (const recipeItem of getStockRecipe(product, item)) {
         const id = recipeItem.product.toString();
         const pieces = (Number(recipeItem.pieces) || 0) * qty;
         stockDeductions.set(id, (stockDeductions.get(id) || 0) + pieces);

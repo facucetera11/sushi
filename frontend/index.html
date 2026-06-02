@@ -2275,21 +2275,22 @@ document.getElementById("menuSearch").addEventListener("input", e => {
 });
 
 /* ══════════════════════════════════════════════
-   COMBO ELECCIÓN — piezas libres, precio exacto
+   COMBO ELECCIÓN — piezas libres, precio fijo por tamaño
    ══════════════════════════════════════════════
-   - El cliente elige cuántas PIEZAS de cada roll quiere.
-   - Precio por pieza = producto.price / producto.piecesPerUnit
-   - El total se suma pieza a pieza (sin promedio, sin descuento extra)
-   - Stock: al enviar, se convierte a ceil(piezas / ppu) unidades
-     para que el backend descuente correctamente.
+   - El cliente elige cuántas PIEZAS de cada tipo de sushi quiere.
+   - El precio es fijo según el tamaño elegido (no por pieza).
+   - Stock: se descuenta DIRECTAMENTE en piezas por cada tipo.
+     Ej: piden 3 pz de Philadelphia → stock de Philadelphia -= 3
    ══════════════════════════════════════════════ */
 
 const COMBO_SIZES = [
-  { pieces: 20, label: "Chico"   },
-  { pieces: 30, label: "Mediano" },
-  { pieces: 40, label: "Grande"  },
-  { pieces: 50, label: "Jumbo"   },
+  { pieces:  8, label: "Pequeño", price: 0 },
+  { pieces: 16, label: "Mediano", price: 0 },
+  { pieces: 35, label: "Grande",  price: 0 },
 ];
+// Los precios se cargan dinámicamente desde los combos del menú (ver loadComboPrices).
+// Si no se encuentran, se usan los valores de COMBO_SIZE_FALLBACK_PRICES.
+const COMBO_SIZE_FALLBACK_PRICES = { 8: 0, 16: 0, 35: 0 };
 
 const COMBO_ELIGIBLE_CATS = ["rolls", "veggie"];
 
@@ -2304,7 +2305,7 @@ function getEligibleProducts() {
   return products.filter(p =>
     p.active !== false &&
     COMBO_ELIGIBLE_CATS.includes(normalizeCategory(p.category)) &&
-    getAvailableUnits(p) > 0
+    (p.stock || 0) > 0
   );
 }
 
@@ -2313,40 +2314,35 @@ function getComboPiecesTotal() {
   return Object.values(comboSelections).reduce((a, b) => a + b, 0);
 }
 
-// Precio exacto: suma(piezas_i × precio_por_pieza_i)
+// Precio del combo: fijo según el tamaño elegido
 function getComboPrice() {
-  let total = 0;
-  for (const [id, pieces] of Object.entries(comboSelections)) {
-    const p = products.find(x => x._id === id);
-    if (!p) continue;
-    const ppu = p.piecesPerUnit || 1;
-    total += (p.price / ppu) * pieces;
-  }
-  return Math.round(total);
+  return comboSelectedSize ? (comboSelectedSize.price || 0) : 0;
 }
 
-// Precio por pieza de un producto
-function pricePerPiece(p) {
-  return p.price / (p.piecesPerUnit || 1);
-}
-
-// Cuántas piezas máximas puedo elegir de un producto (limitado por stock)
+// Cuántas piezas máximas puedo elegir de un producto (limitado por stock en piezas)
 function maxPiecesForProduct(p) {
-  return getAvailableUnits(p) * (p.piecesPerUnit || 1);
+  return p.stock || 0;
 }
 
-// Estima precio total de un tamaño usando el precio promedio por pieza de los elegibles
-function estimateComboPriceForSize(size) {
-  const eligible = getEligibleProducts();
-  if (!eligible.length) return 0;
-  const avgPPP = eligible.reduce((a, p) => a + pricePerPiece(p), 0) / eligible.length;
-  return Math.round(avgPPP * size.pieces);
+// Intenta cargar precios fijos desde los productos de combo del menú
+function loadComboPrices() {
+  // Busca productos cuyo nombre contenga el número de piezas del combo
+  // Ej: "Combo 8 pz", "Combo 16", "Combo 35 piezas"
+  COMBO_SIZES.forEach(size => {
+    const match = products.find(p =>
+      normalizeCategory(p.category) === "combos" &&
+      p.active !== false &&
+      new RegExp(`\\b${size.pieces}\\b`).test(p.name)
+    );
+    size.price = match ? match.price : (COMBO_SIZE_FALLBACK_PRICES[size.pieces] || 0);
+  });
 }
 
 /* ── open / close ── */
 
 function openComboModal() {
   if (!isAcceptingOrders()) { toast("El local está cerrado en este momento"); return; }
+  loadComboPrices();
   comboSelectedSize = null;
   comboSelections = {};
   comboFilterCat = "todos";
@@ -2372,13 +2368,13 @@ function onComboOverlayClick(e) {
 
 function renderComboSizes() {
   document.getElementById("comboSizeRow").innerHTML = COMBO_SIZES.map((size, idx) => {
-    const est = estimateComboPriceForSize(size);
     const active = comboSelectedSize?.pieces === size.pieces ? "active" : "";
+    const priceLabel = size.price ? size.price.toLocaleString("es-AR") : "—";
     return `
       <button class="combo-size-btn ${active}" onclick="selectComboSize(${idx})">
         <span class="csb-pieces">${size.pieces}</span>
         <span class="csb-label">${size.label}</span>
-        <span class="csb-price">${est ? "~" + est.toLocaleString("es-AR") : "—"}</span>
+        <span class="csb-price">${priceLabel}</span>
       </button>`;
   }).join("");
 }
@@ -2437,9 +2433,7 @@ function renderComboGrid() {
   const remaining   = Math.max(0, maxPieces - totalPieces);
 
   grid.innerHTML = eligible.map(p => {
-    const ppu          = p.piecesPerUnit || 1;
-    const ppp          = pricePerPiece(p);           // precio por pieza
-    const maxForThis   = maxPiecesForProduct(p);     // stock en piezas
+    const maxForThis   = maxPiecesForProduct(p);     // stock directo en piezas
     const selected     = comboSelections[p._id] || 0;
     const isSelected   = selected > 0;
     const img          = escapeAttr(p.image || "https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
@@ -2449,10 +2443,9 @@ function renderComboGrid() {
     // No se puede tocar si no está seleccionado y no hay lugar para 1 pieza
     const disabled  = !isSelected && (!comboSelectedSize || remaining === 0);
 
-    const availUnits = getAvailableUnits(p);
-    const stockLabel = availUnits <= 2
-      ? `<span class="combo-item-stock-warn">⚠ ${availUnits * ppu} pz disponibles</span>`
-      : `<span class="combo-item-price-pp">${Math.round(ppp).toLocaleString("es-AR")} / pz</span>`;
+    const stockLabel = maxForThis <= 5
+      ? `<span class="combo-item-stock-warn">⚠ ${maxForThis} pz disponibles</span>`
+      : `<span class="combo-item-price-pp">${maxForThis} pz en stock</span>`;
 
     return `
       <div class="combo-item-btn ${isSelected ? "selected" : ""} ${disabled ? "combo-disabled" : ""}"
@@ -2463,7 +2456,6 @@ function renderComboGrid() {
         <div class="combo-item-body">
           <div class="combo-item-name">${escapeHtml(p.name)}</div>
           <div class="combo-item-meta">
-            <span class="combo-item-ppu">${ppu} pz por unidad</span>
             ${stockLabel}
           </div>
         </div>
@@ -2546,15 +2538,22 @@ function addComboToCart() {
   if (!isAcceptingOrders()) { toast("El local está cerrado"); return; }
 
   // Verificar stock: ceil(piezas / ppu) unidades por producto
+  // Verificar stock directamente en piezas
   for (const [id, pieces] of Object.entries(comboSelections)) {
     const p = products.find(x => x._id === id);
     if (!p) continue;
-    const ppu         = p.piecesPerUnit || 1;
-    const unitsNeeded = Math.ceil(pieces / ppu);
-    const available   = getAvailableUnits(p);
-    const inCart      = getCartQtyForProduct(p._id);
-    if (inCart + unitsNeeded > available) {
-      toast(`Stock insuficiente para "${p.name}"`);
+    // Sumar piezas ya en carrito para este mismo producto (de otros combos o pedidos sueltos)
+    const piecesInCart = cart.reduce((acc, cartItem) => {
+      if (cartItem.isComboEleccion && cartItem.comboSelections && cartItem.comboSelections[id]) {
+        return acc + (cartItem.comboSelections[id] || 0);
+      }
+      if (!cartItem.isComboEleccion && cartItem._id === id) {
+        return acc + (cartItem.qty || 0);
+      }
+      return acc;
+    }, 0);
+    if (piecesInCart + pieces > p.stock) {
+      toast(`Stock insuficiente para "${p.name}" (${p.stock} pz disponibles)`);
       return;
     }
   }
@@ -2592,14 +2591,14 @@ function buildOrderSnapshot() {
   const snapshot = [];
   for (const item of cart) {
     if (item.isComboEleccion && item.comboSelections) {
+      // Enviamos qty=1 y _piecesOverride=pieces para que el backend descuente
+      // exactamente las piezas elegidas, sin multiplicar por piecesPerUnit.
       for (const [id, pieces] of Object.entries(item.comboSelections)) {
         const p = products.find(x => x._id === id);
-        if (!p) continue;
-        const ppu         = p.piecesPerUnit || 1;
-        const unitsNeeded = Math.ceil(pieces / ppu);
-        const existing    = snapshot.find(s => s._id === id);
-        if (existing) existing.qty += unitsNeeded;
-        else snapshot.push({ _id: id, name: p.name, qty: unitsNeeded, price: p.price, note: "Combo Elección" });
+        if (!p || pieces <= 0) continue;
+        const existing = snapshot.find(s => s._id === id && s._piecesOverride !== undefined);
+        if (existing) existing._piecesOverride += pieces;
+        else snapshot.push({ _id: id, name: p.name, qty: 1, price: 0, note: "Combo Elección", _piecesOverride: pieces });
       }
     } else {
       snapshot.push({ _id: item._id, name: item.name, qty: item.qty, price: item.price, note: item.note || "" });
@@ -2612,15 +2611,13 @@ function buildOrderSnapshot() {
 
 function renderComboEleccionCard() {
   const closed = !isAcceptingOrders();
-  const eligible = getEligibleProducts();
-  const est = eligible.length ? estimateComboPriceForSize(COMBO_SIZES[0]) : 0;
   return `
   <div class="combo-eleccion-card" onclick="openComboModal()">
     <div class="combo-eleccion-inner">
       <div class="combo-eleccion-left">
         <div class="combo-eleccion-kicker">✦ Nuevo</div>
         <div class="combo-eleccion-title">Combo<br>Elección</div>
-        <div class="combo-eleccion-desc">Armá tu combo pieza por pieza. Elegís cuántas piezas de cada roll querés y el precio se calcula exacto.${est ? ` Desde ~${est.toLocaleString("es-AR")}.` : ""}</div>
+        <div class="combo-eleccion-desc">Armá tu combo pieza por pieza. Elegís cuántas piezas de cada roll querés — el stock se descuenta exacto por tipo. Combos de 8, 16 o 35 piezas.</div>
         <button class="combo-eleccion-cta" onclick="event.stopPropagation();openComboModal()" ${closed ? "disabled" : ""}>
           ${closed ? "Local cerrado" : "Armar combo →"}
         </button>
@@ -2628,7 +2625,7 @@ function renderComboEleccionCard() {
       <div class="combo-eleccion-right">
         <img src="https://images.unsplash.com/photo-1617196034183-421b4040ed20" alt="Combo Elección" loading="lazy">
         <div class="combo-eleccion-overlay"></div>
-        <div class="combo-eleccion-pieces-badge">20 · 30 · 40 · 50 pz</div>
+        <div class="combo-eleccion-pieces-badge">8 · 16 · 35 pz</div>
       </div>
     </div>
   </div>`;
