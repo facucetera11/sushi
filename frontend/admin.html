@@ -932,15 +932,18 @@ function renderStockInventory(products) {
 
 function renderProducts(products) {
   toggleNewProductStockFields();
-  const cats = ["rolls","combos","veggie","bandejas","extras"];
+  const KNOWN_CATS = ["rolls","combos","veggie","bandejas","extras"];
   const catNames = { rolls:"🍣 Rolls", combos:"🎁 Combos", veggie:"🥗 Veggie Rolls", bandejas:"🍱 Bandejas", extras:"➕ Extras" };
+  // Incluir categorías custom que no estén en la lista base
+  const cats = [...KNOWN_CATS];
+  products.forEach(p => { if (p.category && !cats.includes(p.category)) cats.push(p.category); });
   document.getElementById("productsGrid").innerHTML = cats.map(cat => {
     const items = products.filter(p => p.category === cat);
     if (!items.length) return "";
     return `
       <div style="grid-column:1/-1;margin-top:24px;margin-bottom:8px;">
         <h3 style="font-size:18px;font-weight:800;color:var(--navy);padding-bottom:10px;border-bottom:2px solid rgba(22,32,74,.08);">
-          ${catNames[cat]} <span style="font-size:13px;opacity:.4;font-weight:500;">${items.length} productos</span>
+          ${catNames[cat] || (cat.charAt(0).toUpperCase()+cat.slice(1))} <span style="font-size:13px;opacity:.4;font-weight:500;">${items.length} productos</span>
         </h3>
       </div>
       ${items.map(p => {
