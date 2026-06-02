@@ -126,6 +126,10 @@ textarea{height:80px;resize:vertical;}
 .product-status-row label{font-size:12px;font-weight:800;color:var(--navy);}
 .product-status-row select{width:132px;margin-bottom:0;padding:9px 10px;font-size:12px;}
 
+.btn-print{padding:8px 14px;border:1.5px solid rgba(22,32,74,.15);border-radius:10px;background:transparent;color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;margin-top:8px;margin-right:6px;}
+.btn-print:hover{background:var(--navy);color:white;border-color:var(--navy);}
+.btn-delete-order{padding:8px 14px;border:1.5px solid rgba(216,106,94,.3);border-radius:10px;background:transparent;color:var(--red);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;margin-top:8px;}
+.btn-delete-order:hover{background:var(--red);color:white;}
 #toast{position:fixed;bottom:30px;right:30px;background:var(--navy);color:white;padding:15px 24px;border-radius:16px;font-weight:700;font-size:14px;opacity:0;transition:.3s;z-index:9999;pointer-events:none;}
 #toast.show{opacity:1;}
 #toast.success{background:var(--green);}
@@ -157,7 +161,7 @@ textarea{height:80px;resize:vertical;}
 .pieces-row{display:flex;align-items:center;gap:8px;margin:8px 0 6px;}
 .pieces-row label{font-size:11px;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.5px;flex:1;}
 .pieces-stepper{display:flex;align-items:center;gap:6px;}
-.pieces-stepper button{width:32px;height:32px;border:none;border-radius:10px;background:rgba(22,32,74,.08);color:var(--navy);font-size:18px;font-weight:700;cursor:pointer;transition:.15s;line-height:1;}
+.pieces-stepper button{min-width:32px;height:32px;padding:0 8px;border:none;border-radius:10px;background:rgba(22,32,74,.08);color:var(--navy);font-size:14px;font-weight:700;cursor:pointer;transition:.15s;line-height:1;}
 .pieces-stepper button:hover{background:var(--navy);color:white;}
 .pieces-stepper input{width:72px;font-size:16px!important;font-weight:800!important;margin-bottom:0!important;padding:8px 6px!important;}
 .pieces-divider{border:none;border-top:1px solid rgba(22,32,74,.07);margin:10px 0;}
@@ -493,10 +497,16 @@ function escapeHtml(value) {
 /* ── LOAD ALL ── */
 async function loadAll() {
   try {
+    const [productsRes, ordersRes, settingsRes] = await Promise.all([
+      authFetch(`${API}/products`),
+      authFetch(`${API}/orders`),
+      authFetch(`${API}/settings`)
+    ]);
+    if (!productsRes.ok || !ordersRes.ok || !settingsRes.ok) {
+      toast("❌ Error al cargar datos", "error"); return;
+    }
     const [products, orders, settings] = await Promise.all([
-      authFetch(`${API}/products`).then(r => r.json()),
-      authFetch(`${API}/orders`).then(r => r.json()),
-      authFetch(`${API}/settings`).then(r => r.json())
+      productsRes.json(), ordersRes.json(), settingsRes.json()
     ]);
     allProducts = products;
 
@@ -735,15 +745,24 @@ function toggleHistory() {
 }
 
 async function updateOrder(id, status) {
-  await authFetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
-  toast("✓ Pedido actualizado", "success"); loadAll();
+  try {
+    const res = await authFetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
+    if (!res.ok) throw new Error();
+    toast("✓ Pedido actualizado", "success");
+    startAutoRefresh();
+    loadAll();
+  } catch { toast("Error al actualizar pedido", "error"); }
 }
 
 async function deleteOrder(id) {
-  if (!confirm("Eliminar este pedido del historial?")) return;
-  await authFetch(`${API}/orders/${id}`, { method:"DELETE" });
-  toast("Pedido eliminado", "success");
-  loadAll();
+  if (!confirm("¿Eliminar este pedido del historial?")) return;
+  try {
+    const res = await authFetch(`${API}/orders/${id}`, { method:"DELETE" });
+    if (!res.ok) throw new Error();
+    toast("✓ Pedido eliminado", "success");
+    startAutoRefresh();
+    loadAll();
+  } catch { toast("Error al eliminar pedido", "error"); }
 }
 
 /* ── SETTINGS ── */
@@ -784,53 +803,15 @@ async function saveTransfer() {
   const transferAlias = document.getElementById("transferAlias").value.trim();
   const mercadoPagoLink = document.getElementById("mercadoPagoLink").value.trim();
   const whatsappNumber = document.getElementById("whatsappNumber").value.replace(/\D/g, "");
-  if (!whatsappNumber) { toast("IngresÃ¡ un WhatsApp vÃ¡lido", "error"); return; }
+  if (!whatsappNumber) { toast("Ingresá un WhatsApp válido", "error"); return; }
   await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ transferAlias, mercadoPagoLink, whatsappNumber }) });
   toast("✓ Datos de transferencia guardados", "success");
 }
 
 /* ── PRODUCTS ── */
-function getRecipeText(product, products) {
-  const recipe = product.stockItems || [];
-  return recipe.map(item => {
-    const id = String(item.product?._id || item.product);
-    const stockProduct = products.find(p => p._id === id);
-    return `${stockProduct?.name || id}: ${item.pieces}`;
-  }).join("\n");
-}
 
-function normalizeName(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
-}
 
-function findRecipeProduct(productNameOrId, products) {
-  const wanted = normalizeName(productNameOrId);
-  return products.find(p => p._id === productNameOrId)
-    || products.find(p => normalizeName(p.name) === wanted)
-    || products.find(p => normalizeName(p.name).includes(wanted) || wanted.includes(normalizeName(p.name)));
-}
 
-function parseStockItems(text, products) {
-  const invalid = [];
-  const items = text.split("\n").map(line => line.trim()).filter(Boolean).map(line => {
-    const match = line.match(/^(.+?)(?::|=|-)\s*(\d+)$/);
-    if (!match) { invalid.push(line); return null; }
-    const productNameOrId = match[1].trim();
-    const product = findRecipeProduct(productNameOrId, products);
-    const pieces = Number(match[2]);
-    if (!product || pieces <= 0) invalid.push(line);
-    return product && pieces > 0 ? { product: product._id, pieces } : null;
-  }).filter(Boolean);
-  if (invalid.length) {
-    throw new Error(`No pude guardar estas lineas de receta: ${invalid.join(", ")}`);
-  }
-  return items;
-}
 
 function recipeProductOptions(selectedId = "") {
   const stockProducts = allProducts.filter(isStockType);
@@ -1042,6 +1023,7 @@ async function addProduct() {
     document.getElementById("recipeRows-new").innerHTML = "";
     toggleNewProductStockFields();
     toast("✓ Producto agregado", "success");
+    startAutoRefresh();
     loadAll();
   } catch (err) {
     toast(err.message || "Error al agregar producto", "error");
@@ -1088,6 +1070,7 @@ async function updateProduct(id) {
     });
     if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al guardar"); }
     toast("✓ Guardado", "success");
+    startAutoRefresh();
     loadAll();
   } catch (err) {
     toast(err.message || "Error al guardar", "error");
@@ -1095,13 +1078,15 @@ async function updateProduct(id) {
 }
 
 async function updateStockOnly(id) {
-  const products = await authFetch(`${API}/products`).then(r => r.json());
-  const product = products.find(p => p._id === id);
+  const product = allProducts.find(p => p._id === id);
   const units = +document.getElementById(`stock-only-${id}`).value;
   if (isNaN(units) || units < 0 || !product) { toast("Ingresá un stock válido", "error"); return; }
   const stock = stockPiecesFromUnits(units, product);
-  await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
-  toast("✓ Stock actualizado","success"); loadAll();
+  const res = await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
+  if (!res.ok) { toast("Error al actualizar stock", "error"); return; }
+  toast("✓ Stock actualizado","success");
+  startAutoRefresh(); // resetear timer para no sobreescribir
+  loadAll();
 }
 function adjustPieces(id, delta) {
   const input = document.getElementById(`pieces-only-${id}`);
@@ -1121,6 +1106,7 @@ async function updatePiecesOnly(id) {
   });
   if (!res.ok) { toast("Error al actualizar piezas", "error"); return; }
   toast("✓ Piezas actualizadas", "success");
+  startAutoRefresh();
   loadAll();
 }
 
