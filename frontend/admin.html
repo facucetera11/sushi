@@ -1344,24 +1344,25 @@ async function saveComboPrices() {
 }
 
 function renderComboEleccionAdminCards() {
-  const SIZES = [
-    { pieces: 8,  label: "Pequeño" },
-    { pieces: 16, label: "Mediano" },
-    { pieces: 35, label: "Grande"  },
+  var SIZES = [
+    { pieces: 8,  label: "Pequeno",  ph: "5000"  },
+    { pieces: 16, label: "Mediano",  ph: "9500"  },
+    { pieces: 35, label: "Grande",   ph: "19000" },
   ];
-  return SIZES.map(size => {
-    const p = getComboProductForSize(size.pieces);
-    const price = p ? p.price : "";
-    const pid = p ? p._id : "";
-    return `
-    <div class="product-card" style="border:2px dashed rgba(22,32,74,.18);background:rgba(22,32,74,.02);">
-      <div class="label" style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:600;margin-bottom:4px;">✦ COMBO ELECCIÓN</div>
-      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;">Combo ${size.pieces} pz — ${size.label}</div>
-      <div class="label">Precio fijo del combo</div>
-      <input id="ce-price-${size.pieces}" type="number" min="0" value="${price}" placeholder="Ej: ${size.pieces === 8 ? "5000" : size.pieces === 16 ? "9500" : "19000"}" style="margin-bottom:10px;">
-      ${!p ? `<div style="font-size:11px;color:#c87400;margin-bottom:10px;">⚠ Producto no encontrado. Creá un combo con "${size.pieces}" en el nombre.</div>` : ""}
-      <button class="btn btn-success" onclick="saveComboEleccionPrice(${size.pieces}, '${pid}')" ${!p ? "disabled" : ""}>Guardar precio</button>
-    </div>`;
+  return SIZES.map(function(size) {
+    var p   = getComboProductForSize(size.pieces);
+    var price = p ? p.price : "";
+    var pid   = p ? p._id   : "";
+    var warn  = p ? "" : '<div style="font-size:11px;color:#c87400;margin-bottom:10px;">Producto no encontrado. Crea un combo con ' + size.pieces + ' en el nombre.</div>';
+    var dis   = p ? "" : "disabled";
+    return '<div class="product-card" style="border:2px dashed rgba(22,32,74,.18);background:rgba(22,32,74,.02);">'
+         + '<div class="label" style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:600;margin-bottom:4px;">COMBO ELECCION</div>'
+         + '<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;">Combo ' + size.pieces + ' pz &mdash; ' + size.label + '</div>'
+         + '<div class="label">Precio fijo del combo</div>'
+         + '<input id="ce-price-' + size.pieces + '" type="number" min="0" value="' + price + '" placeholder="Ej: ' + size.ph + '" style="margin-bottom:10px;">'
+         + warn
+         + '<button class="btn btn-success" onclick="saveComboEleccionPrice(' + size.pieces + ', \'' + pid + '\')" ' + dis + '>Guardar precio</button>'
+         + '</div>';
   }).join("");
 }
 
