@@ -1279,7 +1279,7 @@ async function saveTransfer() {
 
 
 function getComboProductForSize(size) {
-  return products.find(function(p) {
+  return allProducts.find(function(p) {
     return (normalizeCategory(p.category) === "combos") && new RegExp("\\b" + size + "\\b").test(p.name);
   });
 }
@@ -1314,7 +1314,7 @@ async function saveComboEleccionPrice(size, pid) {
   if (!pid) { toast("Producto no encontrado", "error"); return; }
   const res = await authFetch(`${API}/products/${pid}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ price }) });
   if (!res.ok) { toast("Error al guardar", "error"); return; }
-  const p = products.find(x => x._id === pid);
+  const p = allProducts.find(x => x._id === pid);
   if (p) p.price = price;
   toast(`✓ Combo ${size} pz — precio guardado`, "success");
 }
