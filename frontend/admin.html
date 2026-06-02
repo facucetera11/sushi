@@ -5,186 +5,370 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Kizuna Sushi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <style>
-:root{--red:#d86a5e;--navy:#16204a;--cream:#ffffff;--green:#2e8b57;--shadow:0 12px 35px rgba(0,0,0,.08);}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:#f4f5f8;color:var(--navy);font-family:'DM Sans',sans-serif;min-height:100vh;}
-
-#loginScreen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:20px;}
-#loginScreen h1{font-family:'Playfair Display',serif;color:white;font-size:42px;margin-bottom:10px;}
-#loginScreen p{color:rgba(255,255,255,.5);font-size:14px;}
-#loginBox{background:rgba(255,255,255,.07);border-radius:24px;padding:36px;width:340px;display:flex;flex-direction:column;gap:14px;}
-#pwInput{padding:16px;border-radius:14px;border:none;background:rgba(255,255,255,.1);color:white;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;transition:background .2s;}
-#pwInput::placeholder{color:rgba(255,255,255,.3);}
-#pwInput:focus{background:rgba(255,255,255,.15);}
-#loginBtn{padding:16px;border-radius:14px;border:none;background:var(--red);color:white;font-weight:800;font-size:15px;cursor:pointer;transition:.2s;}
-#loginBtn:hover{background:#c45a4f;}
-#loginError{color:#ff8a80;font-size:13px;text-align:center;min-height:18px;}
-
-#adminMain{display:none;padding:50px 6%;max-width:1400px;margin:auto;}
-.admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:36px;}
-.admin-header h1{font-family:'Playfair Display',serif;font-size:48px;color:var(--red);}
-#logoutBtn{padding:10px 20px;border-radius:12px;border:none;background:rgba(22,32,74,.08);color:var(--navy);font-weight:700;font-size:13px;cursor:pointer;transition:.2s;}
-#logoutBtn:hover{background:var(--red);color:white;}
-
-#analytics{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-bottom:36px;}
-.metric{background:white;padding:26px 22px;border-radius:22px;box-shadow:var(--shadow);text-align:center;}
-.metric-value{font-size:36px;font-weight:900;color:var(--red);font-family:'Playfair Display',serif;}
-.metric-label{font-size:13px;opacity:.55;margin-top:4px;font-weight:600;}
-
-.panel{background:white;border-radius:24px;padding:30px;box-shadow:var(--shadow);margin-bottom:28px;}
-.panel h2{font-size:22px;font-weight:800;margin-bottom:22px;display:flex;align-items:center;gap:10px;}
-
-/* ORDERS */
-.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
-.order-card{border-radius:18px;border:1.5px solid rgba(22,32,74,.08);padding:20px;background:var(--cream);transition:box-shadow .2s;}
-.order-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.07);}
-.order-card.new-order{border-color:var(--red);box-shadow:0 0 0 3px rgba(216,106,94,.15);}
-.order-card h3{font-size:16px;font-weight:800;margin-bottom:8px;}
-.order-items{font-size:13px;opacity:.7;margin-bottom:10px;line-height:1.7;}
-.order-total{font-weight:900;font-size:17px;margin-bottom:6px;}
-.order-time{font-size:11px;opacity:.4;margin-bottom:10px;}
-.order-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
-.order-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
-.tag-delivery{background:rgba(22,32,74,.08);color:var(--navy);}
-.tag-retiro{background:rgba(46,139,87,.1);color:#2e8b57;}
-.tag-scheduled{background:rgba(216,106,94,.1);color:var(--red);}
-.tag-cash{background:rgba(46,139,87,.12);color:#2e8b57;}
-.tag-transfer{background:rgba(22,32,74,.08);color:var(--navy);}
-
-/* HISTORIAL */
-.history-toggle{
-  display:flex;align-items:center;gap:10px;
-  padding:12px 18px;border-radius:14px;border:none;
-  background:rgba(22,32,74,.05);color:var(--navy);
-  font-weight:700;font-size:13px;cursor:pointer;transition:.2s;
-  margin-bottom:16px;
+:root {
+  --red: #d86a5e;
+  --red-soft: rgba(216,106,94,.12);
+  --navy: #16204a;
+  --navy-soft: rgba(22,32,74,.06);
+  --navy-mid: rgba(22,32,74,.12);
+  --cream: #ffffff;
+  --green: #2a9968;
+  --green-soft: rgba(42,153,104,.1);
+  --bg: #f0f1f5;
+  --surface: #ffffff;
+  --border: rgba(22,32,74,.07);
+  --shadow-sm: 0 2px 8px rgba(22,32,74,.06);
+  --shadow: 0 8px 28px rgba(22,32,74,.08);
+  --shadow-lg: 0 20px 60px rgba(22,32,74,.12);
+  --radius: 20px;
+  --radius-sm: 12px;
+  --radius-xs: 8px;
 }
-.history-toggle:hover{background:rgba(22,32,74,.1);}
-.history-toggle .arrow{transition:transform .2s;}
-.history-toggle.open .arrow{transform:rotate(180deg);}
-#historyGrid{display:none;}
-#historyGrid.open{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin-top:16px;}
-.order-card.delivered{opacity:.6;border-style:dashed;}
-.order-card.delivered:hover{opacity:1;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
 
-/* NOTIF BANNER */
+/* ── LOGIN ── */
+#loginScreen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:20px;
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(216,106,94,.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,255,255,.03) 0%, transparent 50%);
+}
+#loginScreen h1{font-family:'Syne',sans-serif;color:white;font-size:44px;letter-spacing:-1px;}
+#loginScreen p{color:rgba(255,255,255,.4);font-size:14px;letter-spacing:.3px;}
+#loginBox{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);border-radius:28px;padding:36px;width:340px;display:flex;flex-direction:column;gap:14px;}
+#pwInput{padding:16px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:white;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;transition:.2s;}
+#pwInput::placeholder{color:rgba(255,255,255,.28);}
+#pwInput:focus{background:rgba(255,255,255,.12);border-color:rgba(216,106,94,.6);}
+#loginBtn{padding:16px;border-radius:14px;border:none;background:var(--red);color:white;font-weight:700;font-size:15px;cursor:pointer;transition:.2s;letter-spacing:.2px;}
+#loginBtn:hover{background:#c45a4f;transform:translateY(-1px);}
+#loginError{color:rgba(255,150,130,.9);font-size:13px;text-align:center;min-height:18px;}
+
+/* ── MAIN LAYOUT ── */
+#adminMain{display:none;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{
+  background:var(--navy);
+  padding:0 32px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:100;
+  box-shadow:0 1px 0 rgba(255,255,255,.05);
+}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.topbar-logo{font-family:'Syne',sans-serif;color:white;font-size:22px;letter-spacing:-.5px;}
+.topbar-logo span{color:var(--red);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+
+.topbar-btn{
+  padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);
+  background:transparent;color:rgba(255,255,255,.75);
+  font-weight:600;font-size:12px;cursor:pointer;transition:.2s;
+  font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;
+}
+.topbar-btn:hover{background:rgba(255,255,255,.1);color:white;border-color:rgba(255,255,255,.25);}
+.topbar-btn.sound-on{background:rgba(255,255,255,.1);color:white;}
+.store-pill{
+  padding:7px 14px;border-radius:10px;border:none;
+  font-weight:700;font-size:12px;cursor:pointer;transition:.2s;
+  font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;
+}
+.store-pill.open{background:rgba(42,153,104,.2);color:#3ecf8e;border:1px solid rgba(42,153,104,.3);}
+.store-pill.open:hover{background:rgba(42,153,104,.3);}
+.store-pill.closed{background:rgba(216,106,94,.2);color:#ff8a7a;border:1px solid rgba(216,106,94,.3);}
+.store-pill.closed:hover{background:rgba(216,106,94,.3);}
+.refresh-badge{font-size:11px;color:rgba(255,255,255,.3);font-weight:600;min-width:36px;}
+#logoutBtn{padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-weight:600;font-size:12px;cursor:pointer;transition:.2s;font-family:'DM Sans',sans-serif;}
+#logoutBtn:hover{border-color:rgba(216,106,94,.5);color:var(--red);}
+
+/* ── PAGE CONTENT ── */
+.page{padding:28px 32px 48px;max-width:1360px;margin:0 auto;}
+
+/* ── METRICS ── */
+#analytics{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-bottom:24px;
+}
+.metric{
+  background:var(--surface);
+  padding:20px 20px 18px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--border);
+  position:relative;
+  overflow:hidden;
+}
+.metric::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--red);opacity:.35;
+  border-radius:3px 3px 0 0;
+}
+.metric-value{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--navy);line-height:1;margin-bottom:6px;}
+.metric-label{font-size:11px;font-weight:700;color:rgba(22,32,74,.45);letter-spacing:.6px;text-transform:uppercase;}
+.metric.warn .metric-value{color:var(--red);}
+.metric.warn::before{background:var(--red);opacity:.7;}
+
+/* ── PANEL ── */
+.panel{
+  background:var(--surface);
+  border-radius:var(--radius);
+  padding:0;
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--border);
+  margin-bottom:16px;
+  overflow:hidden;
+}
+.panel-header{
+  padding:20px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.panel-header h2{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:9px;}
+.panel-body{padding:24px;}
+
+/* Collapsible panel */
+.panel-toggle-btn{
+  display:flex;align-items:center;gap:8px;
+  background:transparent;border:none;cursor:pointer;
+  padding:20px 24px;width:100%;text-align:left;
+  transition:.15s;
+}
+.panel-toggle-btn:hover{background:rgba(22,32,74,.02);}
+.panel-toggle-btn h2{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:9px;color:var(--navy);}
+.panel-toggle-btn .toggle-arrow{margin-left:auto;color:rgba(22,32,74,.3);font-size:12px;transition:transform .25s;}
+.panel-toggle-btn.open .toggle-arrow{transform:rotate(180deg);}
+.panel-collapsible{display:none;}
+.panel-collapsible.open{display:block;}
+.panel-collapsible > .panel-body{border-top:1px solid var(--border);}
+
+/* ── ORDERS ── */
+.orders-topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px;}
+.orders-topbar input{
+  flex:1;min-width:180px;max-width:240px;
+  padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--bg);color:var(--navy);font-size:13px;font-family:'DM Sans',sans-serif;
+  outline:none;transition:.2s;
+}
+.orders-topbar input:focus{border-color:rgba(22,32,74,.25);background:white;}
+.filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-btn{
+  padding:8px 14px;border-radius:var(--radius-xs);border:1px solid var(--border);
+  background:var(--surface);color:rgba(22,32,74,.6);font-weight:600;font-size:12px;cursor:pointer;transition:.15s;
+  font-family:'DM Sans',sans-serif;
+}
+.filter-btn:hover{border-color:rgba(22,32,74,.2);color:var(--navy);}
+.filter-btn.active{background:var(--navy);color:white;border-color:var(--navy);}
+.btn-csv{
+  padding:8px 14px;border-radius:var(--radius-xs);border:1px solid rgba(42,153,104,.3);
+  background:var(--green-soft);color:var(--green);font-weight:700;font-size:12px;cursor:pointer;transition:.15s;
+  font-family:'DM Sans',sans-serif;margin-left:auto;
+}
+.btn-csv:hover{background:var(--green);color:white;}
+
+.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+
+.order-card{
+  border-radius:16px;
+  border:1px solid var(--border);
+  padding:18px;
+  background:var(--surface);
+  transition:box-shadow .2s, border-color .2s;
+}
+.order-card:hover{box-shadow:var(--shadow);border-color:rgba(22,32,74,.13);}
+.order-card.new-order{border-color:var(--red);box-shadow:0 0 0 3px rgba(216,106,94,.12);}
+.order-card.delivered{opacity:.55;border-style:dashed;}
+.order-card.delivered:hover{opacity:.85;}
+
+.order-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.order-num{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;}
+.status-Pendiente{background:rgba(230,180,10,.12);color:#c48a00;}
+.status-Preparando{background:rgba(230,120,10,.12);color:#c46000;}
+.status-Entregado{background:var(--green-soft);color:var(--green);}
+
+.order-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.order-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;line-height:1.5;}
+.tag-delivery{background:rgba(22,32,74,.07);color:var(--navy);}
+.tag-retiro{background:var(--green-soft);color:var(--green);}
+.tag-scheduled{background:var(--red-soft);color:var(--red);}
+.tag-cash{background:var(--green-soft);color:var(--green);}
+.tag-transfer{background:rgba(22,32,74,.07);color:var(--navy);}
+
+.order-items{font-size:13px;color:rgba(22,32,74,.65);margin-bottom:10px;line-height:1.8;}
+.order-total{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px;}
+.order-time{font-size:11px;color:rgba(22,32,74,.35);margin-bottom:12px;}
+.address-line{font-size:12px;color:rgba(22,32,74,.55);margin-bottom:8px;}
+
+.order-select{
+  width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-xs);
+  background:var(--bg);color:var(--navy);font-weight:600;font-size:13px;
+  font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;
+  appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2316204a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+}
+.order-select:focus{border-color:rgba(22,32,74,.3);}
+
+.customer-note{margin-top:10px;padding:10px 12px;border-radius:var(--radius-xs);background:rgba(216,106,94,.06);border-left:3px solid var(--red);font-size:12px;line-height:1.6;}
+.customer-note strong{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--red);margin-bottom:3px;font-weight:700;}
+
+.stock-deductions{margin:8px 0;padding:9px 12px;background:rgba(22,32,74,.04);border-radius:var(--radius-xs);font-size:12px;color:rgba(22,32,74,.6);line-height:1.7;}
+.stock-deductions strong{display:block;color:rgba(22,32,74,.35);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+
+.order-actions{display:flex;gap:6px;margin-top:10px;}
+.btn-print,.btn-delete-order{
+  padding:7px 12px;border-radius:var(--radius-xs);background:transparent;
+  font-weight:600;font-size:11px;cursor:pointer;transition:.15s;
+  font-family:'DM Sans',sans-serif;
+}
+.btn-print{border:1px solid var(--border);color:rgba(22,32,74,.6);}
+.btn-print:hover{background:var(--navy);color:white;border-color:var(--navy);}
+.btn-delete-order{border:1px solid rgba(216,106,94,.3);color:var(--red);}
+.btn-delete-order:hover{background:var(--red);color:white;}
+
+/* History toggle inside orders panel */
+.history-sep{border:none;border-top:1px solid var(--border);margin:20px 0 16px;}
+.history-toggle{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:transparent;color:rgba(22,32,74,.6);
+  font-weight:600;font-size:13px;cursor:pointer;transition:.15s;
+  font-family:'DM Sans',sans-serif;
+}
+.history-toggle:hover{background:var(--navy-soft);border-color:var(--navy-mid);}
+.history-toggle .arrow{margin-left:auto;transition:transform .2s;font-size:11px;}
+.history-toggle.open .arrow{transform:rotate(180deg);}
+#historyGrid{display:none;margin-top:14px;}
+#historyGrid.open{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+
+/* ── SETTINGS ── */
+.settings-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.days-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.day-btn{
+  padding:8px 14px;border-radius:var(--radius-xs);border:1px solid var(--border);
+  background:transparent;color:rgba(22,32,74,.6);font-weight:600;font-size:13px;cursor:pointer;transition:.15s;
+  font-family:'DM Sans',sans-serif;
+}
+.day-btn.active{background:var(--navy);color:white;border-color:var(--navy);}
+.day-btn:hover:not(.active){background:var(--navy-soft);}
+
+.store-status-box{
+  display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;
+  padding:16px 18px;border-radius:14px;
+  background:var(--bg);border:1px solid var(--border);margin-bottom:16px;
+}
+.store-status-box strong{font-size:14px;font-weight:700;display:block;margin-bottom:3px;}
+.store-status-box span{font-size:12px;color:rgba(22,32,74,.45);}
+
+.discount-box{
+  display:flex;align-items:center;gap:14px;margin-top:20px;padding:16px 18px;
+  background:var(--green-soft);border-radius:14px;border:1px solid rgba(42,153,104,.18);
+}
+.discount-box input{width:80px;margin-bottom:0!important;text-align:center;font-size:20px;font-weight:800;color:var(--green);}
+.discount-pct{font-size:20px;font-weight:800;color:var(--green);}
+.discount-desc{flex:1;}
+.discount-desc strong{font-size:13px;font-weight:700;display:block;margin-bottom:2px;}
+.discount-desc span{font-size:12px;color:rgba(22,32,74,.45);}
+
+/* ── FORM ELEMENTS ── */
+.label{font-size:11px;font-weight:700;color:rgba(22,32,74,.45);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;}
+input,textarea,select{
+  width:100%;padding:11px 14px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--bg);color:var(--navy);font-size:14px;font-family:'DM Sans',sans-serif;
+  margin-bottom:10px;transition:.2s;outline:none;
+}
+input:focus,textarea:focus,select:focus{border-color:rgba(22,32,74,.3);background:white;box-shadow:0 0 0 3px rgba(22,32,74,.04);}
+textarea{height:80px;resize:vertical;}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2316204a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;padding:12px;border:none;border-radius:var(--radius-sm);
+  font-weight:700;font-size:14px;cursor:pointer;transition:.18s;margin-top:4px;
+  font-family:'DM Sans',sans-serif;letter-spacing:.1px;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn-primary{background:var(--navy);color:white;}
+.btn-primary:hover{background:#1e2d5e;}
+.btn-success{background:var(--green);color:white;}
+.btn-success:hover{background:#228055;}
+.btn-danger{background:var(--red);color:white;}
+.btn-danger:hover{background:#c45a4f;}
+.btn-inline{width:auto;padding:10px 18px;margin-top:0;}
+
+/* ── PRODUCTS ── */
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.product-card{background:var(--bg);border-radius:16px;padding:18px;border:1px solid transparent;transition:border-color .2s;}
+.product-card.inactive{opacity:.6;}
+.product-card.stock-low{border-color:rgba(216,106,94,.4);background:#fff8f7;}
+.product-card img{width:100%;height:130px;object-fit:cover;border-radius:10px;margin-bottom:12px;}
+.product-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 10px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.7);}
+.product-status-row label{font-size:12px;font-weight:700;color:var(--navy);}
+.product-status-row select{width:130px;margin-bottom:0;padding:8px 10px;font-size:12px;}
+.stock-low-badge{display:inline-block;background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;margin-bottom:8px;}
+
+/* ── STOCK PANEL ── */
+.stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.stock-card{background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border);}
+.stock-card h3{font-size:14px;font-weight:700;margin-bottom:10px;}
+.stock-card .stock-meta{font-size:11px;color:rgba(22,32,74,.4);margin-bottom:10px;}
+.pieces-row{display:flex;align-items:center;gap:8px;margin:8px 0 6px;}
+.pieces-row label{font-size:11px;font-weight:700;color:rgba(22,32,74,.4);text-transform:uppercase;letter-spacing:.5px;flex:1;}
+.pieces-stepper{display:flex;align-items:center;gap:5px;}
+.pieces-stepper button{min-width:30px;height:30px;padding:0;border:1px solid var(--border);border-radius:8px;background:white;color:var(--navy);font-size:13px;font-weight:700;cursor:pointer;transition:.15s;}
+.pieces-stepper button:hover{background:var(--navy);color:white;border-color:var(--navy);}
+.pieces-stepper input{width:68px;font-size:15px!important;font-weight:700!important;margin-bottom:0!important;padding:6px 4px!important;text-align:center;}
+.pieces-divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+
+/* Recipe editor */
+.recipe-editor{display:flex;flex-direction:column;gap:8px;margin:8px 0 10px;}
+.recipe-row{display:grid;grid-template-columns:1fr 78px 34px;gap:6px;align-items:center;}
+.recipe-row select,.recipe-row input{margin-bottom:0;padding:9px 10px;font-size:12px;}
+.recipe-remove{width:34px;height:34px;border:1px solid rgba(216,106,94,.3);border-radius:8px;background:transparent;color:var(--red);font-weight:900;cursor:pointer;transition:.15s;}
+.recipe-remove:hover{background:var(--red);color:white;}
+.recipe-add{width:100%;padding:10px;border:1px dashed var(--border);border-radius:10px;background:transparent;color:rgba(22,32,74,.5);font-weight:600;font-size:12px;cursor:pointer;transition:.15s;font-family:'DM Sans',sans-serif;}
+.recipe-add:hover{background:var(--navy-soft);color:var(--navy);}
+
+/* ── SECTION DIVIDER ── */
+.section-label{
+  font-size:11px;font-weight:700;color:rgba(22,32,74,.3);
+  text-transform:uppercase;letter-spacing:1px;
+  padding:6px 0 10px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::before,.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── BANNER ── */
 #newOrderBanner{
-  display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);
-  background:var(--red);color:white;padding:14px 28px;border-radius:16px;
-  font-weight:800;font-size:15px;z-index:9998;
+  display:none;position:fixed;top:72px;left:50%;transform:translateX(-50%);
+  background:var(--red);color:white;padding:12px 24px;border-radius:14px;
+  font-weight:700;font-size:14px;z-index:9998;
   box-shadow:0 8px 32px rgba(216,106,94,.4);
   animation:bannerIn .4s cubic-bezier(.34,1.4,.64,1);
   cursor:pointer;
 }
-@keyframes bannerIn{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+@keyframes bannerIn{from{transform:translateX(-50%) translateY(-10px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
 
-select{width:100%;padding:10px 14px;border-radius:12px;border:none;background:white;color:var(--navy);font-weight:700;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.07);cursor:pointer;}
-select:focus{outline:2px solid var(--red);}
-.status-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;}
-.status-Pendiente{background:rgba(216,106,94,.12);color:var(--red);}
-.status-Preparando{background:rgba(255,165,0,.12);color:#e6820a;}
-.status-Entregado{background:rgba(46,139,87,.12);color:var(--green);}
-
-.settings-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
-.days-grid{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
-.day-btn{padding:8px 16px;border-radius:12px;border:none;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:13px;cursor:pointer;transition:.2s;}
-.day-btn.active{background:var(--navy);color:white;}
-.day-btn:hover:not(.active){background:rgba(22,32,74,.14);}
-.store-status-box{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:18px 20px;border-radius:16px;background:rgba(22,32,74,.04);border:1.5px solid rgba(22,32,74,.08);margin-bottom:18px;}
-.store-status-box strong{font-size:15px;font-weight:800;display:block;margin-bottom:3px;}
-.store-status-box span{font-size:12px;opacity:.5;}
-.store-status-box select{width:220px;margin-bottom:0;}
-
-.discount-box{display:flex;align-items:center;gap:14px;margin-top:20px;padding:18px 20px;background:rgba(46,139,87,.05);border-radius:16px;border:1.5px solid rgba(46,139,87,.18);}
-.discount-box input{width:80px;margin-bottom:0;text-align:center;font-size:20px;font-weight:800;color:var(--green);}
-.discount-pct{font-size:20px;font-weight:800;color:var(--green);}
-.discount-desc{flex:1;}
-.discount-desc strong{font-size:14px;font-weight:800;display:block;margin-bottom:2px;}
-.discount-desc span{font-size:12px;opacity:.45;}
-
-input,textarea{width:100%;padding:13px 16px;border:none;border-radius:14px;background:#f4f5f8;color:var(--navy);font-size:14px;font-family:'DM Sans',sans-serif;margin-bottom:10px;transition:box-shadow .2s;}
-input:focus,textarea:focus{outline:none;box-shadow:0 0 0 2px var(--red);}
-textarea{height:80px;resize:vertical;}
-.label{font-size:12px;font-weight:700;opacity:.5;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
-
-.btn{width:100%;padding:13px;border:none;border-radius:14px;font-weight:800;font-size:14px;cursor:pointer;transition:.2s;margin-top:4px;}
-.btn:hover{transform:translateY(-2px);}
-.btn-primary{background:var(--navy);color:white;}
-.btn-primary:hover{background:var(--red);}
-.btn-success{background:#2e8b57;color:white;}
-.btn-danger{background:var(--red);color:white;}
-.btn-danger:hover{background:#c45a4f;}
-.btn-inline{width:auto;padding:11px 20px;margin-top:0;}
-
-.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;}
-.product-card{background:#f4f5f8;border-radius:18px;padding:20px;}
-.product-card.inactive{opacity:.68;background:#eef0f4;}
-.product-card img{width:100%;height:140px;object-fit:cover;border-radius:12px;margin-bottom:12px;}
-.product-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.65);}
-.product-status-row label{font-size:12px;font-weight:800;color:var(--navy);}
-.product-status-row select{width:132px;margin-bottom:0;padding:9px 10px;font-size:12px;}
-
-.btn-print{padding:8px 14px;border:1.5px solid rgba(22,32,74,.15);border-radius:10px;background:transparent;color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;margin-top:8px;margin-right:6px;}
-.btn-print:hover{background:var(--navy);color:white;border-color:var(--navy);}
-.btn-delete-order{padding:8px 14px;border:1.5px solid rgba(216,106,94,.3);border-radius:10px;background:transparent;color:var(--red);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;margin-top:8px;}
-.btn-delete-order:hover{background:var(--red);color:white;}
-#toast{position:fixed;bottom:30px;right:30px;background:var(--navy);color:white;padding:15px 24px;border-radius:16px;font-weight:700;font-size:14px;opacity:0;transition:.3s;z-index:9999;pointer-events:none;}
+/* ── TOAST ── */
+#toast{position:fixed;bottom:28px;right:28px;background:var(--navy);color:white;padding:13px 22px;border-radius:14px;font-weight:700;font-size:14px;opacity:0;transition:.3s;z-index:9999;pointer-events:none;box-shadow:var(--shadow);}
 #toast.show{opacity:1;}
 #toast.success{background:var(--green);}
 #toast.error{background:var(--red);}
-#refreshBadge{font-size:12px;opacity:.4;font-weight:600;}
-
-/* SOUND TOGGLE */
-.sound-btn{padding:8px 16px;border-radius:12px;border:1.5px solid rgba(22,32,74,.12);background:transparent;color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:6px;}
-.sound-btn.on{background:var(--navy);color:white;border-color:var(--navy);}
-.store-toggle-btn{padding:8px 18px;border-radius:12px;border:none;font-weight:800;font-size:12px;cursor:pointer;transition:.2s;}
-.store-toggle-btn.open{background:rgba(46,139,87,.12);color:#2e8b57;}
-.store-toggle-btn.open:hover{background:#2e8b57;color:white;}
-.store-toggle-btn.closed{background:rgba(216,106,94,.12);color:var(--red);}
-.store-toggle-btn.closed:hover{background:var(--red);color:white;}
-
-.filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;align-items:center;}
-.filter-bar input{width:220px;margin-bottom:0;padding:10px 14px;font-size:13px;}
-.filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
-.filter-btn{padding:8px 16px;border-radius:12px;border:none;background:rgba(22,32,74,.07);color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;}
-.filter-btn:hover{background:rgba(22,32,74,.13);}
-.filter-btn.active{background:var(--navy);color:white;}
-.btn-csv{padding:8px 16px;border-radius:12px;border:none;background:rgba(46,139,87,.1);color:#2e8b57;font-weight:700;font-size:12px;cursor:pointer;transition:.2s;margin-left:auto;}
-.btn-csv:hover{background:#2e8b57;color:white;}
-.customer-note{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(216,106,94,.08);color:var(--navy);font-size:12px;line-height:1.5;}
-.customer-note strong{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--red);margin-bottom:4px;}
-.customer-note span{white-space:pre-wrap;}
-.product-card.stock-low{border:2px solid rgba(216,106,94,.5);background:#fff5f4;}
-.stock-low-badge{display:inline-block;background:rgba(216,106,94,.15);color:var(--red);font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;margin-bottom:8px;}
-.stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
-.stock-card{background:#f4f5f8;border-radius:16px;padding:16px;border:1px solid rgba(22,32,74,.06);}
-.stock-card h3{font-size:15px;font-weight:800;margin-bottom:10px;}
-.stock-card input{font-size:22px;font-weight:900;color:var(--navy);text-align:center;margin-bottom:8px;}
-.stock-card .stock-meta{font-size:12px;opacity:.5;margin-bottom:10px;}
-.pieces-row{display:flex;align-items:center;gap:8px;margin:8px 0 6px;}
-.pieces-row label{font-size:11px;font-weight:700;opacity:.5;text-transform:uppercase;letter-spacing:.5px;flex:1;}
-.pieces-stepper{display:flex;align-items:center;gap:6px;}
-.pieces-stepper button{min-width:32px;height:32px;padding:0 8px;border:none;border-radius:10px;background:rgba(22,32,74,.08);color:var(--navy);font-size:14px;font-weight:700;cursor:pointer;transition:.15s;line-height:1;}
-.pieces-stepper button:hover{background:var(--navy);color:white;}
-.pieces-stepper input{width:72px;font-size:16px!important;font-weight:800!important;margin-bottom:0!important;padding:8px 6px!important;}
-.pieces-divider{border:none;border-top:1px solid rgba(22,32,74,.07);margin:10px 0;}
-.stock-deductions{margin:10px 0 12px;padding:10px 12px;background:rgba(216,106,94,.06);border-radius:12px;font-size:12px;color:rgba(22,32,74,.72);line-height:1.6;}
-.stock-deductions strong{display:block;color:var(--red);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
-.recipe-editor{display:flex;flex-direction:column;gap:8px;margin:8px 0 10px;}
-.recipe-row{display:grid;grid-template-columns:1fr 78px 34px;gap:7px;align-items:center;}
-.recipe-row select,.recipe-row input{margin-bottom:0;padding:10px 11px;font-size:12px;}
-.recipe-remove{width:34px;height:34px;border:none;border-radius:10px;background:rgba(216,106,94,.12);color:var(--red);font-weight:900;cursor:pointer;}
-.recipe-add{width:100%;padding:10px;border:none;border-radius:12px;background:rgba(22,32,74,.07);color:var(--navy);font-weight:800;font-size:12px;cursor:pointer;}
-.recipe-add:hover{background:rgba(22,32,74,.13);}
 
 @media(max-width:768px){
-  #adminMain{padding:30px 4%;}
-  #analytics{grid-template-columns:repeat(3,1fr);}
+  .topbar{padding:0 16px;}
+  .page{padding:16px;}
+  #analytics{grid-template-columns:repeat(2,1fr);}
   .settings-row{grid-template-columns:1fr;}
   .orders-grid,.products-grid,#historyGrid{grid-template-columns:1fr;}
   .discount-box{flex-direction:column;align-items:flex-start;}
+  .orders-topbar{gap:8px;}
 }
 </style>
 </head>
@@ -192,8 +376,9 @@ textarea{height:80px;resize:vertical;}
 
 <div id="newOrderBanner" onclick="dismissBanner()">🔔 ¡Nuevo pedido! Tocá para ver</div>
 
+<!-- LOGIN -->
 <div id="loginScreen">
-  <h1>🍣 Kizuna Admin</h1>
+  <h1>🍣 Kizuna <span style="color:var(--red)">Admin</span></h1>
   <p>Panel de administración</p>
   <div id="loginBox">
     <input type="password" id="pwInput" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
@@ -202,144 +387,189 @@ textarea{height:80px;resize:vertical;}
   </div>
 </div>
 
+<!-- MAIN -->
 <div id="adminMain">
-  <div class="admin-header">
-    <h1>🍣 Admin Kizuna</h1>
-    <div style="display:flex;align-items:center;gap:14px;">
-      <button class="store-toggle-btn" id="storeToggleBtn" onclick="toggleStoreStatus()">…</button>
-      <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔔 Sonido</button>
-      <span id="refreshBadge">↻ 30s</span>
-      <button id="logoutBtn" onclick="logout()">Cerrar sesión</button>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">🍣 Kizuna</span>
+    </div>
+    <div class="topbar-right">
+      <button class="store-pill" id="storeToggleBtn" onclick="toggleStoreStatus()">…</button>
+      <button class="topbar-btn" id="soundBtn" onclick="toggleSound()">🔔 Sonido</button>
+      <span class="refresh-badge" id="refreshBadge">↻ 30s</span>
+      <button id="logoutBtn" onclick="logout()">Salir</button>
     </div>
   </div>
 
-  <div id="analytics">
-    <div class="metric"><div class="metric-value" id="mProducts">—</div><div class="metric-label">Productos</div></div>
-    <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
-    <div class="metric"><div class="metric-value" id="mStock">—</div><div class="metric-label">Piezas en stock</div></div>
-    <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
-    <div class="metric"><div class="metric-value" id="mLowStock" style="color:var(--red)">—</div><div class="metric-label">⚠️ Stock bajo (≤3)</div></div>
-  </div>
+  <div class="page">
 
-  <!-- STOCK POR TIPO -->
-  <div class="panel">
-    <h2>Stock por tipo de sushi</h2>
-    <div class="stock-grid" id="stockGrid"></div>
-  </div>
+    <!-- MÉTRICAS -->
+    <div id="analytics">
+      <div class="metric"><div class="metric-value" id="mProducts">—</div><div class="metric-label">Productos</div></div>
+      <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
+      <div class="metric"><div class="metric-value" id="mStock">—</div><div class="metric-label">Piezas en stock</div></div>
+      <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
+      <div class="metric warn"><div class="metric-value" id="mLowStock">—</div><div class="metric-label">⚠️ Stock bajo</div></div>
+    </div>
 
-  <!-- PEDIDOS ACTIVOS -->
-  <div class="panel">
-    <h2>📋 Pedidos activos</h2>
-    <div class="filter-bar">
-      <input type="text" id="orderSearch" placeholder="🔍 Buscar por cliente…" oninput="applyFilters()">
-      <div class="filter-btns">
-        <button class="filter-btn active" data-filter="Todos" onclick="setFilter(this)">Todos</button>
-        <button class="filter-btn" data-filter="Pendiente" onclick="setFilter(this)">🟡 Pendiente</button>
-        <button class="filter-btn" data-filter="Preparando" onclick="setFilter(this)">🟠 Preparando</button>
-        <button class="filter-btn" data-filter="Entregado" onclick="setFilter(this)">🟢 Entregado</button>
+    <!-- PEDIDOS ACTIVOS -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📋 Pedidos activos</h2>
       </div>
-      <button class="btn-csv" onclick="exportCSV()">⬇️ Exportar CSV</button>
-    </div>
-    <div class="orders-grid" id="ordersGrid"></div>
+      <div class="panel-body">
+        <div class="orders-topbar">
+          <input type="text" id="orderSearch" placeholder="🔍 Buscar cliente o #pedido…" oninput="applyFilters()">
+          <div class="filter-btns">
+            <button class="filter-btn active" data-filter="Todos" onclick="setFilter(this)">Todos</button>
+            <button class="filter-btn" data-filter="Pendiente" onclick="setFilter(this)">🟡 Pendiente</button>
+            <button class="filter-btn" data-filter="Preparando" onclick="setFilter(this)">🟠 Preparando</button>
+            <button class="filter-btn" data-filter="Entregado" onclick="setFilter(this)">🟢 Entregado</button>
+          </div>
+          <button class="btn-csv" onclick="exportCSV()">⬇️ Exportar CSV</button>
+        </div>
+        <div class="orders-grid" id="ordersGrid"></div>
 
-    <!-- HISTORIAL -->
-    <button class="history-toggle" id="historyToggleBtn" onclick="toggleHistory()">
-      📦 Ver historial de entregados <span class="arrow">▼</span>
-      <span id="historyCount" style="margin-left:4px;opacity:.5;font-weight:500;"></span>
-    </button>
-    <div id="historyGrid"></div>
-  </div>
-
-  <!-- HORARIO Y PAGOS -->
-  <div class="panel">
-    <h2>🕐 Horario y pagos</h2>
-    <div class="store-status-box">
-      <div>
-        <strong>Estado del local</strong>
-        <span>Cuando esta cerrado, la web muestra cerrado y no deja registrar pedidos.</span>
-      </div>
-      <select id="acceptingOrders">
-        <option value="true">Abierto</option>
-        <option value="false">Cerrado</option>
-      </select>
-    </div>
-    <div class="settings-row">
-      <div><div class="label">Hora apertura</div><input id="openHour" type="number" min="0" max="23" placeholder="19"></div>
-      <div><div class="label">Hora cierre</div><input id="closeHour" type="number" min="0" max="23" placeholder="23"></div>
-    </div>
-    <div class="label" style="margin-bottom:10px;">Días de atención</div>
-    <div class="days-grid" id="daysGrid"></div>
-    <button class="btn btn-success" onclick="saveSettings()">Guardar horario</button>
-
-    <div class="discount-box">
-      <input id="cashDiscount" type="number" min="0" max="100" placeholder="0">
-      <span class="discount-pct">%</span>
-      <div class="discount-desc">
-        <strong>💵 Descuento en efectivo</strong>
-        <span>El cliente lo ve al elegir pagar en efectivo. Poné 0 para desactivarlo.</span>
-      </div>
-      <button class="btn btn-success btn-inline" onclick="saveDiscount()">Guardar</button>
-    </div>
-
-    <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(0,0,0,.07);">
-      <h3 style="font-size:15px;font-weight:800;margin-bottom:14px;">🏦 Datos de transferencia</h3>
-      <div class="settings-row">
-        <div><div class="label">Alias (CBU / CVU / Cuenta DNI)</div><input id="transferAlias" placeholder="kizuna.sushi"></div>
-        <div><div class="label">Link de Mercado Pago (opcional)</div><input id="mercadoPagoLink" placeholder="https://mpago.la/..."></div>
-        <div><div class="label">WhatsApp pedidos</div><input id="whatsappNumber" placeholder="5491121734894"></div>
-      </div>
-      <button class="btn btn-primary" style="max-width:260px;" onclick="saveTransfer()">Guardar datos de transferencia</button>
-    </div>
-  </div>
-
-  <!-- SEGURIDAD -->
-  <div class="panel">
-    <h2>Seguridad</h2>
-    <div class="settings-row">
-      <div><div class="label">Contraseña actual</div><input id="currentPassword" type="password" autocomplete="current-password"></div>
-      <div><div class="label">Nueva contraseña</div><input id="newPassword" type="password" autocomplete="new-password" placeholder="Minimo 8 caracteres"></div>
-    </div>
-    <button class="btn btn-primary" style="max-width:260px;" onclick="changePassword()">Cambiar contraseña</button>
-  </div>
-
-  <!-- NUEVO PRODUCTO -->
-  <div class="panel">
-    <h2>➕ Agregar producto</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div><div class="label">Nombre</div><input id="nameInput" placeholder="Ej: Dragon Roll"></div>
-      <div><div class="label">Precio</div><input id="priceInput" type="number" placeholder="1500"></div>
-      <div class="unit-stock-field"><div class="label">Stock inicial (rolls/unidades)</div><input id="stockInput" type="number" placeholder="10"></div>
-      <div class="unit-stock-field"><div class="label">Piezas por unidad</div><input id="piecesInput" type="number" placeholder="Ej: 8"></div>
-      <div><div class="label">Categoría</div>
-        <select id="categoryInput" style="margin-bottom:10px;" onchange="toggleNewProductStockFields()">
-          <option value="rolls">Rolls</option>
-          <option value="combos">Combos</option>
-          <option value="veggie">Veggie</option>
-          <option value="bandejas">Bandejas</option>
-          <option value="extras">Extras</option>
-          <option value="otro">Otro...</option>
-        </select>
-        <input id="categoryCustomInput" placeholder="Ej: Pancho de sushi" style="display:none;margin-top:6px;">
+        <!-- HISTORIAL (colapsado por defecto) -->
+        <hr class="history-sep">
+        <button class="history-toggle" id="historyToggleBtn" onclick="toggleHistory()">
+          📦 Historial de entregados
+          <span id="historyCount" style="color:rgba(22,32,74,.4);font-weight:500;margin-left:2px;"></span>
+          <span class="arrow">▼</span>
+        </button>
+        <div id="historyGrid"></div>
       </div>
     </div>
-    <div><div class="label">URL imagen</div><input id="imageInput" placeholder="https://..."></div>
-    <div><div class="label">Descripción</div><textarea id="descInput" placeholder="Descripción del producto..."></textarea></div>
-    <div class="new-recipe-field" style="display:none;">
-      <div class="label">Componentes de stock</div>
-      <div class="recipe-editor">
-        <div id="recipeRows-new"></div>
-        <button class="recipe-add" onclick="addRecipeRow('new')">Agregar roll al combo</button>
+
+    <!-- HORARIO Y PAGOS -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>🕐 Horario y pagos</h2>
+      </div>
+      <div class="panel-body">
+        <div class="store-status-box">
+          <div>
+            <strong>Estado del local</strong>
+            <span>Cuando está cerrado, la web no acepta pedidos.</span>
+          </div>
+          <select id="acceptingOrders" style="width:180px;margin-bottom:0;">
+            <option value="true">Abierto</option>
+            <option value="false">Cerrado</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div><div class="label">Hora apertura</div><input id="openHour" type="number" min="0" max="23" placeholder="19"></div>
+          <div><div class="label">Hora cierre</div><input id="closeHour" type="number" min="0" max="23" placeholder="23"></div>
+        </div>
+        <div class="label" style="margin-bottom:10px;">Días de atención</div>
+        <div class="days-grid" id="daysGrid"></div>
+        <button class="btn btn-success" style="max-width:200px;" onclick="saveSettings()">Guardar horario</button>
+
+        <div class="discount-box">
+          <input id="cashDiscount" type="number" min="0" max="100" placeholder="0">
+          <span class="discount-pct">%</span>
+          <div class="discount-desc">
+            <strong>💵 Descuento en efectivo</strong>
+            <span>El cliente lo ve al elegir efectivo. Poné 0 para desactivarlo.</span>
+          </div>
+          <button class="btn btn-success btn-inline" onclick="saveDiscount()">Guardar</button>
+        </div>
+
+        <div style="margin-top:22px;padding-top:22px;border-top:1px solid var(--border);">
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:rgba(22,32,74,.7);">🏦 Datos de transferencia</h3>
+          <div class="settings-row">
+            <div><div class="label">Alias CBU / CVU / Cuenta DNI</div><input id="transferAlias" placeholder="kizuna.sushi"></div>
+            <div><div class="label">Link Mercado Pago (opcional)</div><input id="mercadoPagoLink" placeholder="https://mpago.la/..."></div>
+            <div><div class="label">WhatsApp pedidos</div><input id="whatsappNumber" placeholder="5491121734894"></div>
+          </div>
+          <button class="btn btn-primary" style="max-width:240px;" onclick="saveTransfer()">Guardar transferencia</button>
+        </div>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="addProduct()">Agregar producto</button>
-  </div>
 
-  <!-- PRODUCTOS -->
-  <div class="panel">
-    <h2>📦 Productos</h2>
-    <div class="products-grid" id="productsGrid"></div>
-  </div>
-</div>
+    <!-- SEGURIDAD -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>🔒 Seguridad</h2>
+      </div>
+      <div class="panel-body">
+        <div class="settings-row">
+          <div><div class="label">Contraseña actual</div><input id="currentPassword" type="password" autocomplete="current-password"></div>
+          <div><div class="label">Nueva contraseña</div><input id="newPassword" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
+        </div>
+        <button class="btn btn-primary" style="max-width:240px;" onclick="changePassword()">Cambiar contraseña</button>
+      </div>
+    </div>
+
+    <!-- STOCK (colapsado por defecto) -->
+    <div class="panel">
+      <button class="panel-toggle-btn" id="stockToggleBtn" onclick="toggleStockPanel()">
+        <h2>📊 Stock por tipo de sushi</h2>
+        <span class="toggle-arrow">▼</span>
+      </button>
+      <div class="panel-collapsible" id="stockPanelBody">
+        <div class="panel-body">
+          <div class="stock-grid" id="stockGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGREGAR PRODUCTO (colapsado por defecto) -->
+    <div class="panel">
+      <button class="panel-toggle-btn" id="addProductToggleBtn" onclick="togglePanel('addProductToggleBtn','addProductBody')">
+        <h2>➕ Agregar producto</h2>
+        <span class="toggle-arrow">▼</span>
+      </button>
+      <div class="panel-collapsible" id="addProductBody">
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><div class="label">Nombre</div><input id="nameInput" placeholder="Ej: Dragon Roll"></div>
+            <div><div class="label">Precio</div><input id="priceInput" type="number" placeholder="1500"></div>
+            <div class="unit-stock-field"><div class="label">Stock inicial (rolls/unidades)</div><input id="stockInput" type="number" placeholder="10"></div>
+            <div class="unit-stock-field"><div class="label">Piezas por unidad</div><input id="piecesInput" type="number" placeholder="Ej: 8"></div>
+            <div>
+              <div class="label">Categoría</div>
+              <select id="categoryInput" onchange="toggleNewProductStockFields()">
+                <option value="rolls">Rolls</option>
+                <option value="combos">Combos</option>
+                <option value="veggie">Veggie</option>
+                <option value="bandejas">Bandejas</option>
+                <option value="extras">Extras</option>
+                <option value="otro">Otro...</option>
+              </select>
+              <input id="categoryCustomInput" placeholder="Ej: Pancho de sushi" style="display:none;margin-top:6px;">
+            </div>
+          </div>
+          <div><div class="label">URL imagen</div><input id="imageInput" placeholder="https://..."></div>
+          <div><div class="label">Descripción</div><textarea id="descInput" placeholder="Descripción del producto..."></textarea></div>
+          <div class="new-recipe-field" style="display:none;">
+            <div class="label">Componentes de stock</div>
+            <div class="recipe-editor">
+              <div id="recipeRows-new"></div>
+              <button class="recipe-add" onclick="addRecipeRow('new')">Agregar roll al combo</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="addProduct()">Agregar producto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTOS (colapsado por defecto) -->
+    <div class="panel">
+      <button class="panel-toggle-btn" id="productsToggleBtn" onclick="togglePanel('productsToggleBtn','productsBody')">
+        <h2>📦 Productos</h2>
+        <span class="toggle-arrow">▼</span>
+      </button>
+      <div class="panel-collapsible" id="productsBody">
+        <div class="panel-body">
+          <div class="products-grid" id="productsGrid"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page -->
+</div><!-- /adminMain -->
 
 <div id="toast"></div>
 
@@ -353,35 +583,32 @@ let lastOrderCount = null;
 let soundEnabled = localStorage.getItem("kizuna_sound") !== "off";
 let audioCtx = null;
 
-function authToken() {
-  return sessionStorage.getItem(SESSION_KEY) || "";
-}
-
-function authHeaders(extra = {}) {
-  return { ...extra, Authorization: `Bearer ${authToken()}` };
-}
+function authToken() { return sessionStorage.getItem(SESSION_KEY) || ""; }
+function authHeaders(extra = {}) { return { ...extra, Authorization: `Bearer ${authToken()}` }; }
 
 async function authFetch(url, options = {}) {
   const headers = authHeaders(options.headers || {});
   const res = await fetch(url, { ...options, headers });
-  if (res.status === 401) {
-    logout();
-    toast("Sesión vencida. Volvé a ingresar.", "error");
-    throw new Error("Sesion vencida");
-  }
+  if (res.status === 401) { logout(); toast("Sesión vencida. Volvé a ingresar.", "error"); throw new Error("Sesion vencida"); }
   return res;
 }
-
 async function publicFetch(url) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Error ${res.status} en ${url}`);
+  if (!res.ok) throw new Error(`Error ${res.status}`);
   return res;
 }
 
-/* ── SONIDO ── */
-function initAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+/* ── PANEL COLLAPSIBLE ── */
+function togglePanel(btnId, bodyId) {
+  const btn = document.getElementById(btnId);
+  const body = document.getElementById(bodyId);
+  btn.classList.toggle("open");
+  body.classList.toggle("open");
 }
+function toggleStockPanel() { togglePanel("stockToggleBtn","stockPanelBody"); }
+
+/* ── SOUND ── */
+function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 function playNotif() {
   if (!soundEnabled) return;
   try {
@@ -391,8 +618,7 @@ function playNotif() {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
+      osc.frequency.value = freq; osc.type = "sine";
       const t = audioCtx.currentTime + i * 0.15;
       gain.gain.setValueAtTime(0, t);
       gain.gain.linearRampToValueAtTime(0.3, t + 0.05);
@@ -406,21 +632,19 @@ function toggleSound() {
   localStorage.setItem("kizuna_sound", soundEnabled ? "on" : "off");
   const btn = document.getElementById("soundBtn");
   btn.textContent = soundEnabled ? "🔔 Sonido" : "🔕 Sonido";
-  btn.classList.toggle("on", soundEnabled);
+  btn.classList.toggle("sound-on", soundEnabled);
   if (soundEnabled) { initAudio(); playNotif(); }
 }
-// Init sound btn state
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("soundBtn");
   btn.textContent = soundEnabled ? "🔔 Sonido" : "🔕 Sonido";
-  btn.classList.toggle("on", soundEnabled);
+  btn.classList.toggle("sound-on", soundEnabled);
 });
 
 /* ── BANNER ── */
 function showNewOrderBanner() {
   const b = document.getElementById("newOrderBanner");
-  b.style.display = "block";
-  playNotif();
+  b.style.display = "block"; playNotif();
   setTimeout(() => b.style.display = "none", 6000);
 }
 function dismissBanner() {
@@ -442,9 +666,7 @@ async function login() {
       sessionStorage.setItem(SESSION_KEY, data.token);
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("adminMain").style.display = "block";
-      // Activar audio en gesto de usuario
-      initAudio();
-      loadAll(); startAutoRefresh();
+      initAudio(); loadAll(); startAutoRefresh();
     } else {
       err.textContent = "Contraseña incorrecta";
       document.getElementById("pwInput").value = "";
@@ -457,6 +679,7 @@ async function login() {
   }
   btn.disabled = false; btn.textContent = "Ingresar";
 }
+
 function logout() {
   sessionStorage.removeItem(SESSION_KEY); clearInterval(refreshTimer); clearInterval(countdownTimer);
   document.title = "Admin — Kizuna Sushi";
@@ -465,41 +688,27 @@ function logout() {
   document.getElementById("pwInput").value = "";
   lastOrderCount = null;
 }
+
 if (authToken()) {
-  // Verificar que el token no esté vencido localmente antes de hacer requests
   try {
     const [payload] = authToken().split(".");
     const data = JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
-    if (data.exp && data.exp < Date.now()) {
-      logout();
-    } else {
+    if (data.exp && data.exp < Date.now()) { logout(); }
+    else {
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("adminMain").style.display = "block";
       loadAll(); startAutoRefresh();
     }
-  } catch(e) {
-    logout();
-  }
+  } catch(e) { logout(); }
 }
-let refreshCountdown = 30;
-let countdownTimer = null;
 
+let refreshCountdown = 30, countdownTimer = null;
 function startAutoRefresh() {
-  clearInterval(refreshTimer);
-  clearInterval(countdownTimer);
-  refreshCountdown = 30;
-  updateRefreshBadge();
-  countdownTimer = setInterval(() => {
-    refreshCountdown--;
-    updateRefreshBadge();
-    if (refreshCountdown <= 0) refreshCountdown = 30;
-  }, 1000);
-  refreshTimer = setInterval(() => {
-    refreshCountdown = 30;
-    loadAll();
-  }, 30000);
+  clearInterval(refreshTimer); clearInterval(countdownTimer);
+  refreshCountdown = 30; updateRefreshBadge();
+  countdownTimer = setInterval(() => { refreshCountdown--; updateRefreshBadge(); if (refreshCountdown <= 0) refreshCountdown = 30; }, 1000);
+  refreshTimer = setInterval(() => { refreshCountdown = 30; loadAll(); }, 30000);
 }
-
 function updateRefreshBadge() {
   const el = document.getElementById("refreshBadge");
   if (el) el.textContent = `↻ ${refreshCountdown}s`;
@@ -515,61 +724,39 @@ function toast(msg, type = "") {
 async function changePassword() {
   const currentPassword = document.getElementById("currentPassword").value;
   const newPassword = document.getElementById("newPassword").value;
-  if (!currentPassword || !newPassword) { toast("Completa ambas contrasenas", "error"); return; }
-  if (newPassword.length < 8) { toast("La nueva contrasena debe tener al menos 8 caracteres", "error"); return; }
-  const res = await authFetch(`${API}/auth/change-password`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ currentPassword, newPassword })
-  });
+  if (!currentPassword || !newPassword) { toast("Completá ambas contraseñas", "error"); return; }
+  if (newPassword.length < 8) { toast("Mínimo 8 caracteres", "error"); return; }
+  const res = await authFetch(`${API}/auth/change-password`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ currentPassword, newPassword }) });
   const data = await res.json();
-  if (!res.ok) { toast(data.error || "No se pudo cambiar la contrasena", "error"); return; }
+  if (!res.ok) { toast(data.error || "No se pudo cambiar", "error"); return; }
   sessionStorage.setItem(SESSION_KEY, data.token);
   document.getElementById("currentPassword").value = "";
   document.getElementById("newPassword").value = "";
-  toast("Contrasena actualizada", "success");
+  toast("✓ Contraseña actualizada", "success");
 }
 
 function escapeHtml(value) {
-  return String(value || "").replace(/[&<>"']/g, ch => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "\"": "&quot;",
-    "'": "&#39;"
-  }[ch]));
+  return String(value || "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
 
 /* ── LOAD ALL ── */
 async function loadAll() {
   try {
     const [productsRes, ordersRes, settingsRes] = await Promise.all([
-      publicFetch(`${API}/products`),
-      authFetch(`${API}/orders`),
-      publicFetch(`${API}/settings`)
+      publicFetch(`${API}/products`), authFetch(`${API}/orders`), publicFetch(`${API}/settings`)
     ]);
-    const [products, orders, settings] = await Promise.all([
-      productsRes.json(), ordersRes.json(), settingsRes.json()
-    ]);
+    const [products, orders, settings] = await Promise.all([productsRes.json(), ordersRes.json(), settingsRes.json()]);
     allProducts = products;
-
-    // Detectar pedidos nuevos
     const activeCount = orders.filter(o => o.status !== "Entregado").length;
-    if (lastOrderCount !== null && activeCount > lastOrderCount) {
-      showNewOrderBanner();
-    }
+    if (lastOrderCount !== null && activeCount > lastOrderCount) showNewOrderBanner();
     lastOrderCount = activeCount;
-
     renderMetrics(products, orders);
     renderStockInventory(products);
     renderOrders(orders);
     renderSettings(settings);
     renderProducts(products);
   } catch (err) {
-    if (err.message !== "Sesion vencida") {
-      toast("❌ Error al cargar datos. Verificá la conexión.", "error");
-      console.error("loadAll error:", err);
-    }
+    if (err.message !== "Sesion vencida") { toast("❌ Error al cargar datos.", "error"); console.error(err); }
   }
 }
 
@@ -579,28 +766,21 @@ function renderMetrics(products, orders) {
   const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
   const revenue = todayOrders.reduce((a, o) => a + o.total, 0);
   const stockTypes = products.filter(isStockType);
-  const lowStock = stockTypes.filter(p => {
-    const units = availableUnits(p, products);
-    return units > 0 && units <= 3;
-  }).length;
+  const lowStock = stockTypes.filter(p => { const u = availableUnits(p, products); return u > 0 && u <= 3; }).length;
   document.getElementById("mProducts").textContent = products.length;
   document.getElementById("mOrders").textContent = todayOrders.length;
   document.getElementById("mStock").textContent = stockTypes.reduce((a, p) => a + p.stock, 0);
   document.getElementById("mRevenue").textContent = `$${revenue.toLocaleString("es-AR")}`;
   document.getElementById("mLowStock").textContent = lowStock || "—";
-  // Actualizar título de pestaña con pedidos pendientes
   const pending = orders.filter(o => o.status === "Pendiente").length;
   document.title = pending > 0 ? `(${pending}) Admin — Kizuna Sushi` : "Admin — Kizuna Sushi";
 }
 
 /* ── ORDERS ── */
 function orderDeductionsHTML(o) {
-  const deductions = o.stockDeductions || [];
-  if (!deductions.length) return "";
-  return `<div class="stock-deductions">
-    <strong>Piezas descontadas</strong>
-    ${deductions.map(d => `${d.name}: ${d.pieces} piezas`).join("<br>")}
-  </div>`;
+  const d = o.stockDeductions || [];
+  if (!d.length) return "";
+  return `<div class="stock-deductions"><strong>Piezas descontadas</strong>${d.map(x => `${x.name}: ${x.pieces}`).join("<br>")}</div>`;
 }
 
 function orderCardHTML(o, isDelivered) {
@@ -611,18 +791,15 @@ function orderCardHTML(o, isDelivered) {
   const deliveryTag = isDelivery ? `<span class="order-tag tag-delivery">🛵 Delivery</span>` : `<span class="order-tag tag-retiro">🏃 Retiro</span>`;
   const schedTag = (o.scheduledDate && o.scheduledTime) ? `<span class="order-tag tag-scheduled">📅 ${o.scheduledDate} ${o.scheduledTime}</span>` : "";
   const clientTag = o.clientName ? `<span class="order-tag" style="background:rgba(0,0,0,.05);color:#333;">👤 ${o.clientName}</span>` : "";
-  const phoneTag = o.clientPhone ? `<span class="order-tag" style="background:rgba(22,32,74,.08);color:var(--navy);">📞 ${o.clientPhone}</span>` : "";
+  const phoneTag = o.clientPhone ? `<span class="order-tag tag-transfer">📞 ${o.clientPhone}</span>` : "";
   const pagoTag = o.paymentMethod === "cash" ? `<span class="order-tag tag-cash">💵 Efectivo</span>` : `<span class="order-tag tag-transfer">🏦 Transferencia</span>`;
-  const addressLine = isDelivery && o.address ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">📍 ${o.address}</div>` : "";
+  const addressLine = isDelivery && o.address ? `<div class="address-line">📍 ${escapeHtml(o.address)}</div>` : "";
   const cardClass = isDelivered ? "order-card delivered" : "order-card";
-  const noteBlock = o.notes
-    ? `<div class="customer-note"><strong>Nota del cliente</strong><span>${escapeHtml(o.notes)}</span></div>`
-    : "";
+  const noteBlock = o.notes ? `<div class="customer-note"><strong>Nota del cliente</strong><span>${escapeHtml(o.notes)}</span></div>` : "";
 
-  return `
-  <div class="${cardClass}">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-      <h3>Pedido #${o.number}</h3>
+  return `<div class="${cardClass}">
+    <div class="order-head">
+      <span class="order-num">Pedido #${o.number}</span>
       <span class="status-badge status-${o.status}">${o.status}</span>
     </div>
     <div class="order-meta">${clientTag}${phoneTag}${deliveryTag}${pagoTag}${schedTag}</div>
@@ -631,12 +808,11 @@ function orderCardHTML(o, isDelivered) {
     ${orderDeductionsHTML(o)}
     <div class="order-total">$${o.total.toLocaleString("es-AR")}</div>
     <div class="order-time">🕐 ${fechaDia} · ${fecha}</div>
-    ${!isDelivered ? `<select onchange="confirmOrderStatus('${o._id}', this)">
+    ${!isDelivered ? `<select class="order-select" onchange="confirmOrderStatus('${o._id}', this)">
       <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
       <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
       <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
-    </select>
-    ${noteBlock}` : `<div style="font-size:12px;opacity:.4;margin-top:8px;">✓ Entregado</div>${noteBlock}`}
+    </select>${noteBlock}` : `<div style="font-size:12px;color:rgba(22,32,74,.3);margin-top:6px;">✓ Entregado</div>${noteBlock}`}
     <div class="order-actions">
       <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Imprimir</button>
       ${isDelivered ? `<button class="btn-delete-order" onclick="deleteOrder('${o._id}')">🗑️ Eliminar</button>` : ""}
@@ -644,14 +820,11 @@ function orderCardHTML(o, isDelivered) {
   </div>`;
 }
 
-let allOrders = [];
-let activeFilter = "Todos";
+let allOrders = [], activeFilter = "Todos";
 
 function setFilter(btn) {
   document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  activeFilter = btn.dataset.filter;
-  applyFilters();
+  btn.classList.add("active"); activeFilter = btn.dataset.filter; applyFilters();
 }
 
 function applyFilters() {
@@ -659,32 +832,21 @@ function applyFilters() {
   let filtered = allOrders;
   if (activeFilter !== "Todos") filtered = filtered.filter(o => o.status === activeFilter);
   if (search) filtered = filtered.filter(o => (o.clientName||"").toLowerCase().includes(search) || String(o.number).includes(search));
-
   const active = filtered.filter(o => o.status !== "Entregado");
   const delivered = filtered.filter(o => o.status === "Entregado");
-
   const grid = document.getElementById("ordersGrid");
-  grid.innerHTML = active.length
-    ? active.map(o => orderCardHTML(o, false)).join("")
-    : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
-
+  grid.innerHTML = active.length ? active.map(o => orderCardHTML(o, false)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
   const histGrid = document.getElementById("historyGrid");
-  const countEl = document.getElementById("historyCount");
-  countEl.textContent = delivered.length ? `(${delivered.length})` : "";
-  histGrid.innerHTML = delivered.length
-    ? delivered.map(o => orderCardHTML(o, true)).join("")
-    : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+  document.getElementById("historyCount").textContent = delivered.length ? `(${delivered.length})` : "";
+  histGrid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
 }
 
-function renderOrders(orders) {
-  allOrders = orders;
-  applyFilters();
-}
+function renderOrders(orders) { allOrders = orders; applyFilters(); }
 
 function exportCSV() {
   const today = new Date().toDateString();
   const todayOrders = allOrders.filter(o => new Date(o.createdAt).toDateString() === today);
-  if (!todayOrders.length) { toast("No hay pedidos hoy para exportar", "error"); return; }
+  if (!todayOrders.length) { toast("No hay pedidos hoy", "error"); return; }
   const rows = [["#","Cliente","Telefono","Items","Total","Entrega","Dirección","Pago","Estado","Hora"]];
   todayOrders.forEach(o => {
     const items = o.items.map(i => `${i.name} x${i.qty}`).join(" | ");
@@ -694,112 +856,36 @@ function exportCSV() {
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-  a.download = `kizuna-pedidos-${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
+  a.download = `kizuna-pedidos-${new Date().toISOString().slice(0,10)}.csv`; a.click();
   toast("✓ CSV descargado", "success");
 }
 
 function printOrder(id) {
   const order = allOrders.find(o => o._id === id);
-  if (!order) { toast("No encontre el pedido para imprimir", "error"); return; }
-
+  if (!order) { toast("No encontré el pedido", "error"); return; }
   const createdAt = new Date(order.createdAt);
   const date = createdAt.toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"2-digit" });
   const time = createdAt.toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
   const delivery = order.deliveryType === "delivery" ? "Delivery" : "Retiro en local";
   const payment = order.paymentMethod === "cash" ? "Efectivo" : "Transferencia";
-  const items = (order.items || []).map(item => `
-    <tr>
-      <td>${escapeHtml(item.name)} x${item.qty}</td>
-      <td class="right">$${Number(item.price * item.qty || 0).toLocaleString("es-AR")}</td>
-    </tr>
-  `).join("");
+  const items = (order.items || []).map(item => `<tr><td>${escapeHtml(item.name)} x${item.qty}</td><td class="right">$${Number(item.price * item.qty || 0).toLocaleString("es-AR")}</td></tr>`).join("");
   const notes = (order.notes || "").trim();
-
-  const html = `<!DOCTYPE html>
-  <html lang="es">
-  <head>
-    <meta charset="UTF-8">
-    <title>Pedido #${order.number}</title>
-    <style>
-      @page { size: 80mm auto; margin: 5mm; }
-      * { box-sizing: border-box; }
-      body { margin: 0; font-family: Arial, sans-serif; color: #111; font-size: 12px; }
-      .ticket { width: 70mm; margin: 0 auto; }
-      .center { text-align: center; }
-      h1 { font-size: 19px; margin: 0 0 4px; }
-      h2 { font-size: 16px; margin: 8px 0 6px; }
-      .muted { color: #555; font-size: 11px; }
-      .line { border-top: 1px dashed #111; margin: 10px 0; }
-      table { width: 100%; border-collapse: collapse; }
-      td { padding: 3px 0; vertical-align: top; }
-      .right { text-align: right; white-space: nowrap; }
-      .total { font-size: 16px; font-weight: 700; }
-      .block { margin: 5px 0; }
-      .label { font-weight: 700; }
-      .note { white-space: pre-wrap; border: 1px dashed #111; padding: 6px; margin-top: 4px; }
-    </style>
-  </head>
-  <body>
-    <div class="ticket">
-      <div class="center">
-        <h1>Kizuna Sushi</h1>
-        <div class="muted">Pedido #${order.number}</div>
-        <div class="muted">${date} ${time}</div>
-      </div>
-      <div class="line"></div>
-      <div class="block"><span class="label">Cliente:</span> ${escapeHtml(order.clientName || "-")}</div>
-      ${order.clientPhone ? `<div class="block"><span class="label">Telefono:</span> ${escapeHtml(order.clientPhone)}</div>` : ""}
-      <div class="block"><span class="label">Entrega:</span> ${delivery}</div>
-      ${order.address ? `<div class="block"><span class="label">Direccion:</span> ${escapeHtml(order.address)}</div>` : ""}
-      ${order.scheduledDate || order.scheduledTime ? `<div class="block"><span class="label">Horario:</span> ${escapeHtml(order.scheduledDate || "")} ${escapeHtml(order.scheduledTime || "")}</div>` : ""}
-      <div class="block"><span class="label">Pago:</span> ${payment}</div>
-      <div class="line"></div>
-      <h2>Items</h2>
-      <table>${items}</table>
-      <div class="line"></div>
-      <table>
-        <tr class="total">
-          <td>Total</td>
-          <td class="right">$${Number(order.total || 0).toLocaleString("es-AR")}</td>
-        </tr>
-      </table>
-      ${notes ? `<div class="line"></div><div class="label">Nota</div><div class="note">${escapeHtml(notes)}</div>` : ""}
-      <div class="line"></div>
-      <div class="center muted">Gracias por tu pedido</div>
-    </div>
-    <script>
-      window.onload = () => {
-        window.focus();
-        window.print();
-        setTimeout(() => window.close(), 400);
-      };
-    <\/script>
-  </body>
-  </html>`;
-
-  const printWindow = window.open("", "_blank", "width=420,height=700");
-  if (!printWindow) {
-    toast("El navegador bloqueo la ventana de impresion", "error");
-    return;
-  }
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Pedido #${order.number}</title><style>@page{size:80mm auto;margin:5mm;}*{box-sizing:border-box;}body{margin:0;font-family:Arial,sans-serif;color:#111;font-size:12px;}.ticket{width:70mm;margin:0 auto;}.center{text-align:center;}h1{font-size:19px;margin:0 0 4px;}h2{font-size:16px;margin:8px 0 6px;}.muted{color:#555;font-size:11px;}.line{border-top:1px dashed #111;margin:10px 0;}table{width:100%;border-collapse:collapse;}td{padding:3px 0;vertical-align:top;}.right{text-align:right;white-space:nowrap;}.total{font-size:16px;font-weight:700;}.block{margin:5px 0;}.label{font-weight:700;}.note{white-space:pre-wrap;border:1px dashed #111;padding:6px;margin-top:4px;}</style></head><body><div class="ticket"><div class="center"><h1>Kizuna Sushi</h1><div class="muted">Pedido #${order.number}</div><div class="muted">${date} ${time}</div></div><div class="line"></div><div class="block"><span class="label">Cliente:</span> ${escapeHtml(order.clientName || "-")}</div>${order.clientPhone ? `<div class="block"><span class="label">Telefono:</span> ${escapeHtml(order.clientPhone)}</div>` : ""}<div class="block"><span class="label">Entrega:</span> ${delivery}</div>${order.address ? `<div class="block"><span class="label">Dirección:</span> ${escapeHtml(order.address)}</div>` : ""}${order.scheduledDate || order.scheduledTime ? `<div class="block"><span class="label">Horario:</span> ${escapeHtml(order.scheduledDate||"")} ${escapeHtml(order.scheduledTime||"")}</div>` : ""}<div class="block"><span class="label">Pago:</span> ${payment}</div><div class="line"></div><h2>Items</h2><table>${items}</table><div class="line"></div><table><tr class="total"><td>Total</td><td class="right">$${Number(order.total||0).toLocaleString("es-AR")}</td></tr></table>${notes ? `<div class="line"></div><div class="label">Nota</div><div class="note">${escapeHtml(notes)}</div>` : ""}<div class="line"></div><div class="center muted">Gracias por tu pedido</div></div><script>window.onload=()=>{window.focus();window.print();setTimeout(()=>window.close(),400);};<\/script></body></html>`;
+  const w = window.open("", "_blank", "width=420,height=700");
+  if (!w) { toast("El navegador bloqueó la ventana", "error"); return; }
+  w.document.open(); w.document.write(html); w.document.close();
 }
 
 function toggleHistory() {
   const btn = document.getElementById("historyToggleBtn");
   const grid = document.getElementById("historyGrid");
-  btn.classList.toggle("open");
-  grid.classList.toggle("open");
+  btn.classList.toggle("open"); grid.classList.toggle("open");
 }
 
 function confirmOrderStatus(id, selectEl) {
   const status = selectEl.value;
   if (status === "Entregado") {
-    if (!confirm("¿Marcar este pedido como Entregado? Esta acción lo moverá al historial.")) {
-      // Revertir el select al valor anterior
+    if (!confirm("¿Marcar este pedido como Entregado? Lo moverá al historial.")) {
       const order = allOrders.find(o => o._id === id);
       if (order) selectEl.value = order.status;
       return;
@@ -812,20 +898,16 @@ async function updateOrder(id, status) {
   try {
     const res = await authFetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
     if (!res.ok) throw new Error();
-    toast("✓ Pedido actualizado", "success");
-    startAutoRefresh();
-    loadAll();
+    toast("✓ Pedido actualizado", "success"); startAutoRefresh(); loadAll();
   } catch { toast("Error al actualizar pedido", "error"); }
 }
 
 async function deleteOrder(id) {
-  if (!confirm("¿Eliminar este pedido del historial?")) return;
+  if (!confirm("¿Eliminar este pedido?")) return;
   try {
     const res = await authFetch(`${API}/orders/${id}`, { method:"DELETE" });
     if (!res.ok) throw new Error();
-    toast("✓ Pedido eliminado", "success");
-    startAutoRefresh();
-    loadAll();
+    toast("✓ Pedido eliminado", "success"); startAutoRefresh(); loadAll();
   } catch { toast("Error al eliminar pedido", "error"); }
 }
 
@@ -852,40 +934,28 @@ function updateStoreToggleBtn(isOpen) {
   const btn = document.getElementById("storeToggleBtn");
   if (!btn) return;
   btn.textContent = isOpen ? "🟢 Abierto" : "🔴 Cerrado";
-  btn.className = `store-toggle-btn ${isOpen ? "open" : "closed"}`;
+  btn.className = `store-pill ${isOpen ? "open" : "closed"}`;
 }
-
 async function toggleStoreStatus() {
   const btn = document.getElementById("storeToggleBtn");
-  const isCurrentlyOpen = btn.classList.contains("open");
-  const newStatus = !isCurrentlyOpen;
-  const label = newStatus ? "abrir" : "cerrar";
-  if (!confirm(`¿Querés ${label} el local ahora?`)) return;
-  const res = await authFetch(`${API}/settings`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ acceptingOrders: newStatus })
-  });
-  if (!res.ok) { toast("Error al cambiar estado del local", "error"); return; }
+  const isOpen = btn.classList.contains("open");
+  if (!confirm(`¿Querés ${isOpen ? "cerrar" : "abrir"} el local?`)) return;
+  const newStatus = !isOpen;
+  const res = await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ acceptingOrders: newStatus }) });
+  if (!res.ok) { toast("Error al cambiar estado", "error"); return; }
   updateStoreToggleBtn(newStatus);
   document.getElementById("acceptingOrders").value = newStatus ? "true" : "false";
   toast(newStatus ? "✓ Local abierto" : "✓ Local cerrado", "success");
 }
-
 async function saveSettings() {
   await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      acceptingOrders: document.getElementById("acceptingOrders").value === "true",
-      openHour:+document.getElementById("openHour").value,
-      closeHour:+document.getElementById("closeHour").value,
-      openDays
-    }) });
+    body:JSON.stringify({ acceptingOrders: document.getElementById("acceptingOrders").value === "true", openHour:+document.getElementById("openHour").value, closeHour:+document.getElementById("closeHour").value, openDays }) });
   updateStoreToggleBtn(document.getElementById("acceptingOrders").value === "true");
   toast("✓ Horario guardado", "success");
 }
 async function saveDiscount() {
   const discount = +document.getElementById("cashDiscount").value;
-  if (isNaN(discount) || discount < 0 || discount > 100) { toast("Ingresá un % entre 0 y 100", "error"); return; }
+  if (isNaN(discount) || discount < 0 || discount > 100) { toast("% entre 0 y 100", "error"); return; }
   await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ cashDiscount: discount }) });
   toast(`✓ Descuento ${discount}% guardado`, "success");
 }
@@ -895,29 +965,23 @@ async function saveTransfer() {
   const whatsappNumber = document.getElementById("whatsappNumber").value.replace(/\D/g, "");
   if (!whatsappNumber) { toast("Ingresá un WhatsApp válido", "error"); return; }
   await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ transferAlias, mercadoPagoLink, whatsappNumber }) });
-  toast("✓ Datos de transferencia guardados", "success");
+  toast("✓ Transferencia guardada", "success");
 }
 
 /* ── PRODUCTS ── */
-
-
-
-
 function recipeProductOptions(selectedId = "") {
   const stockProducts = allProducts.filter(isStockType);
   return `<option value="">Elegir roll</option>` + stockProducts.map(p =>
     `<option value="${p._id}" ${p._id === selectedId ? "selected" : ""}>${p.name}</option>`
   ).join("");
 }
-
 function recipeRowHTML(productId, selectedId = "", pieces = 5) {
   return `<div class="recipe-row" data-recipe-row="${productId}">
     <select data-recipe-product>${recipeProductOptions(selectedId)}</select>
-    <input data-recipe-pieces type="number" min="1" value="${pieces || 1}" title="Piezas">
+    <input data-recipe-pieces type="number" min="1" value="${pieces || 1}">
     <button class="recipe-remove" onclick="removeRecipeRow(this)">×</button>
   </div>`;
 }
-
 function recipeEditorHTML(product) {
   if (!usesRecipeStock(product)) return "";
   const rows = (product.stockItems || []).map(item => {
@@ -925,20 +989,11 @@ function recipeEditorHTML(product) {
     return recipeRowHTML(product._id, id, item.pieces);
   }).join("");
   return `<div class="label" style="font-size:11px;margin-bottom:4px;">Componentes de stock</div>
-    <div class="recipe-editor">
-      <div id="recipeRows-${product._id}">${rows}</div>
-      <button class="recipe-add" onclick="addRecipeRow('${product._id}')">Agregar roll al combo</button>
-    </div>`;
+    <div class="recipe-editor"><div id="recipeRows-${product._id}">${rows}</div>
+    <button class="recipe-add" onclick="addRecipeRow('${product._id}')">Agregar roll al combo</button></div>`;
 }
-
-function addRecipeRow(productId) {
-  document.getElementById(`recipeRows-${productId}`).insertAdjacentHTML("beforeend", recipeRowHTML(productId));
-}
-
-function removeRecipeRow(btn) {
-  btn.closest(".recipe-row").remove();
-}
-
+function addRecipeRow(productId) { document.getElementById(`recipeRows-${productId}`).insertAdjacentHTML("beforeend", recipeRowHTML(productId)); }
+function removeRecipeRow(btn) { btn.closest(".recipe-row").remove(); }
 function getRecipeFromEditor(productId) {
   const rows = [...document.querySelectorAll(`[data-recipe-row="${productId}"]`)];
   const totals = new Map();
@@ -957,37 +1012,23 @@ function availableUnits(product, products) {
   if (!recipe.length) return Math.floor((product.stock || 0) / (product.piecesPerUnit || 1));
   return Math.min(...recipe.map(item => {
     const id = String(item.product?._id || item.product);
-    const stockProduct = products.find(p => p._id === id);
-    return stockProduct ? Math.floor((stockProduct.stock || 0) / item.pieces) : 0;
+    const sp = products.find(p => p._id === id);
+    return sp ? Math.floor((sp.stock || 0) / item.pieces) : 0;
   }));
 }
 
-const STOCK_TYPES  = ["rolls", "veggie"];
+const STOCK_TYPES = ["rolls", "veggie"];
 const RECIPE_TYPES = ["combos", "bandejas"];
-
-function isStockType(product) {
-  return STOCK_TYPES.includes(product.category);
-}
-
-function usesRecipeStock(product) {
-  return RECIPE_TYPES.includes(product.category);
-}
-
-function stockPiecesFromUnits(units, product) {
-  return Math.max(0, Number(units) || 0) * (product.piecesPerUnit || 8);
-}
+function isStockType(p) { return STOCK_TYPES.includes(p.category); }
+function usesRecipeStock(p) { return RECIPE_TYPES.includes(p.category); }
+function stockPiecesFromUnits(units, product) { return Math.max(0, Number(units) || 0) * (product.piecesPerUnit || 8); }
 
 function toggleNewProductStockFields() {
   const category = document.getElementById("categoryInput").value;
-  const customInput = document.getElementById("categoryCustomInput");
-  customInput.style.display = category === "otro" ? "block" : "none";
-  if (category !== "otro") customInput.value = "";
-  document.querySelectorAll(".unit-stock-field").forEach(el => {
-    el.style.display = RECIPE_TYPES.includes(category) ? "none" : "block";
-  });
-  document.querySelectorAll(".new-recipe-field").forEach(el => {
-    el.style.display = RECIPE_TYPES.includes(category) ? "block" : "none";
-  });
+  document.getElementById("categoryCustomInput").style.display = category === "otro" ? "block" : "none";
+  if (category !== "otro") document.getElementById("categoryCustomInput").value = "";
+  document.querySelectorAll(".unit-stock-field").forEach(el => { el.style.display = RECIPE_TYPES.includes(category) ? "none" : "block"; });
+  document.querySelectorAll(".new-recipe-field").forEach(el => { el.style.display = RECIPE_TYPES.includes(category) ? "block" : "none"; });
 }
 
 function renderStockInventory(products) {
@@ -995,58 +1036,51 @@ function renderStockInventory(products) {
   const grid = document.getElementById("stockGrid");
   if (!grid) return;
   grid.innerHTML = stockTypes.length ? stockTypes.map(p => {
-    const piecesPerUnit = p.piecesPerUnit || 8;
-    const units = Math.floor((p.stock || 0) / piecesPerUnit);
+    const ppu = p.piecesPerUnit || 8;
+    const units = Math.floor((p.stock || 0) / ppu);
     const pieces = p.stock || 0;
-    return `
-      <div class="stock-card">
-        <h3>${p.name}</h3>
-        <div class="label">Rolls disponibles</div>
-        <input id="stock-only-${p._id}" type="number" value="${units}">
-        <div class="stock-meta">${pieces} piezas · ${piecesPerUnit} por roll</div>
-        <button class="btn btn-success" onclick="updateStockOnly('${p._id}')">Guardar rolls</button>
-        <hr class="pieces-divider">
-        <div class="pieces-row">
-          <label>Ajustar piezas</label>
-        </div>
-        <div class="pieces-stepper">
-          <button onclick="adjustPieces('${p._id}', -10)" title="-10">−10</button>
-          <button onclick="adjustPieces('${p._id}', -1)" title="-1">−</button>
-          <input id="pieces-only-${p._id}" type="number" value="${pieces}" min="0">
-          <button onclick="adjustPieces('${p._id}', 1)" title="+1">+</button>
-          <button onclick="adjustPieces('${p._id}', 10)" title="+10">+10</button>
-        </div>
-        <button class="btn btn-primary" style="margin-top:8px;" onclick="updatePiecesOnly('${p._id}')">Guardar piezas</button>
-      </div>`;
-  }).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay tipos de sushi cargados en Rolls o Veggie.</p>`;
+    return `<div class="stock-card">
+      <h3>${p.name}</h3>
+      <div class="label">Rolls disponibles</div>
+      <input id="stock-only-${p._id}" type="number" value="${units}">
+      <div class="stock-meta">${pieces} piezas · ${ppu} por roll</div>
+      <button class="btn btn-success" onclick="updateStockOnly('${p._id}')">Guardar rolls</button>
+      <hr class="pieces-divider">
+      <div class="pieces-row"><label>Ajustar piezas</label></div>
+      <div class="pieces-stepper">
+        <button onclick="adjustPieces('${p._id}', -10)">−10</button>
+        <button onclick="adjustPieces('${p._id}', -1)">−</button>
+        <input id="pieces-only-${p._id}" type="number" value="${pieces}" min="0">
+        <button onclick="adjustPieces('${p._id}', 1)">+</button>
+        <button onclick="adjustPieces('${p._id}', 10)">+10</button>
+      </div>
+      <button class="btn btn-primary" style="margin-top:8px;" onclick="updatePiecesOnly('${p._id}')">Guardar piezas</button>
+    </div>`;
+  }).join("") : `<p style="opacity:.4;font-size:14px;">No hay tipos de sushi en Rolls o Veggie.</p>`;
 }
 
 function renderProducts(products) {
   toggleNewProductStockFields();
   const KNOWN_CATS = ["rolls","combos","veggie","bandejas","extras"];
   const catNames = { rolls:"🍣 Rolls", combos:"🎁 Combos", veggie:"🥗 Veggie Rolls", bandejas:"🍱 Bandejas", extras:"➕ Extras" };
-  // Incluir categorías custom que no estén en la lista base
   const cats = [...KNOWN_CATS];
   products.forEach(p => { if (p.category && !cats.includes(p.category)) cats.push(p.category); });
   document.getElementById("productsGrid").innerHTML = cats.map(cat => {
     const items = products.filter(p => p.category === cat);
     if (!items.length) return "";
-    return `
-      <div style="grid-column:1/-1;margin-top:24px;margin-bottom:8px;">
-        <h3 style="font-size:18px;font-weight:800;color:var(--navy);padding-bottom:10px;border-bottom:2px solid rgba(22,32,74,.08);">
-          ${catNames[cat] || (cat.charAt(0).toUpperCase()+cat.slice(1))} <span style="font-size:13px;opacity:.4;font-weight:500;">${items.length} productos</span>
-        </h3>
-      </div>
+    return `<div style="grid-column:1/-1;margin-top:22px;margin-bottom:10px;">
+      <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--navy);padding-bottom:10px;border-bottom:1px solid var(--border);">
+        ${catNames[cat] || (cat.charAt(0).toUpperCase()+cat.slice(1))} <span style="font-size:12px;font-weight:400;color:rgba(22,32,74,.35);">${items.length} productos</span>
+      </h3></div>
       ${items.map(p => {
         const units = availableUnits(p, products);
         const recipeStock = usesRecipeStock(p);
-        return `
-        <div class="product-card${units <= 3 ? ' stock-low' : ''}${p.active === false ? ' inactive' : ''}">
-          ${units <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} unidades vendibles</div>` : ''}
+        return `<div class="product-card${units <= 3 ? ' stock-low' : ''}${p.active === false ? ' inactive' : ''}">
+          ${units <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} unidades</div>` : ''}
           <img src="${p.image||''}" alt="${p.name}" onerror="this.style.display='none'">
           <div class="label">${p.category}</div>
           <div class="product-status-row">
-            <label>Visible en la web</label>
+            <label>Visible en web</label>
             <select id="ac-${p._id}">
               <option value="true" ${p.active !== false ? "selected" : ""}>Activo</option>
               <option value="false" ${p.active === false ? "selected" : ""}>Oculto</option>
@@ -1055,8 +1089,8 @@ function renderProducts(products) {
           <input id="n-${p._id}" value="${p.name}">
           <input id="pr-${p._id}" type="number" value="${p.price}" placeholder="Precio">
           <div style="display:${recipeStock ? "none" : "grid"};grid-template-columns:1fr 1fr;gap:6px;">
-            <div><div class="label" style="font-size:11px;margin-bottom:4px;">Stock (${isStockType(p) ? "rolls" : "unidades"})</div><input id="st-${p._id}" type="number" value="${isStockType(p) ? units : p.stock}" placeholder="${isStockType(p) ? "Rolls" : "Unidades"}"></div>
-            <div><div class="label" style="font-size:11px;margin-bottom:4px;">Piezas/unidad</div><input id="pp-${p._id}" type="number" value="${p.piecesPerUnit||1}" placeholder="Ej: 8"></div>
+            <div><div class="label" style="font-size:11px;">Stock (${isStockType(p) ? "rolls" : "unidades"})</div><input id="st-${p._id}" type="number" value="${isStockType(p) ? units : p.stock}"></div>
+            <div><div class="label" style="font-size:11px;">Piezas/unidad</div><input id="pp-${p._id}" type="number" value="${p.piecesPerUnit||1}"></div>
           </div>
           <input id="im-${p._id}" value="${p.image||''}" placeholder="URL imagen">
           <textarea id="de-${p._id}">${p.description||''}</textarea>
@@ -1066,13 +1100,13 @@ function renderProducts(products) {
             ${!["rolls","combos","veggie","bandejas","extras"].includes(p.category) ? `<option value="${p.category}" selected>${p.category}</option>` : ""}
             <option value="otro">Otro...</option>
           </select>
-          <input id="ca-custom-${p._id}" placeholder="Ej: Pancho de sushi" style="display:none;margin-top:6px;">
+          <input id="ca-custom-${p._id}" placeholder="Categoría personalizada" style="display:none;margin-top:6px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
             <button class="btn btn-success" onclick="updateProduct('${p._id}')">Guardar</button>
             <button class="btn btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
           </div>
-        </div>
-      `}).join("")}`;
+        </div>`;
+      }).join("")}`;
   }).join("");
 }
 
@@ -1080,44 +1114,27 @@ async function addProduct() {
   try {
     const categoryRaw = document.getElementById("categoryInput").value;
     const categoryCustom = document.getElementById("categoryCustomInput").value.trim().toLowerCase();
-    if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
+    if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el tipo personalizado", "error"); return; }
     const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
-
     const name = document.getElementById("nameInput").value.trim();
     const price = +document.getElementById("priceInput").value;
     if (!name || !price) { toast("Completá nombre y precio", "error"); return; }
-
     const piecesPerUnit = +document.getElementById("piecesInput").value || (STOCK_TYPES.includes(category) ? 8 : 1);
     const stockUnits = +document.getElementById("stockInput").value || 0;
-    const stock = RECIPE_TYPES.includes(category) ? 0
-                : STOCK_TYPES.includes(category) ? stockUnits * piecesPerUnit
-                : stockUnits;
-
+    const stock = RECIPE_TYPES.includes(category) ? 0 : STOCK_TYPES.includes(category) ? stockUnits * piecesPerUnit : stockUnits;
     const stockItems = RECIPE_TYPES.includes(category) ? getRecipeFromEditor("new") : [];
-    if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
-
-    const body = {
-      name, price, stock, piecesPerUnit, stockItems, active: true,
-      image: document.getElementById("imageInput").value.trim(),
-      description: document.getElementById("descInput").value.trim(),
-      category
-    };
-
-    const res = await authFetch(`${API}/products`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al crear producto"); }
-
+    if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
+    const body = { name, price, stock, piecesPerUnit, stockItems, active: true, image: document.getElementById("imageInput").value.trim(), description: document.getElementById("descInput").value.trim(), category };
+    const res = await authFetch(`${API}/products`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al crear"); }
     ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("categoryInput").value = "rolls";
     document.getElementById("categoryCustomInput").style.display = "none";
     document.getElementById("categoryCustomInput").value = "";
     document.getElementById("recipeRows-new").innerHTML = "";
     toggleNewProductStockFields();
-    toast("✓ Producto agregado", "success");
-    startAutoRefresh();
-    loadAll();
-  } catch (err) {
-    toast(err.message || "Error al agregar producto", "error");
-  }
+    toast("✓ Producto agregado", "success"); startAutoRefresh(); loadAll();
+  } catch (err) { toast(err.message || "Error al agregar", "error"); }
 }
 
 function toggleEditCategoryInput(id) {
@@ -1133,81 +1150,51 @@ async function updateProduct(id) {
     const categoryRaw = document.getElementById(`ca-${id}`).value;
     const customInp = document.getElementById(`ca-custom-${id}`);
     const categoryCustom = customInp ? customInp.value.trim().toLowerCase() : "";
-    if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
+    if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el tipo personalizado", "error"); return; }
     const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
-
     const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (STOCK_TYPES.includes(category) ? 8 : 1);
     const stockUnits = +document.getElementById(`st-${id}`).value || 0;
-    const stock = RECIPE_TYPES.includes(category) ? 0
-                : STOCK_TYPES.includes(category) ? stockPiecesFromUnits(stockUnits, { piecesPerUnit })
-                : stockUnits;
-
+    const stock = RECIPE_TYPES.includes(category) ? 0 : STOCK_TYPES.includes(category) ? stockPiecesFromUnits(stockUnits, { piecesPerUnit }) : stockUnits;
     const stockItems = RECIPE_TYPES.includes(category) ? getRecipeFromEditor(id) : [];
-    if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
-
+    if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll");
     const active = document.getElementById(`ac-${id}`).value === "true";
-    const res = await authFetch(`${API}/products/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: document.getElementById(`n-${id}`).value,
-        price: +document.getElementById(`pr-${id}`).value,
-        stock, piecesPerUnit, stockItems, active,
-        image: document.getElementById(`im-${id}`).value,
-        description: document.getElementById(`de-${id}`).value,
-        category
-      })
-    });
+    const res = await authFetch(`${API}/products/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name: document.getElementById(`n-${id}`).value, price: +document.getElementById(`pr-${id}`).value, stock, piecesPerUnit, stockItems, active, image: document.getElementById(`im-${id}`).value, description: document.getElementById(`de-${id}`).value, category }) });
     if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al guardar"); }
-    toast("✓ Guardado", "success");
-    startAutoRefresh();
-    loadAll();
-  } catch (err) {
-    toast(err.message || "Error al guardar", "error");
-  }
+    toast("✓ Guardado", "success"); startAutoRefresh(); loadAll();
+  } catch (err) { toast(err.message || "Error al guardar", "error"); }
 }
 
 async function updateStockOnly(id) {
   const product = allProducts.find(p => p._id === id);
   const units = +document.getElementById(`stock-only-${id}`).value;
-  if (isNaN(units) || units < 0 || !product) { toast("Ingresá un stock válido", "error"); return; }
+  if (isNaN(units) || units < 0 || !product) { toast("Stock inválido", "error"); return; }
   const stock = stockPiecesFromUnits(units, product);
-  const res = await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
-  if (!res.ok) { toast("Error al actualizar stock", "error"); return; }
-  toast("✓ Stock actualizado","success");
-  startAutoRefresh(); // resetear timer para no sobreescribir
-  loadAll();
+  const res = await authFetch(`${API}/products/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({stock}) });
+  if (!res.ok) { toast("Error al actualizar", "error"); return; }
+  toast("✓ Stock actualizado", "success"); startAutoRefresh(); loadAll();
 }
+
 function adjustPieces(id, delta) {
   const input = document.getElementById(`pieces-only-${id}`);
   if (!input) return;
-  const val = Math.max(0, (+input.value || 0) + delta);
-  input.value = val;
+  input.value = Math.max(0, (+input.value || 0) + delta);
 }
 
 async function updatePiecesOnly(id) {
-  const input = document.getElementById(`pieces-only-${id}`);
-  const pieces = +input.value;
-  if (isNaN(pieces) || pieces < 0) { toast("Ingresá un valor válido", "error"); return; }
-  const res = await authFetch(`${API}/products/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stock: pieces })
-  });
-  if (!res.ok) { toast("Error al actualizar piezas", "error"); return; }
-  toast("✓ Piezas actualizadas", "success");
-  startAutoRefresh();
-  loadAll();
+  const pieces = +document.getElementById(`pieces-only-${id}`).value;
+  if (isNaN(pieces) || pieces < 0) { toast("Valor inválido", "error"); return; }
+  const res = await authFetch(`${API}/products/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ stock: pieces }) });
+  if (!res.ok) { toast("Error al actualizar", "error"); return; }
+  toast("✓ Piezas actualizadas", "success"); startAutoRefresh(); loadAll();
 }
 
 async function deleteProduct(id) {
   if (!confirm("¿Eliminar este producto?")) return;
   try {
-    const res = await authFetch(`${API}/products/${id}`, { method: "DELETE" });
+    const res = await authFetch(`${API}/products/${id}`, { method:"DELETE" });
     if (!res.ok) throw new Error();
-    toast("✓ Producto eliminado", "success");
-    loadAll();
-  } catch { toast("Error al eliminar producto", "error"); }
+    toast("✓ Producto eliminado", "success"); loadAll();
+  } catch { toast("Error al eliminar", "error"); }
 }
 </script>
 </body>
