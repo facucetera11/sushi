@@ -875,6 +875,7 @@ async function loadAll() {
     ]);
     const [products, orders, settings] = await Promise.all([productsRes.json(), ordersRes.json(), settingsRes.json()]);
     allProducts = products;
+    window._kizunaSettings = settings;
     const activeCount = orders.filter(o => o.status !== "Entregado").length;
     if (lastOrderCount !== null && activeCount > lastOrderCount) showNewOrderBanner();
     lastOrderCount = activeCount;
@@ -1278,54 +1279,48 @@ async function saveTransfer() {
 }
 
 
-function getComboProductForSize(size) {
-  var labelMap = { 8: ["pequeno", "pequeño", "chico"], 16: ["mediano"], 35: ["grande"] };
-  var labels = labelMap[size] || [];
-  return allProducts.find(function(p) {
-    if (normalizeCategory(p.category) !== "combos") return false;
-    var nameL = (p.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    if (new RegExp("\\b" + size + "\\b").test(nameL)) return true;
-    if (labels.some(function(l) { return nameL.includes(l); })) return true;
-    return false;
-  });
-}
-
-function renderComboEleccionAdminCards() {
-  var SIZES = [
-    { pieces: 8,  label: "Pequeno",  ph: "5000"  },
-    { pieces: 16, label: "Mediano",  ph: "9500"  },
-    { pieces: 35, label: "Grande",   ph: "19000" },
+function renderComboEleccionAdminSection() {
+  const container = document.getElementById("comboEleccionSection");
+  if (!container) return;
+  const prices = (window._kizunaSettings && window._kizunaSettings.comboEleccionPrices) || {};
+  const SIZES = [
+    { key: "p8",  pieces: 8,  label: "Pequeño", ph: "5000"  },
+    { key: "p16", pieces: 16, label: "Mediano",  ph: "9500"  },
+    { key: "p35", pieces: 35, label: "Grande",   ph: "19000" },
   ];
-  return SIZES.map(function(size) {
-    var p   = getComboProductForSize(size.pieces);
-    var price = p ? p.price : "";
-    var pid   = p ? p._id   : "";
-    var warn  = p ? "" : '<div style="font-size:11px;color:#c87400;margin-bottom:10px;line-height:1.5;">⚠️ No se encontró un combo con <strong>' + size.pieces + '</strong> en el nombre.<br>Creá un producto en categoría <strong>Combos</strong> con el número ' + size.pieces + ' en el nombre (ej: "Combo ' + size.pieces + ' pz").</div>';
-    var dis   = p ? "" : "disabled";
-    return '<div class="product-card" style="border:2px dashed rgba(22,32,74,.18);background:rgba(22,32,74,.02);">'
-         + '<div class="label" style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:600;margin-bottom:4px;">COMBO ELECCION</div>'
-         + '<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;">Combo ' + size.pieces + ' pz &mdash; ' + size.label + (p ? ' <span style="font-size:11px;font-weight:400;color:#2a9968;">✓ Vinculado a: ' + escapeHtml(p.name) + '</span>' : '') + '</div>'
-         + '<div class="label">Precio fijo del combo</div>'
-         + '<input id="ce-price-' + size.pieces + '" type="number" min="0" value="' + price + '" placeholder="Ej: ' + size.ph + '" style="margin-bottom:10px;">'
-         + warn
-         + '<button class="btn btn-success" onclick="saveComboEleccionPrice(' + size.pieces + ', \'' + escapeHtml(pid) + '\')" ' + dis + '>Guardar precio</button>'
-         + '</div>';
+  container.innerHTML = SIZES.map(s => {
+    const price = prices[s.key] || "";
+    const hasPrice = price > 0;
+    const badge = hasPrice
+      ? `<div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:10px;">✓ Precio actual: <strong>$${Number(price).toLocaleString("es-AR")}</strong></div>`
+      : `<div style="font-size:11px;color:#c87400;font-weight:600;margin-bottom:10px;">Sin precio — no aparece en la web.</div>`;
+    return `<div class="product-card" style="border:2px dashed rgba(22,32,74,.18);background:rgba(22,32,74,.02);">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:600;margin-bottom:4px;">COMBO ELECCIÓN</div>
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:10px;">${s.pieces} pz — ${s.label}</div>
+      ${badge}
+      <div class="label" style="margin-bottom:6px;">Precio fijo</div>
+      <input id="ce-price-${s.key}" type="number" min="0" value="${price}" placeholder="Ej: ${s.ph}">
+      <button class="btn btn-success" style="margin-top:10px;" onclick="saveComboEleccionPrice('${s.key}', ${s.pieces})">Guardar precio</button>
+    </div>`;
   }).join("");
 }
 
-async function saveComboEleccionPrice(size, pid) {
-  const input = document.getElementById(`ce-price-${size}`);
+async function saveComboEleccionPrice(key, pieces) {
+  const input = document.getElementById(`ce-price-${key}`);
   const price = parseInt(input.value);
   if (isNaN(price) || price < 0) { toast("Precio inválido", "error"); return; }
-  if (!pid) { toast("Producto no encontrado. Creá un producto en categoría Combos con el número " + size + " en el nombre.", "error"); return; }
-  const res = await authFetch(`${API}/products/${pid}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ price }) });
-  if (!res.ok) { toast("Error al guardar", "error"); return; }
-  // Actualizar en memoria local inmediatamente
-  const p = allProducts.find(x => x._id === pid);
-  if (p) p.price = price;
-  toast(`✓ Combo ${size} pz — precio $${price.toLocaleString("es-AR")} guardado`, "success");
-  // Recargar para reflejar en las cards
-  loadAll();
+  const current = (window._kizunaSettings && window._kizunaSettings.comboEleccionPrices) || {};
+  const updated = { ...current, [key]: price };
+  const res = await authFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ comboEleccionPrices: updated })
+  });
+  if (!res.ok) { toast("Error al guardar precio", "error"); return; }
+  if (!window._kizunaSettings) window._kizunaSettings = {};
+  window._kizunaSettings.comboEleccionPrices = updated;
+  toast(`✓ Combo ${pieces} pz — $${price.toLocaleString("es-AR")} guardado`, "success");
+  renderComboEleccionAdminSection();
 }
 
 /* ── PRODUCTS ── */
@@ -1422,18 +1417,31 @@ function renderStockInventory(products) {
 function renderProducts(products) {
   toggleNewProductStockFields();
   const cats = orderedCategories(products);
-  document.getElementById("productsGrid").innerHTML = cats.map(cat => {
+  const hasCombos = products.some(p => normalizeCategory(p.category) === "combos");
+
+  // Si no hay productos en combos, igual mostramos la sección para los precios de Combo Elección
+  const extraCombosHeader = !hasCombos ? `
+    <div style="grid-column:1/-1;margin-top:22px;margin-bottom:10px;">
+      <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--navy);padding-bottom:10px;border-bottom:1px solid var(--border);">
+        🎁 Combos
+      </h3>
+    </div>
+    <div id="comboEleccionSection" style="display:contents;"></div>
+  ` : "";
+
+  document.getElementById("productsGrid").innerHTML = extraCombosHeader + cats.map(cat => {
     const items = products.filter(p => normalizeCategory(p.category) === cat);
     if (!items.length) return "";
 
-    // Tarjetas especiales de Combo Elección dentro de la categoría combos
-    const comboEleccionCards = cat === "combos" ? renderComboEleccionAdminCards() : "";
+    const comboEleccionPlaceholder = cat === "combos"
+      ? `<div id="comboEleccionSection" style="display:contents;"></div>`
+      : "";
 
     return `<div style="grid-column:1/-1;margin-top:22px;margin-bottom:10px;">
       <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--navy);padding-bottom:10px;border-bottom:1px solid var(--border);">
         ${categoryLabel(cat)} <span style="font-size:12px;font-weight:400;color:rgba(22,32,74,.35);">${items.length} productos</span>
       </h3></div>
-      ${comboEleccionCards}
+      ${comboEleccionPlaceholder}
       ${items.map(p => {
         const units = availableUnits(p, products);
         const recipeStock = usesRecipeStock(p);
@@ -1472,7 +1480,13 @@ function renderProducts(products) {
         </div>`;
       }).join("")}`;
   }).join("");
+
+  // Renderizar las cards de Combo Elección (ya con el DOM listo)
+  renderComboEleccionAdminSection();
 }
+
+
+
 
 async function addProduct() {
   try {

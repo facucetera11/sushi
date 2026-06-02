@@ -210,7 +210,7 @@ app.get("/settings", async (req, res) => {
 
 app.put("/settings", requireAdmin, async (req, res) => {
   try {
-    const allowed = ["openHour", "closeHour", "openDays", "cashDiscount", "transferAlias", "mercadoPagoLink", "whatsappNumber", "acceptingOrders"];
+    const allowed = ["openHour", "closeHour", "openDays", "cashDiscount", "transferAlias", "mercadoPagoLink", "whatsappNumber", "acceptingOrders", "comboEleccionPrices"];
     const updates = {};
     allowed.forEach(key => {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) updates[key] = req.body[key];
