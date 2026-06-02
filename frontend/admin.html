@@ -505,7 +505,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
     <!-- STOCK (colapsado por defecto) -->
     <div class="panel">
       <button class="panel-toggle-btn" id="stockToggleBtn" onclick="toggleStockPanel()">
-        <h2>📊 Stock </h2>
+        <h2>📊 Stock por tipo de sushi</h2>
         <span class="toggle-arrow">▼</span>
       </button>
       <div class="panel-collapsible" id="stockPanelBody">
@@ -636,9 +636,26 @@ function toggleSound() {
   if (soundEnabled) { initAudio(); playNotif(); }
 }
 document.addEventListener("DOMContentLoaded", () => {
+  // Init sound button
   const btn = document.getElementById("soundBtn");
   btn.textContent = soundEnabled ? "🔔 Sonido" : "🔕 Sonido";
   btn.classList.toggle("sound-on", soundEnabled);
+
+  // Auth check moved here so DOM is guaranteed ready on F5/reload
+  if (authToken()) {
+    try {
+      const [payload] = authToken().split(".");
+      const data = JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
+      if (data.exp && data.exp < Date.now()) {
+        logout();
+      } else {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("adminMain").style.display = "block";
+        loadAll();
+        startAutoRefresh();
+      }
+    } catch(e) { logout(); }
+  }
 });
 
 /* ── BANNER ── */
@@ -687,19 +704,6 @@ function logout() {
   document.getElementById("adminMain").style.display = "none";
   document.getElementById("pwInput").value = "";
   lastOrderCount = null;
-}
-
-if (authToken()) {
-  try {
-    const [payload] = authToken().split(".");
-    const data = JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
-    if (data.exp && data.exp < Date.now()) { logout(); }
-    else {
-      document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("adminMain").style.display = "block";
-      loadAll(); startAutoRefresh();
-    }
-  } catch(e) { logout(); }
 }
 
 let refreshCountdown = 30, countdownTimer = null;
