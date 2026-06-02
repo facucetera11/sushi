@@ -243,6 +243,24 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 .btn-delete-order{border:1px solid rgba(216,106,94,.3);color:var(--red);}
 .btn-delete-order:hover{background:var(--red);color:white;}
 
+/* Multi-print */
+.btn-print-multi{
+  padding:8px 14px;border-radius:var(--radius-xs);
+  border:1px solid rgba(22,32,74,.2);background:var(--navy-soft);
+  color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.15s;
+  font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;
+}
+.btn-print-multi:hover{background:var(--navy);color:white;}
+.btn-print-multi.active{background:var(--navy);color:white;}
+.order-checkbox-wrap{display:none;align-items:center;gap:7px;margin-bottom:10px;}
+.order-checkbox-wrap.visible{display:flex;}
+.order-checkbox-wrap input[type="checkbox"]{
+  width:18px;height:18px;margin:0;padding:0;cursor:pointer;accent-color:var(--navy);
+  border-radius:4px;border:2px solid var(--border);background:white;
+}
+.order-checkbox-wrap label{font-size:12px;font-weight:600;color:rgba(22,32,74,.55);cursor:pointer;}
+.order-card.selected-for-print{border-color:var(--navy);box-shadow:0 0 0 3px rgba(22,32,74,.1);}
+
 /* History toggle inside orders panel */
 .history-sep{border:none;border-top:1px solid var(--border);margin:20px 0 16px;}
 .history-toggle{
@@ -451,6 +469,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
             <input type="date" id="exportTo">
             <button class="btn-csv" onclick="exportCSV()">⬇️ Exportar CSV</button>
           </div>
+          <button class="btn-print-multi" id="multiPrintBtn" onclick="toggleMultiPrintMode()">&#128424; Imprimir m&#250;ltiple</button>
+          <button class="btn-print-multi" id="multiPrintGoBtn" style="display:none;" onclick="printSelectedOrders()">&#128424; Imprimir seleccionados (<span id="multiPrintCount">0</span>)</button>
         </div>
         <div class="confirm-hint">Los pedidos web se registran acá, pero quedan confirmados cuando los responden por WhatsApp.</div>
         <div class="orders-grid" id="ordersGrid"></div>
@@ -914,7 +934,8 @@ function orderCardHTML(o, isDelivered) {
   const noteBlock = o.notes ? `<div class="customer-note"><strong>Nota del cliente</strong><span>${escapeHtml(o.notes)}</span></div>` : "";
   const statusClass = `status-${String(o.status || "").toLowerCase()}`;
 
-  return `<div class="${cardClass}">
+  return `<div class="${cardClass}" id="order-card-${o._id}">
+    <div class="order-checkbox-wrap" id="chk-wrap-${o._id}"><input type="checkbox" id="chk-${o._id}" onchange="toggleOrderSelection('${o._id}', this.checked)"><label for="chk-${o._id}">Seleccionar para imprimir</label></div>
     <div class="order-head">
       <span class="order-num">Pedido #${o.number}</span>
       <span class="status-badge status-${o.status} ${statusClass}">${o.status}</span>
@@ -971,9 +992,22 @@ function applyFilters() {
   const histGrid = document.getElementById("historyGrid");
   document.getElementById("historyCount").textContent = delivered.length ? `(${delivered.length})` : "";
   histGrid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+  refreshCheckboxVisibility();
 }
 
 function renderOrders(orders) { allOrders = orders; applyFilters(); }
+
+function refreshCheckboxVisibility() {
+  if (!multiPrintMode) return;
+  document.querySelectorAll(".order-checkbox-wrap").forEach(el => el.classList.add("visible"));
+  // Restore checked state
+  selectedOrderIds.forEach(id => {
+    const chk = document.getElementById(`chk-${id}`);
+    const card = document.getElementById(`order-card-${id}`);
+    if (chk) chk.checked = true;
+    if (card) card.classList.add("selected-for-print");
+  });
+}
 
 function exportCSV() {
   const fromValue = document.getElementById("exportFrom")?.value;
@@ -1472,6 +1506,149 @@ async function deleteProduct(id) {
     if (!res.ok) throw new Error();
     toast("✓ Producto eliminado", "success"); loadAll();
   } catch { toast("Error al eliminar", "error"); }
+}
+
+/* ── MULTI PRINT ── */
+let multiPrintMode = false;
+let selectedOrderIds = new Set();
+
+function toggleMultiPrintMode() {
+  multiPrintMode = !multiPrintMode;
+  selectedOrderIds.clear();
+  const btn = document.getElementById("multiPrintBtn");
+  const goBtn = document.getElementById("multiPrintGoBtn");
+  btn.classList.toggle("active", multiPrintMode);
+  btn.textContent = multiPrintMode ? "✕ Cancelar" : "\u{1F5A8}\uFE0F Imprimir múltiple";
+  goBtn.style.display = multiPrintMode ? "" : "none";
+  updateMultiPrintCount();
+  document.querySelectorAll(".order-checkbox-wrap").forEach(el => {
+    el.classList.toggle("visible", multiPrintMode);
+  });
+  document.querySelectorAll("input[id^='chk-']").forEach(el => { el.checked = false; });
+  document.querySelectorAll(".order-card").forEach(el => el.classList.remove("selected-for-print"));
+}
+
+function toggleOrderSelection(id, checked) {
+  if (checked) selectedOrderIds.add(id);
+  else selectedOrderIds.delete(id);
+  const card = document.getElementById(`order-card-${id}`);
+  if (card) card.classList.toggle("selected-for-print", checked);
+  updateMultiPrintCount();
+}
+
+function updateMultiPrintCount() {
+  const el = document.getElementById("multiPrintCount");
+  if (el) el.textContent = selectedOrderIds.size;
+}
+
+function printSelectedOrders() {
+  const ids = [...selectedOrderIds];
+  if (!ids.length) { toast("Seleccioná al menos un pedido", "error"); return; }
+  const orders = ids.map(id => allOrders.find(o => o._id === id)).filter(Boolean);
+  if (!orders.length) { toast("No encontré los pedidos", "error"); return; }
+
+  function buildTicketHTML(order) {
+    const createdAt = new Date(order.createdAt);
+    const date = createdAt.toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"2-digit" });
+    const time = createdAt.toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
+    const delivery = order.deliveryType === "delivery" ? "Delivery" : "Retiro";
+    const payment = order.paymentMethod === "cash" ? "Efectivo" : "Transferencia";
+    const schedule = [order.scheduledDate, order.scheduledTime].filter(Boolean).join(" ");
+    const notes = (order.notes || "").trim();
+    const itemsRows = (order.items || []).map(item => {
+      const qty = Number(item.qty || 0);
+      const price = Number(item.price || 0);
+      const lineTotal = price * qty;
+      const itemNote = (item.note || "").trim();
+      return `<tr><td><strong>${qty}x ${escapeHtml(item.name||"")}</strong>${itemNote ? `<div class="item-note">Nota: ${escapeHtml(itemNote)}</div>` : ""}</td><td class="right">$${lineTotal.toLocaleString("es-AR")}</td></tr>`;
+    }).join("");
+    return `<div class="ticket">
+      <div class="center"><strong>Kizuna Sushi</strong><br><span class="muted">Pedido #${order.number} &middot; ${date} ${time}</span></div>
+      <div class="pill">${delivery}</div>
+      <div class="block"><span class="lbl">Cliente:</span> ${escapeHtml(order.clientName||"-")}</div>
+      ${order.clientPhone ? `<div class="block"><span class="lbl">Tel:</span> ${escapeHtml(order.clientPhone)}</div>` : ""}
+      ${order.address ? `<div class="block"><span class="lbl">Dir:</span> ${escapeHtml(order.address)}</div>` : ""}
+      ${schedule ? `<div class="block"><span class="lbl">Horario:</span> ${escapeHtml(schedule)}</div>` : ""}
+      <div class="block"><span class="lbl">Pago:</span> ${payment}</div>
+      <div class="line"></div>
+      <table>${itemsRows}</table>
+      <div class="line"></div>
+      <table><tr class="total-row"><td>Total</td><td class="right">$${Number(order.total||0).toLocaleString("es-AR")}</td></tr></table>
+      ${notes ? `<div class="line"></div><div class="lbl">Nota</div><div class="note">${escapeHtml(notes)}</div>` : ""}
+    </div>`;
+  }
+
+  // Group into pages of 4
+  const pages = [];
+  for (let i = 0; i < orders.length; i += 4) pages.push(orders.slice(i, i + 4));
+
+  const pagesHTML = pages.map(group => {
+    const cells = group.map(o => `<div class="cell">${buildTicketHTML(o)}</div>`).join("");
+    // pad to 4 cells so grid is even
+    const pad = Array(4 - group.length).fill(`<div class="cell"></div>`).join("");
+    return `<div class="a4-page">${cells}${pad}</div>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Pedidos múltiples</title>
+<style>
+  @page{size:A4 portrait;margin:8mm;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,sans-serif;color:#111;font-size:11px;line-height:1.3;background:white;}
+  .a4-page{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
+    gap:6mm;
+    page-break-after:always;
+    height:calc(297mm - 16mm);
+  }
+  .a4-page:last-child{page-break-after:auto;}
+  .cell{
+    border:1px solid #ccc;
+    border-radius:4px;
+    padding:6px 8px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .ticket{width:100%;}
+  .center{text-align:center;margin-bottom:4px;}
+  .muted{color:#555;font-size:10px;}
+  .pill{border:2px solid #111;border-radius:3px;padding:4px 6px;margin:5px 0;text-align:center;font-size:13px;font-weight:800;text-transform:uppercase;}
+  .line{border-top:1px dashed #111;margin:5px 0;}
+  table{width:100%;border-collapse:collapse;}
+  td{padding:2px 0;vertical-align:top;}
+  .right{text-align:right;white-space:nowrap;padding-left:6px;}
+  .total-row{font-size:13px;font-weight:800;}
+  .block{margin:2px 0;word-break:break-word;}
+  .lbl{font-weight:800;}
+  .note{border:1px dashed #111;padding:4px;margin-top:3px;font-weight:700;white-space:pre-wrap;font-size:10px;}
+  .item-note{font-size:10px;padding-left:6px;}
+</style>
+</head>
+<body>
+${pagesHTML}
+<script>
+  window.onload = () => {
+    window.focus();
+    window.print();
+    window.onafterprint = () => window.close();
+    setTimeout(() => window.close(), 1500);
+  };
+<\/script>
+</body>
+</html>`;
+
+  const w = window.open("", "_blank", "width=800,height=900");
+  if (!w) { toast("El navegador bloqueó la ventana", "error"); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
 }
 </script>
 </body>

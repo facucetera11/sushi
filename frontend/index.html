@@ -1453,7 +1453,7 @@ function onCheckoutOverlayClick(e) {
 }
 
 function openWhatsAppConfirm(order, summaryHtml, whatsappUrl, fallbackUrl) {
-  pendingWhatsAppUrl = fallbackUrl || whatsappUrl;
+  pendingWhatsAppUrl = whatsappUrl;
   pendingWhatsAppFallbackUrl = fallbackUrl || whatsappUrl;
   document.getElementById("whatsappConfirmTitle").textContent =
     order?.number ? `Pedido #${order.number} registrado` : "Pedido registrado";
@@ -1467,8 +1467,16 @@ function openWhatsAppConfirm(order, summaryHtml, whatsappUrl, fallbackUrl) {
 function confirmWhatsAppOrder() {
   if (!pendingWhatsAppUrl) return;
   const fallback = pendingWhatsAppFallbackUrl || pendingWhatsAppUrl;
-  const opened = window.open(fallback, "_blank", "noopener");
-  if (!opened) window.location.href = fallback;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    // On iOS, use native whatsapp:// scheme directly to avoid blank-tab issue
+    // If app not installed, redirect to wa.me after a short delay
+    window.location.href = pendingWhatsAppUrl;
+    setTimeout(() => { window.location.href = fallback; }, 1200);
+  } else {
+    const opened = window.open(fallback, "_blank", "noopener");
+    if (!opened) window.location.href = fallback;
+  }
 }
 
 function goToStep1(silent) {
