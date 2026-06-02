@@ -1453,7 +1453,7 @@ function onCheckoutOverlayClick(e) {
 }
 
 function openWhatsAppConfirm(order, summaryHtml, whatsappUrl, fallbackUrl) {
-  pendingWhatsAppUrl = whatsappUrl;
+  pendingWhatsAppUrl = fallbackUrl || whatsappUrl;
   pendingWhatsAppFallbackUrl = fallbackUrl || whatsappUrl;
   document.getElementById("whatsappConfirmTitle").textContent =
     order?.number ? `Pedido #${order.number} registrado` : "Pedido registrado";
@@ -1466,21 +1466,9 @@ function openWhatsAppConfirm(order, summaryHtml, whatsappUrl, fallbackUrl) {
 
 function confirmWhatsAppOrder() {
   if (!pendingWhatsAppUrl) return;
-  // Intentar abrir app nativa; si no abre en 1.5s, abrir wa.me en nueva pestaña
   const fallback = pendingWhatsAppFallbackUrl || pendingWhatsAppUrl;
-  let appOpened = false;
-  const iframe = document.createElement("iframe");
-  iframe.style.display = "none";
-  iframe.src = pendingWhatsAppUrl;
-  document.body.appendChild(iframe);
-  setTimeout(() => {
-    document.body.removeChild(iframe);
-    if (!appOpened) window.open(fallback, "_blank");
-  }, 1500);
-  window.addEventListener("blur", function onBlur() {
-    appOpened = true;
-    window.removeEventListener("blur", onBlur);
-  }, { once: true });
+  const opened = window.open(fallback, "_blank", "noopener");
+  if (!opened) window.location.href = fallback;
 }
 
 function goToStep1(silent) {
