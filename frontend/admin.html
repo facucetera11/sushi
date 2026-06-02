@@ -1078,7 +1078,7 @@ async function updateStockOnly(id) {
   if (isNaN(units) || units < 0 || !product) { toast("Ingresá un stock válido", "error"); return; }
   const stock = stockPiecesFromUnits(units, product);
   await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
-  toast("âœ“ Stock actualizado","success"); loadAll();
+  toast("✓ Stock actualizado","success"); loadAll();
 }
 async function deleteProduct(id) {
   if (!confirm("¿Eliminar este producto?")) return;

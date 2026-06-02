@@ -1176,7 +1176,8 @@ function validateCheckoutFields() {
   if (clientName.length < 2) return "Ingresá tu nombre completo";
   if (phoneDigits.length < 8) return "Ingresá un teléfono válido";
   if (deliveryType === "delivery" && address.length < 6) return "Ingresá una dirección más completa";
-  if (!dateValue || !timeValue) return "Elegí día y horario";
+  if (!dateValue) return "No hay días disponibles para pedir. Volvé más tarde.";
+  if (!timeValue) return "Elegí un horario";
   return "";
 }
 
@@ -1192,7 +1193,21 @@ async function load() {
       fetch(`${API}/settings`).then(r => r.json())
     ]);
     updateStatus();
-    CATS.forEach(cat => renderCat(cat));
+    // Incluir categorías custom que no estén en CATS
+    const allCats = [...CATS];
+    products.forEach(p => { if (p.category && !allCats.includes(p.category)) allCats.push(p.category); });
+    allCats.forEach(cat => {
+      // Crear sección si no existe
+      if (!document.getElementById("cat-" + cat)) {
+        const menuBody = document.querySelector(".menu-body");
+        const sec = document.createElement("div");
+        sec.className = "cat-section";
+        sec.id = "cat-" + cat;
+        sec.innerHTML = `<div class="section-header"><h2 class="section-title">${cat.charAt(0).toUpperCase()+cat.slice(1)}</h2><span class="section-count" id="count-${cat}"></span></div><div class="grid" id="grid-${cat}"></div>`;
+        menuBody.appendChild(sec);
+      }
+      renderCat(cat);
+    });
   } catch (err) {
     CATS.forEach(cat => {
       document.getElementById("grid-" + cat).innerHTML =
@@ -1448,12 +1463,21 @@ function openWhatsAppConfirm(order, summaryHtml, whatsappUrl, fallbackUrl) {
 
 function confirmWhatsAppOrder() {
   if (!pendingWhatsAppUrl) return;
-  location.href = pendingWhatsAppUrl;
+  // Intentar abrir app nativa; si no abre en 1.5s, abrir wa.me en nueva pestaña
+  const fallback = pendingWhatsAppFallbackUrl || pendingWhatsAppUrl;
+  let appOpened = false;
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  iframe.src = pendingWhatsAppUrl;
+  document.body.appendChild(iframe);
   setTimeout(() => {
-    if (document.visibilityState === "visible" && pendingWhatsAppFallbackUrl) {
-      location.href = pendingWhatsAppFallbackUrl;
-    }
-  }, 1200);
+    document.body.removeChild(iframe);
+    if (!appOpened) window.open(fallback, "_blank");
+  }, 1500);
+  window.addEventListener("blur", function onBlur() {
+    appOpened = true;
+    window.removeEventListener("blur", onBlur);
+  }, { once: true });
 }
 
 function goToStep1(silent) {
@@ -1575,8 +1599,8 @@ function populateDateTimeSelects() {
     timeEl.innerHTML += `<option value="${h}:30">${h}:30</option>`;
   }
 
-  dateEl.addEventListener("change", updateCheckoutSummary);
-  timeEl.addEventListener("change", updateCheckoutSummary);
+  dateEl.onchange = updateCheckoutSummary;
+  timeEl.onchange = updateCheckoutSummary;
 }
 
 function updateCheckoutSummary() {

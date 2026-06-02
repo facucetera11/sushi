@@ -220,7 +220,11 @@ app.put("/settings", requireAdmin, async (req, res) => {
 
 /* ── ORDERS ── */
 app.get("/orders", requireAdmin, async (req, res) => {
-  try { res.json(await Order.find().sort({ number: -1 })); }
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+    const skip = parseInt(req.query.skip) || 0;
+    res.json(await Order.find().sort({ number: -1 }).skip(skip).limit(limit));
+  }
   catch (err) { res.status(500).json({ error: "Error al obtener pedidos" }); }
 });
 
@@ -304,6 +308,12 @@ app.delete("/orders/:id", requireAdmin, async (req, res) => {
   try {
     const o = await Order.findByIdAndDelete(req.params.id);
     if (!o) return res.status(404).json({ error: "Pedido no encontrado" });
+    // Restaurar stock de las piezas descontadas al crear el pedido
+    if (Array.isArray(o.stockDeductions) && o.stockDeductions.length) {
+      await Promise.all(o.stockDeductions.map(d =>
+        Product.findByIdAndUpdate(d.product, { $inc: { stock: d.pieces } })
+      ));
+    }
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: "Error al eliminar pedido" }); }
 });
