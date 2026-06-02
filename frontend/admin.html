@@ -884,12 +884,15 @@ function availableUnits(product, products) {
   }));
 }
 
+const STOCK_TYPES  = ["rolls", "veggie"];
+const RECIPE_TYPES = ["combos", "bandejas"];
+
 function isStockType(product) {
-  return ["rolls", "veggie"].includes(product.category);
+  return STOCK_TYPES.includes(product.category);
 }
 
 function usesRecipeStock(product) {
-  return ["combos", "bandejas"].includes(product.category);
+  return RECIPE_TYPES.includes(product.category);
 }
 
 function stockPiecesFromUnits(units, product) {
@@ -902,10 +905,10 @@ function toggleNewProductStockFields() {
   customInput.style.display = category === "otro" ? "block" : "none";
   if (category !== "otro") customInput.value = "";
   document.querySelectorAll(".unit-stock-field").forEach(el => {
-    el.style.display = ["combos", "bandejas"].includes(category) ? "none" : "block";
+    el.style.display = RECIPE_TYPES.includes(category) ? "none" : "block";
   });
   document.querySelectorAll(".new-recipe-field").forEach(el => {
-    el.style.display = ["combos", "bandejas"].includes(category) ? "block" : "none";
+    el.style.display = RECIPE_TYPES.includes(category) ? "block" : "none";
   });
 }
 
@@ -981,29 +984,47 @@ function renderProducts(products) {
 
 async function addProduct() {
   try {
-  const products = await authFetch(`${API}/products`).then(r => r.json());
-  const categoryRaw = document.getElementById("categoryInput").value;
-  const categoryCustom = document.getElementById("categoryCustomInput").value.trim().toLowerCase();
-  if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
-  const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
-  const piecesPerUnit = +document.getElementById("piecesInput").value || (["rolls","veggie"].includes(category) ? 8 : 1);
-  const stockUnits = +document.getElementById("stockInput").value || 0;
-  const stock = ["combos","bandejas"].includes(category) ? 0 : ["rolls","veggie"].includes(category) ? stockUnits * piecesPerUnit : stockUnits;
-    const stockItems = ["combos","bandejas"].includes(category) ? getRecipeFromEditor("new") : [];
-    if (["combos","bandejas"].includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
-    const body = { name:document.getElementById("nameInput").value.trim(), price:+document.getElementById("priceInput").value, stock, piecesPerUnit, stockItems, active:true, image:document.getElementById("imageInput").value.trim(), description:document.getElementById("descInput").value.trim(), category };
-  if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
-  await authFetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
+    const categoryRaw = document.getElementById("categoryInput").value;
+    const categoryCustom = document.getElementById("categoryCustomInput").value.trim().toLowerCase();
+    if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
+    const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
+
+    const name = document.getElementById("nameInput").value.trim();
+    const price = +document.getElementById("priceInput").value;
+    if (!name || !price) { toast("Completá nombre y precio", "error"); return; }
+
+    const piecesPerUnit = +document.getElementById("piecesInput").value || (STOCK_TYPES.includes(category) ? 8 : 1);
+    const stockUnits = +document.getElementById("stockInput").value || 0;
+    const stock = RECIPE_TYPES.includes(category) ? 0
+                : STOCK_TYPES.includes(category) ? stockUnits * piecesPerUnit
+                : stockUnits;
+
+    const stockItems = RECIPE_TYPES.includes(category) ? getRecipeFromEditor("new") : [];
+    if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
+
+    const body = {
+      name, price, stock, piecesPerUnit, stockItems, active: true,
+      image: document.getElementById("imageInput").value.trim(),
+      description: document.getElementById("descInput").value.trim(),
+      category
+    };
+
+    const res = await authFetch(`${API}/products`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al crear producto"); }
+
+    ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("categoryInput").value = "rolls";
     document.getElementById("categoryCustomInput").style.display = "none";
     document.getElementById("categoryCustomInput").value = "";
     document.getElementById("recipeRows-new").innerHTML = "";
-  toast("✓ Producto agregado","success"); loadAll();
+    toggleNewProductStockFields();
+    toast("✓ Producto agregado", "success");
+    loadAll();
   } catch (err) {
-    toast(err.message || "Error al guardar receta", "error");
+    toast(err.message || "Error al agregar producto", "error");
   }
 }
+
 function toggleEditCategoryInput(id) {
   const sel = document.getElementById(`ca-${id}`);
   const inp = document.getElementById(`ca-custom-${id}`);
@@ -1014,30 +1035,47 @@ function toggleEditCategoryInput(id) {
 
 async function updateProduct(id) {
   try {
-  const products = await authFetch(`${API}/products`).then(r => r.json());
-  const current = products.find(p => p._id === id);
-  const categoryRaw = document.getElementById(`ca-${id}`).value;
-  const customInp = document.getElementById(`ca-custom-${id}`);
-  const categoryCustom = customInp ? customInp.value.trim().toLowerCase() : "";
-  if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
-  const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
-  const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (["rolls","veggie"].includes(category) ? 8 : 1);
-  const stockUnits = +document.getElementById(`st-${id}`).value || 0;
-  const stock = usesRecipeStock({ category }) ? 0 : current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
-    const stockItems = usesRecipeStock({ category }) ? getRecipeFromEditor(id) : [];
-    if (usesRecipeStock({ category }) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
+    const categoryRaw = document.getElementById(`ca-${id}`).value;
+    const customInp = document.getElementById(`ca-custom-${id}`);
+    const categoryCustom = customInp ? customInp.value.trim().toLowerCase() : "";
+    if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
+    const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
+
+    const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (STOCK_TYPES.includes(category) ? 8 : 1);
+    const stockUnits = +document.getElementById(`st-${id}`).value || 0;
+    const stock = RECIPE_TYPES.includes(category) ? 0
+                : STOCK_TYPES.includes(category) ? stockPiecesFromUnits(stockUnits, { piecesPerUnit })
+                : stockUnits;
+
+    const stockItems = RECIPE_TYPES.includes(category) ? getRecipeFromEditor(id) : [];
+    if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
+
     const active = document.getElementById(`ac-${id}`).value === "true";
-    await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:document.getElementById(`n-${id}`).value,price:+document.getElementById(`pr-${id}`).value,stock,piecesPerUnit,stockItems,active,image:document.getElementById(`im-${id}`).value,description:document.getElementById(`de-${id}`).value,category})});
-  toast("✓ Guardado","success"); loadAll();
+    const res = await authFetch(`${API}/products/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: document.getElementById(`n-${id}`).value,
+        price: +document.getElementById(`pr-${id}`).value,
+        stock, piecesPerUnit, stockItems, active,
+        image: document.getElementById(`im-${id}`).value,
+        description: document.getElementById(`de-${id}`).value,
+        category
+      })
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al guardar"); }
+    toast("✓ Guardado", "success");
+    loadAll();
   } catch (err) {
-    toast(err.message || "Error al guardar receta", "error");
+    toast(err.message || "Error al guardar", "error");
   }
 }
+
 async function updateStockOnly(id) {
   const products = await authFetch(`${API}/products`).then(r => r.json());
   const product = products.find(p => p._id === id);
   const units = +document.getElementById(`stock-only-${id}`).value;
-  if (isNaN(units) || units < 0 || !product) { toast("IngresÃ¡ un stock vÃ¡lido", "error"); return; }
+  if (isNaN(units) || units < 0 || !product) { toast("Ingresá un stock válido", "error"); return; }
   const stock = stockPiecesFromUnits(units, product);
   await authFetch(`${API}/products/${id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock})});
   toast("âœ“ Stock actualizado","success"); loadAll();
