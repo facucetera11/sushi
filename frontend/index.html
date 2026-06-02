@@ -1388,145 +1388,16 @@ function validateCheckoutFields() {
 }
 
 /* ── LOAD ── */
-async function load() {
-  CATS.forEach(cat => {
-    document.getElementById("grid-" + cat).innerHTML =
-      `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
-  });
-  try {
-    [products, settings] = await Promise.all([
-      fetch(`${API}/products`).then(r => r.json()),
-      fetch(`${API}/settings`).then(r => r.json())
-    ]);
-    updateStatus();
-    // Incluir categorías custom que no estén en CATS
-    const allCats = [...CATS];
-    products.forEach(p => { if (p.category && !allCats.includes(p.category)) allCats.push(p.category); });
-    allCats.forEach(cat => {
-      // Crear sección si no existe
-      if (!document.getElementById("cat-" + cat)) {
-        const menuBody = document.querySelector(".menu-body");
-        const sec = document.createElement("div");
-        sec.className = "cat-section";
-        sec.id = "cat-" + cat;
-        sec.innerHTML = `<div class="section-header"><h2 class="section-title">${cat.charAt(0).toUpperCase()+cat.slice(1)}</h2><span class="section-count" id="count-${cat}"></span></div><div class="grid" id="grid-${cat}"></div>`;
-        menuBody.appendChild(sec);
-      }
-      renderCat(cat);
-    });
-  } catch (err) {
-    CATS.forEach(cat => {
-      document.getElementById("grid-" + cat).innerHTML =
-        `<p class="empty-cat">Error al cargar. Recargá la página.</p>`;
-    });
-  }
-}
+
 
 /* ── STATUS ── */
-function updateStatus() {
-  const now = new Date();
-  const badge = document.getElementById("statusBadge");
-  if (!isAcceptingOrders()) {
-    badge.textContent = "Cerrado";
-    badge.style.cssText = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-    return;
-  }
-  if (!settings.openDays?.includes(now.getDay())) {
-    badge.textContent = "Cerrado hoy";
-    badge.style.cssText = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-    return;
-  }
-  const h = now.getHours();
-  if (h >= settings.openHour && h < settings.closeHour) {
-    badge.textContent = "Abierto ahora";
-    badge.style.cssText = "background:rgba(26,107,58,.1);color:#1a6b3a;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-  } else {
-    badge.textContent = `Abrimos a las ${settings.openHour}:00`;
-    badge.style.cssText = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-  }
-}
+
 
 /* ── RENDER CATEGORÍA ── */
-function renderCat(cat) {
-  const filtered = products.filter(p => p.category === cat && p.active !== false);
-  const grid = document.getElementById("grid-" + cat);
-  const countEl = document.getElementById("count-" + cat);
-  if (!filtered.length) {
-    grid.innerHTML = `<p class="empty-cat">Sin productos disponibles por ahora.</p>`;
-    if (countEl) countEl.textContent = "";
-    return;
-  }
-  if (countEl) countEl.textContent = `${filtered.length} opciones`;
-  grid.innerHTML = filtered.map((p, i) => {
-    const available = getAvailableUnits(p);
-    const closed = !isAcceptingOrders();
-    const sinStock = available <= 0;
-    const stockTag = sinStock
-      ? `<span class="card-stock-tag empty">Agotado</span>`
-      : closed
-        ? `<span class="card-stock-tag empty">Cerrado</span>`
-      : available <= 3
-        ? `<span class="card-stock-tag low">Quedan ${available}</span>`
-        : "";
-    const stockBadge = sinStock
-      ? `<div class="stock-badge">Sin stock</div>`
-      : closed
-        ? `<div class="stock-badge">Local cerrado</div>`
-      : available <= 3
-        ? `<div class="stock-badge">Últimas ${available}</div>`
-        : `<div class="stock-badge ok">Disponible</div>`;
-    const tag = i === 0 && !sinStock ? `<span class="card-tag">Popular</span>` : "";
-    const desc = p.description || "";
-    return `
-    <div class="card ${sinStock ? "out-of-stock" : ""}" onclick="openModal('${p._id}')">
-      <div class="card-img-wrap">
-        <img src="${p.image || 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c'}"
-             alt="${p.name}" loading="lazy"
-             onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
-        ${tag}
-        ${stockTag}
-        <div class="card-quick"><span>Vista rápida</span></div>
-      </div>
-      <div class="card-body">
-        <h3>${p.name}</h3>
-        <p class="card-desc">${desc.substring(0,60)}${desc.length > 60 ? "…" : ""}</p>
-        <div class="card-bottom">
-          <div>
-            <div class="price">$${p.price.toLocaleString("es-AR")}</div>
-            ${stockBadge}
-          </div>
-          <button class="btn-add"
-            onclick="event.stopPropagation(); addToCartDirect('${p._id}')"
-            ${sinStock || closed ? "disabled" : ""}>
-            ${closed ? "Cerrado" : sinStock ? "Agotado" : "Agregar al carrito"}
-          </button>
-        </div>
-      </div>
-    </div>`;
-  }).join("");
-}
+
 
 /* ── MODAL ── */
-function openModal(id) {
-  const p = products.find(x => x._id === id);
-  if (!p) return;
-  const available = getAvailableUnits(p);
-  modalProduct = p; modalQty = 1;
-  document.getElementById("modalImg").src = p.image || "https://images.unsplash.com/photo-1579871494447-9811cf80d66c";
-  document.getElementById("modalImg").alt = p.name;
-  document.getElementById("modalCat").textContent = p.category.toUpperCase();
-  document.getElementById("modalName").textContent = p.name;
-  document.getElementById("modalDesc").textContent = p.description || "";
-  document.getElementById("modalStock").textContent = available > 0
-    ? `Stock disponible: ${available} unidades` : "Sin stock disponible";
-  document.getElementById("modalQtyVal").textContent = "1";
-  document.getElementById("modalPrice").textContent = `$${p.price.toLocaleString("es-AR")}`;
-  document.getElementById("modalAdded").classList.remove("show");
-  document.getElementById("modalAddBtn").disabled = available <= 0 || !isAcceptingOrders();
-  document.getElementById("modalAddBtn").textContent = !isAcceptingOrders() ? "Local cerrado" : available <= 0 ? "Sin stock" : "Agregar al pedido";
-  document.getElementById("modalOverlay").classList.add("open");
-  document.body.style.overflow = "hidden";
-}
+
 
 function closeModal() {
   document.getElementById("modalOverlay").classList.remove("open");
@@ -1542,70 +1413,15 @@ function changeModalQty(d) {
   modalQty = Math.max(1, Math.min(getAvailableUnits(modalProduct), modalQty + d));
   document.getElementById("modalQtyVal").textContent = modalQty;
   document.getElementById("modalPrice").textContent =
-    `$${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
+    `${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
 }
 
-function addFromModal() {
-  if (!modalProduct || modalProduct.active === false || getAvailableUnits(modalProduct) <= 0 || !isAcceptingOrders()) return;
-  const p = modalProduct, qty = modalQty;
-  const available = getAvailableUnits(p);
-  const found = cart.find(i => i._id === p._id);
-  if (found) {
-    if (found.qty + qty > available) { toast("Stock máximo alcanzado"); return; }
-    found.qty += qty;
-  } else {
-    cart.push({ ...p, qty });
-  }
-  updateCart();
-  document.getElementById("modalAdded").classList.add("show");
-  setTimeout(() => document.getElementById("modalAdded").classList.remove("show"), 2000);
-  toast(`✓ ${p.name} agregado al pedido`);
-}
+
 
 /* ── CART ── */
-function updateCart() {
-  const itemsDiv = document.getElementById("cartItems");
-  let total = 0, count = 0;
-  if (!cart.length) {
-    itemsDiv.innerHTML = `<p style="opacity:.32;font-size:13px;padding:12px 0;letter-spacing:.3px;">Tu carrito está vacío</p>`;
-  } else {
-    itemsDiv.innerHTML = cart.map(i => {
-      const sub = i.price * i.qty;
-      total += sub; count += i.qty;
-      return `
-      <div class="cart-item">
-        <div>
-          <div class="cart-item-name">${i.name}</div>
-          <div class="cart-item-sub">$${i.price.toLocaleString("es-AR")} c/u</div>
-        </div>
-        <div class="qty">
-          <button onclick="changeCartQty('${i._id}',-1)">−</button>
-          <span>${i.qty}</span>
-          <button onclick="changeCartQty('${i._id}',1)">+</button>
-        </div>
-      </div>`;
-    }).join("");
-  }
-  document.getElementById("cartTotal").textContent = `$${total.toLocaleString("es-AR")}`;
-  document.getElementById("cartCount").textContent = count;
-  document.getElementById("fabCount").textContent = count;
-  document.getElementById("btnConfirm").disabled = cart.length === 0 || !isAcceptingOrders();
-  if (!cart.length) {
-    document.getElementById("cart").classList.remove("mobile-open");
-    document.body.classList.remove("cart-open");
-  }
-}
 
-function changeCartQty(id, delta) {
-  const item = cart.find(x => x._id === id);
-  if (!item) return;
-  const product = products.find(p => p._id === id) || item;
-  const available = getAvailableUnits(product);
-  if (delta > 0 && item.qty >= available) { toast("Stock máximo alcanzado"); return; }
-  item.qty += delta;
-  if (item.qty <= 0) cart = cart.filter(x => x._id !== id);
-  updateCart();
-}
+
+
 
 function toggleCartMobile() {
   const cartEl = document.getElementById("cart");
@@ -1756,17 +1572,17 @@ function selectPayment(method) {
     document.getElementById("breakdownTransfer").innerHTML = `
       <div class="price-line total">
         <span>Total a transferir</span>
-        <span>$${base.toLocaleString("es-AR")}</span>
+        <span>${base.toLocaleString("es-AR")}</span>
       </div>`;
   } else {
     const saving = Math.round(base * discount / 100);
     const final = base - saving;
     document.getElementById("breakdownCash").innerHTML = `
-      <div class="price-line"><span>Subtotal</span><span>$${base.toLocaleString("es-AR")}</span></div>
-      ${discount > 0 ? `<div class="price-line discount"><span>Descuento ${discount}% efectivo</span><span>− $${saving.toLocaleString("es-AR")}</span></div>` : ""}
+      <div class="price-line"><span>Subtotal</span><span>${base.toLocaleString("es-AR")}</span></div>
+      ${discount > 0 ? `<div class="price-line discount"><span>Descuento ${discount}% efectivo</span><span>− ${saving.toLocaleString("es-AR")}</span></div>` : ""}
       <div class="price-line total">
         <span>Total a pagar</span>
-        <span>$${final.toLocaleString("es-AR")}</span>
+        <span>${final.toLocaleString("es-AR")}</span>
       </div>`;
   }
   updateCheckoutSummary();
@@ -1809,165 +1625,15 @@ function populateDateTimeSelects() {
   timeEl.onchange = updateCheckoutSummary;
 }
 
-function updateCheckoutSummary() {
-  const name = (document.getElementById("clientName").value || "").trim();
-  const phone = (document.getElementById("clientPhone").value || "").trim();
-  const notes = (document.getElementById("orderNotes").value || "").trim();
-  const date = document.getElementById("deliveryDate")?.options[document.getElementById("deliveryDate").selectedIndex]?.text || "";
-  const time = document.getElementById("deliveryTime")?.value || "";
-  const address = document.getElementById("addressInput")?.value.trim() || "";
-  const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
-  const discount = settings.cashDiscount || 0;
-  const isCash = paymentMethod === "cash";
-  const saving = isCash ? Math.round(base * discount / 100) : 0;
-  const final = base - saving;
-  const safeName = escapeHtml(name);
-  const safePhone = escapeHtml(phone);
-  const safeAddress = escapeHtml(address);
-  const safeNotes = escapeHtml(notes);
 
-  const itemsText = cart.map(i => `<strong>${i.name}</strong> ×${i.qty}`).join(", ");
-  const entrega = deliveryType === "delivery"
-    ? `🛵 Delivery${address ? ` a <strong>${safeAddress}</strong>` : ""}`
-    : `🏃 Retiro en local`;
-  const pagoText = paymentMethod === "transfer" ? "🏦 Transferencia / MP"
-    : paymentMethod === "cash" ? "💵 Efectivo"
-    : "—";
-
-  document.getElementById("checkoutSummary").innerHTML = `
-    ${name ? `👤 <strong>${safeName}</strong><br>` : ""}
-    ${phone ? `📞 ${safePhone}<br>` : ""}
-    ${entrega}<br>
-    📅 ${date} a las ${time}<br>
-    💳 ${pagoText}<br>
-    ${notes ? `📝 <strong>Nota:</strong> ${safeNotes}<br>` : ""}
-    🛒 ${itemsText}<br>
-    💰 Total: <strong>$${final.toLocaleString("es-AR")}</strong>${saving > 0 ? ` <span style="color:#1a6b3a;font-size:11px;">(ahorrás $${saving.toLocaleString("es-AR")})</span>` : ""}
-  `;
-}
 
 document.addEventListener("input", e => {
   if (e.target.id === "clientName" || e.target.id === "clientPhone" || e.target.id === "addressInput" || e.target.id === "orderNotes") updateCheckoutSummary();
 });
 
 /* ── WHATSAPP ── */
-async function sendWhatsApp() {
-  if (!cart.length) return;
-  if (!isAcceptingOrders()) { toast("El local esta cerrado en este momento"); return; }
 
-  if (!paymentMethod) { toast("❌ Elegí un método de pago"); return; }
 
-  const clientName = document.getElementById("clientName").value.trim();
-  const clientPhone = document.getElementById("clientPhone").value.trim();
-  const address = document.getElementById("addressInput").value.trim();
-  const notes = document.getElementById("orderNotes").value.trim();
-  const dateEl = document.getElementById("deliveryDate");
-  const timeEl = document.getElementById("deliveryTime");
-  const dateText = dateEl?.options[dateEl.selectedIndex]?.text || "";
-  const timeText = timeEl?.value || "";
-
-  const validationError = validateCheckoutFields();
-  if (validationError) { toast(`❌ ${validationError}`); return; }
-
-  const btn = document.getElementById("btnCheckoutConfirm");
-  btn.disabled = true; btn.textContent = "Enviando pedido...";
-
-  const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
-  const discount = settings.cashDiscount || 0;
-  const isCash = paymentMethod === "cash";
-  const saving = isCash ? Math.round(base * discount / 100) : 0;
-  const total = base - saving;
-
-  const snapshot = cart.map(i => ({ _id: i._id, name: i.name, qty: i.qty, price: i.price }));
-  const orderPayload = {
-    items: snapshot, total,
-    deliveryType, address: deliveryType === "delivery" ? address : "",
-    clientName, clientPhone, notes, scheduledDate: dateText, scheduledTime: timeText,
-    paymentMethod
-  };
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 18000);
-
-  try {
-    const res = await fetch(`${API}/orders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderPayload),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const order = await res.json();
-      const enc = encodeURIComponent;
-      const pagoLabel = paymentMethod === "transfer" ? "Transferencia / Mercado Pago" : "Efectivo";
-      let msg = `🍣 *Pedido Kizuna #${order.number || ""}*\n\n`;
-      msg += `Hola, hice mi pedido por la web.\n\n`;
-      msg += `👤 *${clientName}*\n`;
-      msg += `📞 ${clientPhone}\n`;
-      msg += deliveryType === "delivery"
-        ? `🛵 *Delivery* a: ${address}\n`
-        : `🏃 *Retiro en local*\n`;
-      msg += `📅 ${dateText} a las ${timeText}\n`;
-      msg += `💳 *Pago: ${pagoLabel}*\n\n`;
-      if (notes) msg += `📝 *Nota:* ${notes}\n\n`;
-      snapshot.forEach(i => {
-        msg += `• ${i.name} ×${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}\n`;
-      });
-      if (saving > 0) {
-        msg += `\n🎉 Descuento efectivo (${discount}%): − $${saving.toLocaleString("es-AR")}`;
-      }
-      msg += `\n\n💰 *Total: $${total.toLocaleString("es-AR")}*`;
-
-      cart = [];
-      updateCart();
-      closeCheckout();
-      toast(`✅ Pedido #${order.number || ""} registrado`);
-
-      const whatsappNumber = String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
-      const whatsappText = enc(msg);
-      const confirmSummary = `
-        <strong>Total:</strong> $${total.toLocaleString("es-AR")}<br>
-        <strong>Entrega:</strong> ${deliveryType === "delivery" ? `Delivery a ${escapeHtml(address)}` : "Retiro en local"}<br>
-        <strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}<br>
-        <strong>Teléfono:</strong> ${escapeHtml(clientPhone)}
-        ${notes ? `<br><strong>Nota:</strong> ${escapeHtml(notes)}` : ""}
-      `;
-      openWhatsAppConfirm(
-        order,
-        confirmSummary,
-        `whatsapp://send?phone=${whatsappNumber}&text=${whatsappText}`,
-        `https://wa.me/${whatsappNumber}?text=${whatsappText}`
-      );
-    } else {
-      const data = await res.json();
-      toast(`❌ ${data.error || "Error al registrar el pedido"}`);
-      btn.disabled = false; btn.textContent = "Enviar pedido";
-    }
-  } catch (err) {
-    clearTimeout(timeoutId);
-    const message = err.name === "AbortError"
-      ? "❌ El servidor tardó demasiado. Probá de nuevo."
-      : "❌ Error de conexión. Intentá de nuevo.";
-    toast(message);
-    btn.disabled = false; btn.textContent = "Enviar pedido";
-  }
-}
-function addToCartDirect(id) {
-  const p = products.find(x => x._id === id);
-  if (!p || p.active === false || getAvailableUnits(p) <= 0 || !isAcceptingOrders()) return;
-  const available = getAvailableUnits(p);
-  const found = cart.find(i => i._id === p._id);
-  if (found) {
-    if (found.qty >= available) { toast("Stock máximo alcanzado"); return; }
-    found.qty += 1;
-  } else {
-    cart.push({ ...p, qty: 1 });
-  }
-  updateCart();
-  toast(`✓ ${p.name} agregado al carrito`);
-}
 function ensureCategorySections() {
   const menuBody = document.querySelector(".menu-body");
   menuCats.forEach(cat => {
@@ -2109,7 +1775,7 @@ function renderCat(cat) {
         <p class="card-desc">${escapeHtml(desc.substring(0, 60))}${desc.length > 60 ? "…" : ""}</p>
         <div class="card-bottom">
           <div>
-            <div class="price">$${p.price.toLocaleString("es-AR")}</div>
+            <div class="price">${p.price.toLocaleString("es-AR")}</div>
             ${stockBadge}
           </div>
           <button class="btn-add" onclick="event.stopPropagation(); addToCartDirect('${escapeAttr(p._id)}')" ${sinStock || closed ? "disabled" : ""}>
@@ -2135,7 +1801,7 @@ function openModal(id) {
   document.getElementById("modalDesc").textContent = p.description || "";
   document.getElementById("modalStock").textContent = available > 0 ? `Stock disponible: ${available} unidades` : "Sin stock disponible";
   document.getElementById("modalQtyVal").textContent = "1";
-  document.getElementById("modalPrice").textContent = `$${p.price.toLocaleString("es-AR")}`;
+  document.getElementById("modalPrice").textContent = `${p.price.toLocaleString("es-AR")}`;
   document.getElementById("modalNote").value = "";
   document.getElementById("modalAdded").classList.remove("show");
   document.getElementById("modalAddBtn").disabled = available <= 0 || !isAcceptingOrders();
@@ -2151,7 +1817,7 @@ function changeModalQty(delta) {
   const maxQty = Math.max(1, available - alreadyInCart + modalQty);
   modalQty = Math.max(1, Math.min(maxQty, modalQty + delta));
   document.getElementById("modalQtyVal").textContent = modalQty;
-  document.getElementById("modalPrice").textContent = `$${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
+  document.getElementById("modalPrice").textContent = `${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
 }
 
 function addFromModal() {
@@ -2184,7 +1850,7 @@ function updateCart() {
       <div class="cart-item">
         <div class="cart-item-main">
           <div class="cart-item-name">${escapeHtml(i.name)}</div>
-          <div class="cart-item-sub">$${i.price.toLocaleString("es-AR")} c/u</div>
+          <div class="cart-item-sub">${i.price.toLocaleString("es-AR")} c/u</div>
           <input class="cart-item-note" type="text" maxlength="120" value="${escapeAttr(i.note || "")}" placeholder="Nota: sin palta, sin sésamo..." oninput="updateCartNote('${lineId}', this.value)">
         </div>
         <div class="qty">
@@ -2195,7 +1861,7 @@ function updateCart() {
       </div>`;
     }).join("");
   }
-  document.getElementById("cartTotal").textContent = `$${total.toLocaleString("es-AR")}`;
+  document.getElementById("cartTotal").textContent = `${total.toLocaleString("es-AR")}`;
   document.getElementById("cartCount").textContent = count;
   document.getElementById("fabCount").textContent = count;
   document.getElementById("btnConfirm").disabled = cart.length === 0 || !isAcceptingOrders();
@@ -2269,7 +1935,7 @@ function updateCheckoutSummary() {
     💳 ${pagoText}<br>
     ${notes ? `📝 <strong>Nota:</strong> ${escapeHtml(notes)}<br>` : ""}
     🛒 ${itemsText}<br>
-    💰 Total: <strong>$${final.toLocaleString("es-AR")}</strong>${saving > 0 ? ` <span style="color:#1a6b3a;font-size:11px;">(ahorrás $${saving.toLocaleString("es-AR")})</span>` : ""}
+    💰 Total: <strong>${final.toLocaleString("es-AR")}</strong>${saving > 0 ? ` <span style="color:#1a6b3a;font-size:11px;">(ahorrás ${saving.toLocaleString("es-AR")})</span>` : ""}
   `;
 }
 
@@ -2284,11 +1950,11 @@ function buildOrderMessage(orderNumber, clientName, clientPhone, address, notes,
   msg += `💳 *Pago: ${pagoLabel}*\n\n`;
   if (notes) msg += `📝 *Nota general:* ${notes}\n\n`;
   cart.forEach(i => {
-    msg += `• ${i.name} ×${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}\n`;
+    msg += `• ${i.name} ×${i.qty} — ${(i.price * i.qty).toLocaleString("es-AR")}\n`;
     if (i.note) msg += `  Nota: ${i.note}\n`;
   });
-  if (saving > 0) msg += `\n🎉 Descuento efectivo (${discount}%): − $${saving.toLocaleString("es-AR")}`;
-  msg += `\n\n💰 *Total: $${total.toLocaleString("es-AR")}*`;
+  if (saving > 0) msg += `\n🎉 Descuento efectivo (${discount}%): − ${saving.toLocaleString("es-AR")}`;
+  msg += `\n\n💰 *Total: ${total.toLocaleString("es-AR")}*`;
   return msg;
 }
 
@@ -2340,7 +2006,7 @@ async function sendWhatsApp() {
     const whatsappText = encodeURIComponent(msg);
     const whatsappNumber = getWhatsAppNumber();
     const confirmSummary = `
-      <strong>Total:</strong> $${total.toLocaleString("es-AR")}<br>
+      <strong>Total:</strong> ${total.toLocaleString("es-AR")}<br>
       <strong>Entrega:</strong> ${deliveryType === "delivery" ? `Delivery a ${escapeHtml(address)}` : "Retiro en local"}<br>
       <strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}<br>
       <strong>Teléfono:</strong> ${escapeHtml(clientPhone)}
@@ -2357,7 +2023,7 @@ async function sendWhatsApp() {
     btn.disabled = false;
     btn.textContent = "Enviar pedido";
     toast("No se pudo registrar, pero podés enviarlo por WhatsApp");
-    openWhatsAppConfirm(null, `<strong>Total:</strong> $${total.toLocaleString("es-AR")}<br><strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}`, buildWhatsAppUrl(msg), buildWhatsAppUrl(msg));
+    openWhatsAppConfirm(null, `<strong>Total:</strong> ${total.toLocaleString("es-AR")}<br><strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}`, buildWhatsAppUrl(msg), buildWhatsAppUrl(msg));
   }
 }
 
