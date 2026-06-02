@@ -366,9 +366,15 @@ async function authFetch(url, options = {}) {
   const res = await fetch(url, { ...options, headers });
   if (res.status === 401) {
     logout();
-    toast("Sesion vencida. Volve a ingresar.", "error");
+    toast("Sesión vencida. Volvé a ingresar.", "error");
     throw new Error("Sesion vencida");
   }
+  return res;
+}
+
+async function publicFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Error ${res.status} en ${url}`);
   return res;
 }
 
@@ -460,9 +466,20 @@ function logout() {
   lastOrderCount = null;
 }
 if (authToken()) {
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("adminMain").style.display = "block";
-  loadAll(); startAutoRefresh();
+  // Verificar que el token no esté vencido localmente antes de hacer requests
+  try {
+    const [payload] = authToken().split(".");
+    const data = JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
+    if (data.exp && data.exp < Date.now()) {
+      logout();
+    } else {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("adminMain").style.display = "block";
+      loadAll(); startAutoRefresh();
+    }
+  } catch(e) {
+    logout();
+  }
 }
 let refreshCountdown = 30;
 let countdownTimer = null;
@@ -527,13 +544,10 @@ function escapeHtml(value) {
 async function loadAll() {
   try {
     const [productsRes, ordersRes, settingsRes] = await Promise.all([
-      authFetch(`${API}/products`),
+      publicFetch(`${API}/products`),
       authFetch(`${API}/orders`),
-      authFetch(`${API}/settings`)
+      publicFetch(`${API}/settings`)
     ]);
-    if (!productsRes.ok || !ordersRes.ok || !settingsRes.ok) {
-      toast("❌ Error al cargar datos", "error"); return;
-    }
     const [products, orders, settings] = await Promise.all([
       productsRes.json(), ordersRes.json(), settingsRes.json()
     ]);
@@ -551,7 +565,12 @@ async function loadAll() {
     renderOrders(orders);
     renderSettings(settings);
     renderProducts(products);
-  } catch (err) { toast("❌ Error al cargar datos", "error"); }
+  } catch (err) {
+    if (err.message !== "Sesion vencida") {
+      toast("❌ Error al cargar datos. Verificá la conexión.", "error");
+      console.error("loadAll error:", err);
+    }
+  }
 }
 
 /* ── METRICS ── */
@@ -1183,8 +1202,12 @@ async function updatePiecesOnly(id) {
 
 async function deleteProduct(id) {
   if (!confirm("¿Eliminar este producto?")) return;
-  await authFetch(`${API}/products/${id}`,{method:"DELETE"});
-  toast("Eliminado","error"); loadAll();
+  try {
+    const res = await authFetch(`${API}/products/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error();
+    toast("✓ Producto eliminado", "success");
+    loadAll();
+  } catch { toast("Error al eliminar producto", "error"); }
 }
 </script>
 </body>
