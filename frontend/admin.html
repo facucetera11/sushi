@@ -139,6 +139,11 @@ textarea{height:80px;resize:vertical;}
 /* SOUND TOGGLE */
 .sound-btn{padding:8px 16px;border-radius:12px;border:1.5px solid rgba(22,32,74,.12);background:transparent;color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:6px;}
 .sound-btn.on{background:var(--navy);color:white;border-color:var(--navy);}
+.store-toggle-btn{padding:8px 18px;border-radius:12px;border:none;font-weight:800;font-size:12px;cursor:pointer;transition:.2s;}
+.store-toggle-btn.open{background:rgba(46,139,87,.12);color:#2e8b57;}
+.store-toggle-btn.open:hover{background:#2e8b57;color:white;}
+.store-toggle-btn.closed{background:rgba(216,106,94,.12);color:var(--red);}
+.store-toggle-btn.closed:hover{background:var(--red);color:white;}
 
 .filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;align-items:center;}
 .filter-bar input{width:220px;margin-bottom:0;padding:10px 14px;font-size:13px;}
@@ -201,6 +206,7 @@ textarea{height:80px;resize:vertical;}
   <div class="admin-header">
     <h1>🍣 Admin Kizuna</h1>
     <div style="display:flex;align-items:center;gap:14px;">
+      <button class="store-toggle-btn" id="storeToggleBtn" onclick="toggleStoreStatus()">…</button>
       <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔔 Sonido</button>
       <span id="refreshBadge">↻ 30s</span>
       <button id="logoutBtn" onclick="logout()">Cerrar sesión</button>
@@ -446,7 +452,8 @@ async function login() {
   btn.disabled = false; btn.textContent = "Ingresar";
 }
 function logout() {
-  sessionStorage.removeItem(SESSION_KEY); clearInterval(refreshTimer);
+  sessionStorage.removeItem(SESSION_KEY); clearInterval(refreshTimer); clearInterval(countdownTimer);
+  document.title = "Admin — Kizuna Sushi";
   document.getElementById("loginScreen").style.display = "flex";
   document.getElementById("adminMain").style.display = "none";
   document.getElementById("pwInput").value = "";
@@ -457,7 +464,29 @@ if (authToken()) {
   document.getElementById("adminMain").style.display = "block";
   loadAll(); startAutoRefresh();
 }
-function startAutoRefresh() { clearInterval(refreshTimer); refreshTimer = setInterval(loadAll, 30000); }
+let refreshCountdown = 30;
+let countdownTimer = null;
+
+function startAutoRefresh() {
+  clearInterval(refreshTimer);
+  clearInterval(countdownTimer);
+  refreshCountdown = 30;
+  updateRefreshBadge();
+  countdownTimer = setInterval(() => {
+    refreshCountdown--;
+    updateRefreshBadge();
+    if (refreshCountdown <= 0) refreshCountdown = 30;
+  }, 1000);
+  refreshTimer = setInterval(() => {
+    refreshCountdown = 30;
+    loadAll();
+  }, 30000);
+}
+
+function updateRefreshBadge() {
+  const el = document.getElementById("refreshBadge");
+  if (el) el.textContent = `↻ ${refreshCountdown}s`;
+}
 
 /* ── TOAST ── */
 function toast(msg, type = "") {
@@ -540,6 +569,9 @@ function renderMetrics(products, orders) {
   document.getElementById("mStock").textContent = stockTypes.reduce((a, p) => a + p.stock, 0);
   document.getElementById("mRevenue").textContent = `$${revenue.toLocaleString("es-AR")}`;
   document.getElementById("mLowStock").textContent = lowStock || "—";
+  // Actualizar título de pestaña con pedidos pendientes
+  const pending = orders.filter(o => o.status === "Pendiente").length;
+  document.title = pending > 0 ? `(${pending}) Admin — Kizuna Sushi` : "Admin — Kizuna Sushi";
 }
 
 /* ── ORDERS ── */
@@ -580,7 +612,7 @@ function orderCardHTML(o, isDelivered) {
     ${orderDeductionsHTML(o)}
     <div class="order-total">$${o.total.toLocaleString("es-AR")}</div>
     <div class="order-time">🕐 ${fechaDia} · ${fecha}</div>
-    ${!isDelivered ? `<select onchange="updateOrder('${o._id}', this.value)">
+    ${!isDelivered ? `<select onchange="confirmOrderStatus('${o._id}', this)">
       <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
       <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
       <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
@@ -744,6 +776,19 @@ function toggleHistory() {
   grid.classList.toggle("open");
 }
 
+function confirmOrderStatus(id, selectEl) {
+  const status = selectEl.value;
+  if (status === "Entregado") {
+    if (!confirm("¿Marcar este pedido como Entregado? Esta acción lo moverá al historial.")) {
+      // Revertir el select al valor anterior
+      const order = allOrders.find(o => o._id === id);
+      if (order) selectEl.value = order.status;
+      return;
+    }
+  }
+  updateOrder(id, status);
+}
+
 async function updateOrder(id, status) {
   try {
     const res = await authFetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
@@ -774,6 +819,7 @@ function renderSettings(s) {
   document.getElementById("mercadoPagoLink").value = s.mercadoPagoLink || "";
   document.getElementById("whatsappNumber").value = s.whatsappNumber || "5491121734894";
   document.getElementById("acceptingOrders").value = s.acceptingOrders === false ? "false" : "true";
+  updateStoreToggleBtn(s.acceptingOrders !== false);
   openDays = s.openDays || [];
   document.getElementById("daysGrid").innerHTML = DAYS.map((d, i) =>
     `<button class="day-btn ${openDays.includes(i)?"active":""}" onclick="toggleDay(${i},this)">${d}</button>`
@@ -783,6 +829,30 @@ function toggleDay(day, btn) {
   if (openDays.includes(day)) { openDays = openDays.filter(d => d !== day); btn.classList.remove("active"); }
   else { openDays.push(day); btn.classList.add("active"); }
 }
+function updateStoreToggleBtn(isOpen) {
+  const btn = document.getElementById("storeToggleBtn");
+  if (!btn) return;
+  btn.textContent = isOpen ? "🟢 Abierto" : "🔴 Cerrado";
+  btn.className = `store-toggle-btn ${isOpen ? "open" : "closed"}`;
+}
+
+async function toggleStoreStatus() {
+  const btn = document.getElementById("storeToggleBtn");
+  const isCurrentlyOpen = btn.classList.contains("open");
+  const newStatus = !isCurrentlyOpen;
+  const label = newStatus ? "abrir" : "cerrar";
+  if (!confirm(`¿Querés ${label} el local ahora?`)) return;
+  const res = await authFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ acceptingOrders: newStatus })
+  });
+  if (!res.ok) { toast("Error al cambiar estado del local", "error"); return; }
+  updateStoreToggleBtn(newStatus);
+  document.getElementById("acceptingOrders").value = newStatus ? "true" : "false";
+  toast(newStatus ? "✓ Local abierto" : "✓ Local cerrado", "success");
+}
+
 async function saveSettings() {
   await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
@@ -791,6 +861,7 @@ async function saveSettings() {
       closeHour:+document.getElementById("closeHour").value,
       openDays
     }) });
+  updateStoreToggleBtn(document.getElementById("acceptingOrders").value === "true");
   toast("✓ Horario guardado", "success");
 }
 async function saveDiscount() {
