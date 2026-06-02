@@ -51,7 +51,7 @@ header {
   padding: 4px 13px; border-radius: 20px; margin-left: 14px; transition: .3s;
 }
 
-nav { display: flex; gap: 24px; align-items: center; }
+nav { display: flex; gap: 24px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 nav a {
   text-decoration: none; font-weight: 400; color: var(--navy);
   font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
@@ -1286,7 +1286,7 @@ setInterval(() => {
 }, 4500);
 
 /* ── NAV HIGHLIGHT ON SCROLL ── */
-const navLinks = document.querySelectorAll("nav a");
+let navLinks = document.querySelectorAll("nav a");
 
 function getMenuOffset(extra = 18) {
   const header = document.querySelector("header");
@@ -1313,14 +1313,12 @@ function updateNavHighlight() {
 window.addEventListener("scroll", updateNavHighlight, { passive: true });
 
 /* ── SCROLL OFFSET for fixed header ── */
-document.querySelectorAll("nav a").forEach(a => {
-  a.addEventListener("click", e => {
-    e.preventDefault();
-    const target = document.querySelector(a.getAttribute("href"));
-    if (!target) return;
-    const offset = target.getBoundingClientRect().top + window.scrollY - getMenuOffset(18);
-    window.scrollTo({ top: offset, behavior: "smooth" });
-  });
+document.querySelector("nav").addEventListener("click", e => {
+  const link = e.target.closest("a[href^='#cat-']");
+  if (!link) return;
+  e.preventDefault();
+  const cat = link.getAttribute("href").replace("#cat-", "");
+  scrollToCategory(cat);
 });
 
 /* ── TOAST ── */
@@ -1615,13 +1613,32 @@ document.addEventListener("input", e => {
 function ensureCategorySections() {
   const menuBody = document.querySelector(".menu-body");
   menuCats.forEach(cat => {
-    if (document.getElementById("cat-" + cat)) return;
-    const sec = document.createElement("div");
-    sec.className = "cat-section";
-    sec.id = "cat-" + cat;
-    sec.innerHTML = `<div class="section-header"><h2 class="section-title">${escapeHtml(categoryLabel(cat))}</h2><span class="section-count" id="count-${escapeAttr(cat)}"></span></div><div class="grid" id="grid-${escapeAttr(cat)}"></div>`;
+    let sec = document.getElementById("cat-" + cat);
+    if (!sec) {
+      sec = document.createElement("div");
+      sec.className = "cat-section";
+      sec.id = "cat-" + cat;
+      sec.innerHTML = `<div class="section-header"><h2 class="section-title">${escapeHtml(categoryLabel(cat))}</h2><span class="section-count" id="count-${escapeAttr(cat)}"></span></div><div class="grid" id="grid-${escapeAttr(cat)}"></div>`;
+    }
     menuBody.appendChild(sec);
   });
+}
+
+function buildMenuCats() {
+  const primary = CATS.filter(cat => cat !== "extras");
+  const custom = [];
+  products.forEach(p => {
+    if (p.category && !CATS.includes(p.category) && !custom.includes(p.category)) custom.push(p.category);
+  });
+  return [...primary, ...custom, "extras"];
+}
+
+function renderTopNav() {
+  const nav = document.querySelector("nav");
+  nav.innerHTML = menuCats.map(cat =>
+    `<a href="#cat-${escapeAttr(cat)}">${escapeHtml(categoryLabel(cat))}</a>`
+  ).join("");
+  navLinks = document.querySelectorAll("nav a");
 }
 
 function renderCategoryStrip() {
@@ -1687,9 +1704,9 @@ async function load() {
       fetch(`${API}/settings`).then(r => r.json())
     ]);
     updateStatus();
-    menuCats = [...CATS];
-    products.forEach(p => { if (p.category && !menuCats.includes(p.category)) menuCats.push(p.category); });
+    menuCats = buildMenuCats();
     ensureCategorySections();
+    renderTopNav();
     renderCategoryStrip();
     reconcileCartWithProducts();
     renderAllCats();
