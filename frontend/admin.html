@@ -91,7 +91,7 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 /* ── METRICS ── */
 #analytics{
   display:grid;
-  grid-template-columns:repeat(5,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:14px;
   margin-bottom:24px;
 }
@@ -190,7 +190,16 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 .status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;}
 .status-Pendiente{background:rgba(230,180,10,.12);color:#c48a00;}
 .status-Preparando{background:rgba(230,120,10,.12);color:#c46000;}
+.status-Listo{background:rgba(42,153,104,.12);color:var(--green);}
+.status-listo{background:rgba(42,153,104,.12);color:var(--green);}
 .status-Entregado{background:var(--green-soft);color:var(--green);}
+
+.orders-board{display:grid;grid-template-columns:repeat(3,minmax(260px,1fr));gap:14px;align-items:start;}
+.order-column{background:rgba(22,32,74,.035);border:1px solid var(--border);border-radius:18px;padding:12px;min-height:180px;}
+.order-column-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:800;font-size:13px;}
+.order-column-count{background:white;border:1px solid var(--border);border-radius:999px;padding:2px 8px;font-size:11px;color:rgba(22,32,74,.55);}
+.order-column .order-card{margin-bottom:10px;}
+.order-column .order-card:last-child{margin-bottom:0;}
 
 .order-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
 .order-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;line-height:1.5;}
@@ -226,6 +235,9 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
   font-weight:600;font-size:11px;cursor:pointer;transition:.15s;
   font-family:'DM Sans',sans-serif;
 }
+.export-range{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;}
+.export-range input{max-width:142px;min-width:132px;}
+.confirm-hint{margin:10px 0 16px;padding:10px 12px;border-radius:var(--radius-xs);background:rgba(22,32,74,.04);color:rgba(22,32,74,.58);font-size:12px;line-height:1.5;}
 .btn-print{border:1px solid var(--border);color:rgba(22,32,74,.6);}
 .btn-print:hover{background:var(--navy);color:white;border-color:var(--navy);}
 .btn-delete-order{border:1px solid rgba(216,106,94,.3);color:var(--red);}
@@ -366,7 +378,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   .page{padding:16px;}
   #analytics{grid-template-columns:repeat(2,1fr);}
   .settings-row{grid-template-columns:1fr;}
-  .orders-grid,.products-grid,#historyGrid{grid-template-columns:1fr;}
+  .orders-grid,.orders-board,.products-grid,#historyGrid{grid-template-columns:1fr;}
   .discount-box{flex-direction:column;align-items:flex-start;}
   .orders-topbar{gap:8px;}
 }
@@ -410,6 +422,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
       <div class="metric"><div class="metric-value" id="mStock">—</div><div class="metric-label">Piezas en stock</div></div>
       <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
+      <div class="metric"><div class="metric-value" id="mAvgTicket">—</div><div class="metric-label">Ticket prom.</div></div>
+      <div class="metric"><div class="metric-value" id="mTopProduct">—</div><div class="metric-label">Más vendido</div></div>
       <div class="metric warn"><div class="metric-value" id="mLowStock">—</div><div class="metric-label">⚠️ Stock bajo</div></div>
     </div>
 
@@ -425,10 +439,16 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
             <button class="filter-btn active" data-filter="Todos" onclick="setFilter(this)">Todos</button>
             <button class="filter-btn" data-filter="Pendiente" onclick="setFilter(this)">🟡 Pendiente</button>
             <button class="filter-btn" data-filter="Preparando" onclick="setFilter(this)">🟠 Preparando</button>
+            <button class="filter-btn" data-filter="Listo" onclick="setFilter(this)">🟢 Listo</button>
             <button class="filter-btn" data-filter="Entregado" onclick="setFilter(this)">🟢 Entregado</button>
           </div>
-          <button class="btn-csv" onclick="exportCSV()">⬇️ Exportar CSV</button>
+          <div class="export-range">
+            <input type="date" id="exportFrom">
+            <input type="date" id="exportTo">
+            <button class="btn-csv" onclick="exportCSV()">⬇️ Exportar CSV</button>
+          </div>
         </div>
+        <div class="confirm-hint">Los pedidos web se registran acá, pero quedan confirmados cuando los responden por WhatsApp.</div>
         <div class="orders-grid" id="ordersGrid"></div>
 
         <!-- HISTORIAL (colapsado por defecto) -->
@@ -535,6 +555,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
                 <option value="combos">Combos</option>
                 <option value="veggie">Veggie</option>
                 <option value="bandejas">Bandejas</option>
+                <option value="panchos">Panchos</option>
                 <option value="extras">Extras</option>
                 <option value="otro">Otro...</option>
               </select>
@@ -582,6 +603,28 @@ let allProducts = [];
 let lastOrderCount = null;
 let soundEnabled = localStorage.getItem("kizuna_sound") !== "off";
 let audioCtx = null;
+const ORDER_STATUSES = ["Pendiente", "Preparando", "Listo", "Entregado"];
+const BASE_CATEGORIES = ["rolls","combos","veggie","bandejas","panchos","extras"];
+const CATEGORY_LABELS = { rolls:"🍣 Rolls", combos:"🎁 Combos", veggie:"🥗 Veggie Rolls", bandejas:"🍱 Bandejas", panchos:"🌭 Panchos", extras:"➕ Extras" };
+
+function normalizeCategory(cat) {
+  const value = String(cat || "").trim().toLowerCase();
+  return value === "pancho" ? "panchos" : value;
+}
+
+function categoryLabel(cat) {
+  const key = normalizeCategory(cat);
+  return CATEGORY_LABELS[key] || key.replace(/[-_]/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+function orderedCategories(products = allProducts) {
+  const custom = [];
+  products.forEach(p => {
+    const cat = normalizeCategory(p.category);
+    if (cat && !BASE_CATEGORIES.includes(cat) && !custom.includes(cat)) custom.push(cat);
+  });
+  return [...BASE_CATEGORIES.filter(c => c !== "extras"), ...custom, "extras"];
+}
 
 function authToken() { return sessionStorage.getItem(SESSION_KEY) || ""; }
 function authHeaders(extra = {}) { return { ...extra, Authorization: `Bearer ${authToken()}` }; }
@@ -769,12 +812,20 @@ function renderMetrics(products, orders) {
   const today = new Date().toDateString();
   const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
   const revenue = todayOrders.reduce((a, o) => a + o.total, 0);
+  const avgTicket = todayOrders.length ? Math.round(revenue / todayOrders.length) : 0;
+  const sold = new Map();
+  todayOrders.forEach(o => (o.items || []).forEach(item => {
+    sold.set(item.name, (sold.get(item.name) || 0) + (Number(item.qty) || 0));
+  }));
+  const topProduct = [...sold.entries()].sort((a, b) => b[1] - a[1])[0];
   const stockTypes = products.filter(isStockType);
   const lowStock = stockTypes.filter(p => { const u = availableUnits(p, products); return u > 0 && u <= 3; }).length;
   document.getElementById("mProducts").textContent = products.length;
   document.getElementById("mOrders").textContent = todayOrders.length;
   document.getElementById("mStock").textContent = stockTypes.reduce((a, p) => a + p.stock, 0);
   document.getElementById("mRevenue").textContent = `$${revenue.toLocaleString("es-AR")}`;
+  document.getElementById("mAvgTicket").textContent = avgTicket ? `$${avgTicket.toLocaleString("es-AR")}` : "—";
+  document.getElementById("mTopProduct").textContent = topProduct ? `${topProduct[0]} (${topProduct[1]})` : "—";
   document.getElementById("mLowStock").textContent = lowStock || "—";
   const pending = orders.filter(o => o.status === "Pendiente").length;
   document.title = pending > 0 ? `(${pending}) Admin — Kizuna Sushi` : "Admin — Kizuna Sushi";
@@ -790,21 +841,22 @@ function orderDeductionsHTML(o) {
 function orderCardHTML(o, isDelivered) {
   const fecha = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
   const fechaDia = new Date(o.createdAt).toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit" });
-  const itemsList = o.items.map(i => `${i.name} ×${i.qty}`).join("<br>");
+  const itemsList = o.items.map(i => `${escapeHtml(i.name)} ×${i.qty}${i.note ? `<br><small>Nota: ${escapeHtml(i.note)}</small>` : ""}`).join("<br>");
   const isDelivery = o.deliveryType === "delivery";
   const deliveryTag = isDelivery ? `<span class="order-tag tag-delivery">🛵 Delivery</span>` : `<span class="order-tag tag-retiro">🏃 Retiro</span>`;
   const schedTag = (o.scheduledDate && o.scheduledTime) ? `<span class="order-tag tag-scheduled">📅 ${o.scheduledDate} ${o.scheduledTime}</span>` : "";
-  const clientTag = o.clientName ? `<span class="order-tag" style="background:rgba(0,0,0,.05);color:#333;">👤 ${o.clientName}</span>` : "";
-  const phoneTag = o.clientPhone ? `<span class="order-tag tag-transfer">📞 ${o.clientPhone}</span>` : "";
+  const clientTag = o.clientName ? `<span class="order-tag" style="background:rgba(0,0,0,.05);color:#333;">👤 ${escapeHtml(o.clientName)}</span>` : "";
+  const phoneTag = o.clientPhone ? `<span class="order-tag tag-transfer">📞 ${escapeHtml(o.clientPhone)}</span>` : "";
   const pagoTag = o.paymentMethod === "cash" ? `<span class="order-tag tag-cash">💵 Efectivo</span>` : `<span class="order-tag tag-transfer">🏦 Transferencia</span>`;
   const addressLine = isDelivery && o.address ? `<div class="address-line">📍 ${escapeHtml(o.address)}</div>` : "";
   const cardClass = isDelivered ? "order-card delivered" : "order-card";
   const noteBlock = o.notes ? `<div class="customer-note"><strong>Nota del cliente</strong><span>${escapeHtml(o.notes)}</span></div>` : "";
+  const statusClass = `status-${String(o.status || "").toLowerCase()}`;
 
   return `<div class="${cardClass}">
     <div class="order-head">
       <span class="order-num">Pedido #${o.number}</span>
-      <span class="status-badge status-${o.status}">${o.status}</span>
+      <span class="status-badge status-${o.status} ${statusClass}">${o.status}</span>
     </div>
     <div class="order-meta">${clientTag}${phoneTag}${deliveryTag}${pagoTag}${schedTag}</div>
     ${addressLine}
@@ -815,10 +867,12 @@ function orderCardHTML(o, isDelivered) {
     ${!isDelivered ? `<select class="order-select" onchange="confirmOrderStatus('${o._id}', this)">
       <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
       <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
+      <option ${o.status==="Listo"?"selected":""} value="Listo">🟢 Listo</option>
       <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
     </select>${noteBlock}` : `<div style="font-size:12px;color:rgba(22,32,74,.3);margin-top:6px;">✓ Entregado</div>${noteBlock}`}
     <div class="order-actions">
-      <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Imprimir</button>
+      <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Ticket</button>
+      <button class="btn-print" onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
       ${isDelivered ? `<button class="btn-delete-order" onclick="deleteOrder('${o._id}')">🗑️ Eliminar</button>` : ""}
     </div>
   </div>`;
@@ -839,7 +893,20 @@ function applyFilters() {
   const active = filtered.filter(o => o.status !== "Entregado");
   const delivered = filtered.filter(o => o.status === "Entregado");
   const grid = document.getElementById("ordersGrid");
-  grid.innerHTML = active.length ? active.map(o => orderCardHTML(o, false)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
+  if (active.length) {
+    const columns = ["Pendiente", "Preparando", "Listo"];
+    grid.className = "orders-board";
+    grid.innerHTML = columns.map(status => {
+      const list = active.filter(o => o.status === status);
+      return `<div class="order-column">
+        <div class="order-column-head"><span>${status}</span><span class="order-column-count">${list.length}</span></div>
+        ${list.length ? list.map(o => orderCardHTML(o, false)).join("") : `<p style="opacity:.35;font-size:12px;padding:10px 2px;">Sin pedidos</p>`}
+      </div>`;
+    }).join("");
+  } else {
+    grid.className = "orders-grid";
+    grid.innerHTML = `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
+  }
   const histGrid = document.getElementById("historyGrid");
   document.getElementById("historyCount").textContent = delivered.length ? `(${delivered.length})` : "";
   histGrid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
@@ -848,19 +915,28 @@ function applyFilters() {
 function renderOrders(orders) { allOrders = orders; applyFilters(); }
 
 function exportCSV() {
-  const today = new Date().toDateString();
-  const todayOrders = allOrders.filter(o => new Date(o.createdAt).toDateString() === today);
-  if (!todayOrders.length) { toast("No hay pedidos hoy", "error"); return; }
-  const rows = [["#","Cliente","Telefono","Items","Total","Entrega","Dirección","Pago","Estado","Hora"]];
-  todayOrders.forEach(o => {
-    const items = o.items.map(i => `${i.name} x${i.qty}`).join(" | ");
-    const hora = new Date(o.createdAt).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-    rows.push([o.number, o.clientName||"—", o.clientPhone||"—", items, o.total, o.deliveryType, o.address||"—", o.paymentMethod, o.status, hora]);
+  const fromValue = document.getElementById("exportFrom")?.value;
+  const toValue = document.getElementById("exportTo")?.value;
+  const todayIso = new Date().toISOString().slice(0,10);
+  const from = new Date(`${fromValue || todayIso}T00:00:00`);
+  const to = new Date(`${toValue || fromValue || todayIso}T23:59:59`);
+  const selectedOrders = allOrders.filter(o => {
+    const d = new Date(o.createdAt);
+    return d >= from && d <= to;
+  });
+  if (!selectedOrders.length) { toast("No hay pedidos en ese rango", "error"); return; }
+  const rows = [["#","Cliente","Teléfono","Items","Total","Entrega","Dirección","Pago","Estado","Fecha","Hora","Notas"]];
+  selectedOrders.forEach(o => {
+    const items = o.items.map(i => `${i.name} x${i.qty}${i.note ? ` (${i.note})` : ""}`).join(" | ");
+    const createdAt = new Date(o.createdAt);
+    const fecha = createdAt.toLocaleDateString("es-AR");
+    const hora = createdAt.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+    rows.push([o.number, o.clientName||"—", o.clientPhone||"—", items, o.total, o.deliveryType, o.address||"—", o.paymentMethod, o.status, fecha, hora, o.notes || ""]);
   });
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-  a.download = `kizuna-pedidos-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  a.download = `kizuna-pedidos-${(fromValue || todayIso)}-${(toValue || fromValue || todayIso)}.csv`; a.click();
   toast("✓ CSV descargado", "success");
 }
 
@@ -950,6 +1026,63 @@ function printOrder(id) {
 </body>
 </html>`;
 
+  const w = window.open("", "_blank", "width=420,height=700");
+  if (!w) { toast("El navegador bloqueó la ventana", "error"); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+function printKitchenOrder(id) {
+  const order = allOrders.find(o => o._id === id);
+  if (!order) { toast("No encontré el pedido", "error"); return; }
+  const delivery = order.deliveryType === "delivery" ? "Delivery" : "Retiro";
+  const schedule = [order.scheduledDate, order.scheduledTime].filter(Boolean).join(" ");
+  const items = (order.items || []).map(item => {
+    const note = (item.note || "").trim();
+    return `<div class="item">
+      <div><strong>${Number(item.qty || 0)}x ${escapeHtml(item.name || "Producto")}</strong></div>
+      ${note ? `<div class="note">Nota: ${escapeHtml(note)}</div>` : ""}
+    </div>`;
+  }).join("");
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cocina #${order.number}</title>
+<style>
+  @page{size:80mm auto;margin:4mm;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,sans-serif;color:#000;font-size:14px;line-height:1.25;}
+  .ticket{width:72mm;margin:0 auto;}
+  .head{text-align:center;border:2px solid #000;padding:7px;margin-bottom:8px;}
+  h1{font-size:22px;margin:0;text-transform:uppercase;}
+  .meta{font-size:13px;margin-top:4px;}
+  .item{border-bottom:1px dashed #000;padding:8px 0;font-size:16px;}
+  .note{font-size:13px;margin-top:4px;font-weight:700;white-space:pre-wrap;}
+  .general{border:2px dashed #000;padding:7px;margin-top:10px;font-weight:700;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<div class="ticket">
+  <div class="head">
+    <h1>#${escapeHtml(order.number || "-")} · ${delivery}</h1>
+    <div class="meta">${schedule ? `Horario: ${escapeHtml(schedule)}` : "Sin horario programado"}</div>
+    ${order.clientName ? `<div class="meta">${escapeHtml(order.clientName)}</div>` : ""}
+  </div>
+  ${items}
+  ${order.notes ? `<div class="general">Nota general: ${escapeHtml(order.notes)}</div>` : ""}
+</div>
+<script>
+  window.onload = () => {
+    window.focus();
+    window.print();
+    window.onafterprint = () => window.close();
+    setTimeout(() => window.close(), 1200);
+  };
+<\/script>
+</body>
+</html>`;
   const w = window.open("", "_blank", "width=420,height=700");
   if (!w) { toast("El navegador bloqueó la ventana", "error"); return; }
   w.document.open();
@@ -1142,16 +1275,13 @@ function renderStockInventory(products) {
 
 function renderProducts(products) {
   toggleNewProductStockFields();
-  const KNOWN_CATS = ["rolls","combos","veggie","bandejas","extras"];
-  const catNames = { rolls:"🍣 Rolls", combos:"🎁 Combos", veggie:"🥗 Veggie Rolls", bandejas:"🍱 Bandejas", extras:"➕ Extras" };
-  const cats = [...KNOWN_CATS];
-  products.forEach(p => { if (p.category && !cats.includes(p.category)) cats.push(p.category); });
+  const cats = orderedCategories(products);
   document.getElementById("productsGrid").innerHTML = cats.map(cat => {
-    const items = products.filter(p => p.category === cat);
+    const items = products.filter(p => normalizeCategory(p.category) === cat);
     if (!items.length) return "";
     return `<div style="grid-column:1/-1;margin-top:22px;margin-bottom:10px;">
       <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--navy);padding-bottom:10px;border-bottom:1px solid var(--border);">
-        ${catNames[cat] || (cat.charAt(0).toUpperCase()+cat.slice(1))} <span style="font-size:12px;font-weight:400;color:rgba(22,32,74,.35);">${items.length} productos</span>
+        ${categoryLabel(cat)} <span style="font-size:12px;font-weight:400;color:rgba(22,32,74,.35);">${items.length} productos</span>
       </h3></div>
       ${items.map(p => {
         const units = availableUnits(p, products);
@@ -1159,7 +1289,7 @@ function renderProducts(products) {
         return `<div class="product-card${units <= 3 ? ' stock-low' : ''}${p.active === false ? ' inactive' : ''}">
           ${units <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} unidades</div>` : ''}
           <img src="${p.image||''}" alt="${p.name}" onerror="this.style.display='none'">
-          <div class="label">${p.category}</div>
+          <div class="label">${categoryLabel(p.category)}</div>
           <div class="product-status-row">
             <label>Visible en web</label>
             <select id="ac-${p._id}">
@@ -1177,8 +1307,8 @@ function renderProducts(products) {
           <textarea id="de-${p._id}">${p.description||''}</textarea>
           ${recipeEditorHTML(p)}
           <select id="ca-${p._id}" onchange="toggleEditCategoryInput('${p._id}')">
-            ${["rolls","combos","veggie","bandejas","extras"].map(c=>`<option ${p.category===c?"selected":""} value="${c}">${c}</option>`).join("")}
-            ${!["rolls","combos","veggie","bandejas","extras"].includes(p.category) ? `<option value="${p.category}" selected>${p.category}</option>` : ""}
+            ${BASE_CATEGORIES.map(c=>`<option ${normalizeCategory(p.category)===c?"selected":""} value="${c}">${categoryLabel(c)}</option>`).join("")}
+            ${!BASE_CATEGORIES.includes(normalizeCategory(p.category)) ? `<option value="${normalizeCategory(p.category)}" selected>${categoryLabel(p.category)}</option>` : ""}
             <option value="otro">Otro...</option>
           </select>
           <input id="ca-custom-${p._id}" placeholder="Categoría personalizada" style="display:none;margin-top:6px;">
@@ -1196,7 +1326,7 @@ async function addProduct() {
     const categoryRaw = document.getElementById("categoryInput").value;
     const categoryCustom = document.getElementById("categoryCustomInput").value.trim().toLowerCase();
     if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el tipo personalizado", "error"); return; }
-    const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
+    const category = normalizeCategory(categoryRaw === "otro" ? categoryCustom : categoryRaw);
     const name = document.getElementById("nameInput").value.trim();
     const price = +document.getElementById("priceInput").value;
     if (!name || !price) { toast("Completá nombre y precio", "error"); return; }
@@ -1232,7 +1362,7 @@ async function updateProduct(id) {
     const customInp = document.getElementById(`ca-custom-${id}`);
     const categoryCustom = customInp ? customInp.value.trim().toLowerCase() : "";
     if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el tipo personalizado", "error"); return; }
-    const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
+    const category = normalizeCategory(categoryRaw === "otro" ? categoryCustom : categoryRaw);
     const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (STOCK_TYPES.includes(category) ? 8 : 1);
     const stockUnits = +document.getElementById(`st-${id}`).value || 0;
     const stock = RECIPE_TYPES.includes(category) ? 0 : STOCK_TYPES.includes(category) ? stockPiecesFromUnits(stockUnits, { piecesPerUnit }) : stockUnits;
