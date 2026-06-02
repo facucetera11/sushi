@@ -300,7 +300,9 @@ textarea{height:80px;resize:vertical;}
           <option value="veggie">Veggie</option>
           <option value="bandejas">Bandejas</option>
           <option value="extras">Extras</option>
+          <option value="otro">Otro...</option>
         </select>
+        <input id="categoryCustomInput" placeholder="Ej: Pancho de sushi" style="display:none;margin-top:6px;">
       </div>
     </div>
     <div><div class="label">URL imagen</div><input id="imageInput" placeholder="https://..."></div>
@@ -896,6 +898,9 @@ function stockPiecesFromUnits(units, product) {
 
 function toggleNewProductStockFields() {
   const category = document.getElementById("categoryInput").value;
+  const customInput = document.getElementById("categoryCustomInput");
+  customInput.style.display = category === "otro" ? "block" : "none";
+  if (category !== "otro") customInput.value = "";
   document.querySelectorAll(".unit-stock-field").forEach(el => {
     el.style.display = ["combos", "bandejas"].includes(category) ? "none" : "block";
   });
@@ -959,9 +964,12 @@ function renderProducts(products) {
           <input id="im-${p._id}" value="${p.image||''}" placeholder="URL imagen">
           <textarea id="de-${p._id}">${p.description||''}</textarea>
           ${recipeEditorHTML(p)}
-          <select id="ca-${p._id}">
+          <select id="ca-${p._id}" onchange="toggleEditCategoryInput('${p._id}')">
             ${["rolls","combos","veggie","bandejas","extras"].map(c=>`<option ${p.category===c?"selected":""} value="${c}">${c}</option>`).join("")}
+            ${!["rolls","combos","veggie","bandejas","extras"].includes(p.category) ? `<option value="${p.category}" selected>${p.category}</option>` : ""}
+            <option value="otro">Otro...</option>
           </select>
+          <input id="ca-custom-${p._id}" placeholder="Ej: Pancho de sushi" style="display:none;margin-top:6px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
             <button class="btn btn-success" onclick="updateProduct('${p._id}')">Guardar</button>
             <button class="btn btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
@@ -974,7 +982,10 @@ function renderProducts(products) {
 async function addProduct() {
   try {
   const products = await authFetch(`${API}/products`).then(r => r.json());
-  const category = document.getElementById("categoryInput").value;
+  const categoryRaw = document.getElementById("categoryInput").value;
+  const categoryCustom = document.getElementById("categoryCustomInput").value.trim().toLowerCase();
+  if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
+  const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
   const piecesPerUnit = +document.getElementById("piecesInput").value || (["rolls","veggie"].includes(category) ? 8 : 1);
   const stockUnits = +document.getElementById("stockInput").value || 0;
   const stock = ["combos","bandejas"].includes(category) ? 0 : ["rolls","veggie"].includes(category) ? stockUnits * piecesPerUnit : stockUnits;
@@ -984,17 +995,32 @@ async function addProduct() {
   if (!body.name || !body.price) { toast("Completá nombre y precio","error"); return; }
   await authFetch(`${API}/products`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("categoryInput").value = "rolls";
+    document.getElementById("categoryCustomInput").style.display = "none";
+    document.getElementById("categoryCustomInput").value = "";
     document.getElementById("recipeRows-new").innerHTML = "";
   toast("✓ Producto agregado","success"); loadAll();
   } catch (err) {
     toast(err.message || "Error al guardar receta", "error");
   }
 }
+function toggleEditCategoryInput(id) {
+  const sel = document.getElementById(`ca-${id}`);
+  const inp = document.getElementById(`ca-custom-${id}`);
+  if (!inp) return;
+  inp.style.display = sel.value === "otro" ? "block" : "none";
+  if (sel.value !== "otro") inp.value = "";
+}
+
 async function updateProduct(id) {
   try {
   const products = await authFetch(`${API}/products`).then(r => r.json());
   const current = products.find(p => p._id === id);
-  const category = document.getElementById(`ca-${id}`).value;
+  const categoryRaw = document.getElementById(`ca-${id}`).value;
+  const customInp = document.getElementById(`ca-custom-${id}`);
+  const categoryCustom = customInp ? customInp.value.trim().toLowerCase() : "";
+  if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el nombre del tipo personalizado", "error"); return; }
+  const category = categoryRaw === "otro" ? categoryCustom : categoryRaw;
   const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (["rolls","veggie"].includes(category) ? 8 : 1);
   const stockUnits = +document.getElementById(`st-${id}`).value || 0;
   const stock = usesRecipeStock({ category }) ? 0 : current && isStockType({ ...current, category, piecesPerUnit }) ? stockPiecesFromUnits(stockUnits, { ...current, piecesPerUnit }) : stockUnits;
