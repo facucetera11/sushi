@@ -2324,31 +2324,27 @@ function maxPiecesForProduct(p) {
   return p.stock || 0;
 }
 
-// Intenta cargar precios fijos desde los productos de combo del menú
+// Intenta cargar precios fijos desde los productos de combo del menú.
+// Los nombres canónicos son "Combo Elección 8", "Combo Elección 16", "Combo Elección 35"
+// (creados automáticamente desde el admin).
 function loadComboPrices() {
-  // Busca productos cuyo nombre contenga el número de piezas del combo
-  // Ej: "Combo 8 pz", "Combo 16", "Combo 35 piezas"
-  // También matchea por label: "Pequeño", "Mediano", "Grande" (sin importar mayúsculas/acentos)
   COMBO_SIZES.forEach(size => {
-    const labelVariants = [size.label.toLowerCase()];
-    // variantes sin acento
-    labelVariants.push(labelVariants[0].normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    // Busca por nombre canónico (con o sin tilde, case-insensitive)
+    const targets = [
+      `combo elección ${size.pieces}`,
+      `combo eleccion ${size.pieces}`,
+    ];
     const match = products.find(p => {
       if (normalizeCategory(p.category) !== "combos" || p.active === false) return false;
-      const nameL = (p.name || "").toLowerCase();
-      // por número de piezas
-      if (new RegExp(`\\b${size.pieces}\\b`).test(nameL)) return true;
-      // por label (pequeño, mediano, grande / pequeno, mediano, grande)
-      if (labelVariants.some(v => nameL.includes(v))) return true;
+      const nameL = (p.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const nameNorm = nameL.replace(/\s+/g, " ").trim();
+      // nombre canónico exacto
+      if (targets.some(t => t.normalize("NFD").replace(/[\u0300-\u036f]/g,"") === nameNorm)) return true;
+      // fallback: contiene el número de piezas y la palabra "elección" / "eleccion"
+      if (/elecci[oó]n/i.test(p.name) && new RegExp(`\\b${size.pieces}\\b`).test(p.name)) return true;
       return false;
     });
-    if (match) {
-      size.price = match.price;
-      size._productId = match._id;
-    } else {
-      size.price = COMBO_SIZE_FALLBACK_PRICES[size.pieces] || 0;
-      size._productId = null;
-    }
+    size.price = match ? match.price : 0;
   });
 }
 
@@ -2544,7 +2540,7 @@ function updateComboFooter() {
   btn.disabled = !comboSelectedSize || total === 0 || noPrice;
 
   if (!comboSelectedSize)    btn.textContent = "Elegí un tamaño";
-  else if (noPrice)          btn.textContent = "⚠ Sin precio configurado";
+  else if (noPrice)          btn.textContent = "Sin precio configurado";
   else if (total === 0)      btn.textContent = "Sumá piezas";
   else                       btn.textContent = `Agregar · ${total} pz`;
 }
