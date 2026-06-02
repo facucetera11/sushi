@@ -521,18 +521,6 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
         </div>
 
         <div style="margin-top:22px;padding-top:22px;border-top:1px solid var(--border);">
-          <h3 style="font-size:14px;font-weight:700;margin-bottom:6px;color:rgba(22,32,74,.7);">🍱 Precios Combo Elección</h3>
-          <p style="font-size:12px;color:rgba(22,32,74,.45);margin-bottom:14px;">Precio fijo por tamaño de combo armado por el cliente.</p>
-          <div class="settings-row" id="comboPricesRow">
-            <div><div class="label">Combo 8 piezas</div><input id="comboPrice8" type="number" min="0" placeholder="Ej: 5000"></div>
-            <div><div class="label">Combo 16 piezas</div><input id="comboPrice16" type="number" min="0" placeholder="Ej: 9500"></div>
-            <div><div class="label">Combo 35 piezas</div><input id="comboPrice35" type="number" min="0" placeholder="Ej: 19000"></div>
-          </div>
-          <div id="comboPricesNote" style="font-size:11px;color:rgba(22,32,74,.38);margin-bottom:12px;"></div>
-          <button class="btn btn-primary" style="max-width:240px;" onclick="saveComboPrices()">Guardar precios combo</button>
-        </div>
-
-        <div style="margin-top:22px;padding-top:22px;border-top:1px solid var(--border);">
           <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:rgba(22,32,74,.7);">🏦 Datos de transferencia</h3>
           <div class="settings-row">
             <div><div class="label">Alias CBU / CVU / Cuenta DNI</div><input id="transferAlias" placeholder="kizuna.sushi"></div>
@@ -894,7 +882,6 @@ async function loadAll() {
     renderStockInventory(products);
     renderOrders(orders);
     renderSettings(settings);
-    renderComboPrices();
     renderProducts(products);
   } catch (err) {
     if (err.message !== "Sesion vencida") { toast("❌ Error al cargar datos.", "error"); console.error(err); }
@@ -1290,57 +1277,11 @@ async function saveTransfer() {
   toast("✓ Transferencia guardada", "success");
 }
 
-/* ── COMBO PRICES ── */
-
-const COMBO_PIECE_SIZES = [8, 16, 35];
 
 function getComboProductForSize(size) {
-  return products.find(p =>
-    (p.category === "combos" || p.category === "Combos") &&
-    new RegExp(`\\b${size}\\b`).test(p.name)
-  );
-}
-
-function renderComboPrices() {
-  const noteEl = document.getElementById("comboPricesNote");
-  const missing = [];
-  COMBO_PIECE_SIZES.forEach(size => {
-    const p = getComboProductForSize(size);
-    const input = document.getElementById(`comboPrice${size}`);
-    if (p) {
-      input.value = p.price || 0;
-    } else {
-      input.value = "";
-      missing.push(`${size} pz`);
-    }
+  return products.find(function(p) {
+    return (normalizeCategory(p.category) === "combos") && new RegExp("\\b" + size + "\\b").test(p.name);
   });
-  if (missing.length) {
-    noteEl.textContent = `⚠ No se encontró producto combo para: ${missing.join(", ")}. Crealo en el menú con "8", "16" o "35" en el nombre.`;
-  } else {
-    noteEl.textContent = "";
-  }
-}
-
-async function saveComboPrices() {
-  const updates = [];
-  for (const size of COMBO_PIECE_SIZES) {
-    const input = document.getElementById(`comboPrice${size}`);
-    const price = parseInt(input.value);
-    if (isNaN(price) || price < 0) { toast(`Precio inválido para combo de ${size} pz`, "error"); return; }
-    const p = getComboProductForSize(size);
-    if (!p) { toast(`No existe producto combo de ${size} pz — crealo primero en el menú`, "error"); return; }
-    updates.push({ id: p._id, price });
-  }
-  try {
-    await Promise.all(updates.map(u =>
-      authFetch(`${API}/products/${u.id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ price: u.price }) })
-    ));
-    // Actualizar en memoria
-    updates.forEach(u => { const p = products.find(x => x._id === u.id); if (p) p.price = u.price; });
-    toast("✓ Precios de combos guardados", "success");
-  } catch (e) {
-    toast("Error al guardar precios", "error");
-  }
 }
 
 function renderComboEleccionAdminCards() {
