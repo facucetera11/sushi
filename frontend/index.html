@@ -2328,13 +2328,27 @@ function maxPiecesForProduct(p) {
 function loadComboPrices() {
   // Busca productos cuyo nombre contenga el número de piezas del combo
   // Ej: "Combo 8 pz", "Combo 16", "Combo 35 piezas"
+  // También matchea por label: "Pequeño", "Mediano", "Grande" (sin importar mayúsculas/acentos)
   COMBO_SIZES.forEach(size => {
-    const match = products.find(p =>
-      normalizeCategory(p.category) === "combos" &&
-      p.active !== false &&
-      new RegExp(`\\b${size.pieces}\\b`).test(p.name)
-    );
-    size.price = match ? match.price : (COMBO_SIZE_FALLBACK_PRICES[size.pieces] || 0);
+    const labelVariants = [size.label.toLowerCase()];
+    // variantes sin acento
+    labelVariants.push(labelVariants[0].normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    const match = products.find(p => {
+      if (normalizeCategory(p.category) !== "combos" || p.active === false) return false;
+      const nameL = (p.name || "").toLowerCase();
+      // por número de piezas
+      if (new RegExp(`\\b${size.pieces}\\b`).test(nameL)) return true;
+      // por label (pequeño, mediano, grande / pequeno, mediano, grande)
+      if (labelVariants.some(v => nameL.includes(v))) return true;
+      return false;
+    });
+    if (match) {
+      size.price = match.price;
+      size._productId = match._id;
+    } else {
+      size.price = COMBO_SIZE_FALLBACK_PRICES[size.pieces] || 0;
+      size._productId = null;
+    }
   });
 }
 
@@ -2369,12 +2383,13 @@ function onComboOverlayClick(e) {
 function renderComboSizes() {
   document.getElementById("comboSizeRow").innerHTML = COMBO_SIZES.map((size, idx) => {
     const active = comboSelectedSize?.pieces === size.pieces ? "active" : "";
-    const priceLabel = size.price ? size.price.toLocaleString("es-AR") : "—";
+    const priceLabel = size.price ? size.price.toLocaleString("es-AR") : "Sin precio";
+    const priceStyle = !size.price ? `style="color:var(--red);font-size:9px;"` : "";
     return `
       <button class="combo-size-btn ${active}" onclick="selectComboSize(${idx})">
         <span class="csb-pieces">${size.pieces}</span>
         <span class="csb-label">${size.label}</span>
-        <span class="csb-price">${priceLabel}</span>
+        <span class="csb-price" ${priceStyle}>${priceLabel}</span>
       </button>`;
   }).join("");
 }
@@ -2522,13 +2537,16 @@ function updateComboFooter() {
   const btn      = document.getElementById("comboAddBtn");
   const total    = getComboPiecesTotal();
   const price    = getComboPrice();
+  const noPrice  = comboSelectedSize && !price;
 
-  amountEl.textContent = price ? price.toLocaleString("es-AR") : "—";
-  btn.disabled = !comboSelectedSize || total === 0;
+  amountEl.textContent = price ? price.toLocaleString("es-AR") : (comboSelectedSize ? "Sin precio" : "—");
+  amountEl.style.color = noPrice ? "var(--red)" : "";
+  btn.disabled = !comboSelectedSize || total === 0 || noPrice;
 
-  if (!comboSelectedSize)  btn.textContent = "Elegí un tamaño";
-  else if (total === 0)    btn.textContent = "Sumá piezas";
-  else                     btn.textContent = `Agregar · ${total} pz`;
+  if (!comboSelectedSize)    btn.textContent = "Elegí un tamaño";
+  else if (noPrice)          btn.textContent = "⚠ Sin precio configurado";
+  else if (total === 0)      btn.textContent = "Sumá piezas";
+  else                       btn.textContent = `Agregar · ${total} pz`;
 }
 
 /* ── agregar al carrito ── */

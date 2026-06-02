@@ -1279,8 +1279,14 @@ async function saveTransfer() {
 
 
 function getComboProductForSize(size) {
+  var labelMap = { 8: ["pequeno", "pequeño", "chico"], 16: ["mediano"], 35: ["grande"] };
+  var labels = labelMap[size] || [];
   return allProducts.find(function(p) {
-    return (normalizeCategory(p.category) === "combos") && new RegExp("\\b" + size + "\\b").test(p.name);
+    if (normalizeCategory(p.category) !== "combos") return false;
+    var nameL = (p.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (new RegExp("\\b" + size + "\\b").test(nameL)) return true;
+    if (labels.some(function(l) { return nameL.includes(l); })) return true;
+    return false;
   });
 }
 
@@ -1294,15 +1300,15 @@ function renderComboEleccionAdminCards() {
     var p   = getComboProductForSize(size.pieces);
     var price = p ? p.price : "";
     var pid   = p ? p._id   : "";
-    var warn  = p ? "" : '<div style="font-size:11px;color:#c87400;margin-bottom:10px;">Producto no encontrado. Crea un combo con ' + size.pieces + ' en el nombre.</div>';
+    var warn  = p ? "" : '<div style="font-size:11px;color:#c87400;margin-bottom:10px;line-height:1.5;">⚠️ No se encontró un combo con <strong>' + size.pieces + '</strong> en el nombre.<br>Creá un producto en categoría <strong>Combos</strong> con el número ' + size.pieces + ' en el nombre (ej: "Combo ' + size.pieces + ' pz").</div>';
     var dis   = p ? "" : "disabled";
     return '<div class="product-card" style="border:2px dashed rgba(22,32,74,.18);background:rgba(22,32,74,.02);">'
          + '<div class="label" style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:600;margin-bottom:4px;">COMBO ELECCION</div>'
-         + '<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;">Combo ' + size.pieces + ' pz &mdash; ' + size.label + '</div>'
+         + '<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;">Combo ' + size.pieces + ' pz &mdash; ' + size.label + (p ? ' <span style="font-size:11px;font-weight:400;color:#2a9968;">✓ Vinculado a: ' + escapeHtml(p.name) + '</span>' : '') + '</div>'
          + '<div class="label">Precio fijo del combo</div>'
          + '<input id="ce-price-' + size.pieces + '" type="number" min="0" value="' + price + '" placeholder="Ej: ' + size.ph + '" style="margin-bottom:10px;">'
          + warn
-         + '<button class="btn btn-success" onclick="saveComboEleccionPrice(' + size.pieces + ', \'' + pid + '\')" ' + dis + '>Guardar precio</button>'
+         + '<button class="btn btn-success" onclick="saveComboEleccionPrice(' + size.pieces + ', \'' + escapeHtml(pid) + '\')" ' + dis + '>Guardar precio</button>'
          + '</div>';
   }).join("");
 }
@@ -1311,12 +1317,15 @@ async function saveComboEleccionPrice(size, pid) {
   const input = document.getElementById(`ce-price-${size}`);
   const price = parseInt(input.value);
   if (isNaN(price) || price < 0) { toast("Precio inválido", "error"); return; }
-  if (!pid) { toast("Producto no encontrado", "error"); return; }
+  if (!pid) { toast("Producto no encontrado. Creá un producto en categoría Combos con el número " + size + " en el nombre.", "error"); return; }
   const res = await authFetch(`${API}/products/${pid}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ price }) });
   if (!res.ok) { toast("Error al guardar", "error"); return; }
+  // Actualizar en memoria local inmediatamente
   const p = allProducts.find(x => x._id === pid);
   if (p) p.price = price;
-  toast(`✓ Combo ${size} pz — precio guardado`, "success");
+  toast(`✓ Combo ${size} pz — precio $${price.toLocaleString("es-AR")} guardado`, "success");
+  // Recargar para reflejar en las cards
+  loadAll();
 }
 
 /* ── PRODUCTS ── */
