@@ -197,6 +197,12 @@ nav a:hover { opacity: 1; }
   font-size: 14px;
 }
 .menu-empty.show { display: block; }
+.fallback-whatsapp {
+  color: var(--red);
+  font-weight: 600;
+  text-decoration: none;
+}
+.fallback-whatsapp:hover { text-decoration: underline; }
 
 /* ── GRID ── */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
@@ -1224,9 +1230,12 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 const API = "https://kizuna-api-8ja8.onrender.com";
 const CATS = ["rolls","combos","veggie","bandejas","extras"];
 let products = [], cart = [], settings = {};
+let menuCats = [...CATS];
+let searchQuery = "";
 let modalProduct = null, modalQty = 1;
 let pendingWhatsAppUrl = "";
 let pendingWhatsAppFallbackUrl = "";
+const CART_KEY = "kizunaCart";
 
 function getAvailableUnits(product) {
   const recipe = product.stockItems || [];
@@ -1242,6 +1251,60 @@ function isAcceptingOrders() {
   return settings.acceptingOrders !== false;
 }
 
+function categoryLabel(cat) {
+  const labels = { rolls: "Rolls", combos: "Combos", veggie: "Veggie", bandejas: "Bandejas", extras: "Extras" };
+  return labels[cat] || String(cat || "").replace(/[-_]/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+function makeLineId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function saveCart() {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+}
+
+function loadSavedCart() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+    cart = Array.isArray(saved) ? saved.map(item => ({
+      ...item,
+      lineId: item.lineId || makeLineId(),
+      note: item.note || ""
+    })) : [];
+  } catch (err) {
+    cart = [];
+  }
+}
+
+function getCartQtyForProduct(productId) {
+  return cart
+    .filter(item => item._id === productId)
+    .reduce((sum, item) => sum + item.qty, 0);
+}
+
+function reconcileCartWithProducts() {
+  if (!products.length || !cart.length) return;
+  cart = cart.reduce((next, item) => {
+    const product = products.find(p => p._id === item._id && p.active !== false);
+    if (!product) return next;
+    const available = getAvailableUnits(product);
+    const queued = next.filter(i => i._id === item._id).reduce((sum, i) => sum + i.qty, 0);
+    const qty = Math.min(Math.max(1, Number(item.qty) || 1), Math.max(0, available - queued));
+    if (qty > 0) next.push({ ...product, qty, note: item.note || "", lineId: item.lineId || makeLineId() });
+    return next;
+  }, []);
+  saveCart();
+}
+
+function getWhatsAppNumber() {
+  return String(settings.whatsappNumber || "5491121734894").replace(/\D/g, "");
+}
+
+function buildWhatsAppUrl(text) {
+  return `https://wa.me/${getWhatsAppNumber()}?text=${encodeURIComponent(text)}`;
+}
+
 /* ── SLIDESHOW ── */
 const slides = document.querySelectorAll(".hero-slide");
 let slideIdx = 0;
@@ -1253,15 +1316,20 @@ setInterval(() => {
 
 /* ── NAV HIGHLIGHT ON SCROLL ── */
 const navLinks = document.querySelectorAll("nav a");
-const sections = CATS.map(cat => document.getElementById("cat-" + cat));
 
 function updateNavHighlight() {
   const scrollY = window.scrollY + (window.matchMedia("(max-width: 768px)").matches ? 132 : 100);
-  let active = null;
+  const sections = menuCats.map(cat => document.getElementById("cat-" + cat));
+  let active = "";
   sections.forEach((sec, i) => {
-    if (sec && sec.offsetTop <= scrollY) active = i;
+    if (sec && !sec.classList.contains("hidden-by-search") && sec.offsetTop <= scrollY) active = menuCats[i];
   });
-  navLinks.forEach((a, i) => a.style.opacity = (i === active) ? "1" : ".45");
+  navLinks.forEach(a => {
+    a.style.opacity = (a.getAttribute("href") === `#cat-${active}`) ? "1" : ".45";
+  });
+  document.querySelectorAll(".cat-chip").forEach(chip => {
+    chip.classList.toggle("active", chip.dataset.cat === active);
+  });
 }
 window.addEventListener("scroll", updateNavHighlight, { passive: true });
 
@@ -1293,6 +1361,10 @@ function escapeHtml(value) {
     "\"": "&quot;",
     "'": "&#39;"
   }[ch]));
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
 }
 
 function normalizePhone(value) {
@@ -1896,6 +1968,406 @@ function addToCartDirect(id) {
   updateCart();
   toast(`✓ ${p.name} agregado al carrito`);
 }
+function ensureCategorySections() {
+  const menuBody = document.querySelector(".menu-body");
+  menuCats.forEach(cat => {
+    if (document.getElementById("cat-" + cat)) return;
+    const sec = document.createElement("div");
+    sec.className = "cat-section";
+    sec.id = "cat-" + cat;
+    sec.innerHTML = `<div class="section-header"><h2 class="section-title">${escapeHtml(categoryLabel(cat))}</h2><span class="section-count" id="count-${escapeAttr(cat)}"></span></div><div class="grid" id="grid-${escapeAttr(cat)}"></div>`;
+    menuBody.appendChild(sec);
+  });
+}
+
+function renderCategoryStrip() {
+  const strip = document.getElementById("categoryStrip");
+  strip.innerHTML = menuCats.map(cat =>
+    `<button class="cat-chip" type="button" data-cat="${escapeAttr(cat)}" onclick="scrollToCategory('${escapeAttr(cat)}')">${escapeHtml(categoryLabel(cat))}</button>`
+  ).join("");
+  updateNavHighlight();
+}
+
+function scrollToCategory(cat) {
+  const target = document.getElementById("cat-" + cat);
+  if (!target) return;
+  const offset = target.getBoundingClientRect().top + window.scrollY -
+    (window.matchMedia("(max-width: 768px)").matches ? 164 : 116);
+  window.scrollTo({ top: offset, behavior: "smooth" });
+}
+
+function updateClosedNotice(message) {
+  const notice = document.getElementById("closedNotice");
+  if (!notice) return;
+  notice.textContent = message || "";
+  notice.classList.toggle("show", Boolean(message));
+}
+
+function updateStatus() {
+  const now = new Date();
+  const badge = document.getElementById("statusBadge");
+  const closedStyle = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
+  const openStyle = "background:rgba(26,107,58,.1);color:#1a6b3a;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
+
+  if (!isAcceptingOrders()) {
+    badge.textContent = "Cerrado";
+    badge.style.cssText = closedStyle;
+    updateClosedNotice("El local está cerrado por ahora. Podés mirar la carta y dejar armado tu pedido para más tarde.");
+    return;
+  }
+  if (!settings.openDays?.includes(now.getDay())) {
+    badge.textContent = "Cerrado hoy";
+    badge.style.cssText = closedStyle;
+    updateClosedNotice("Hoy no estamos tomando pedidos, pero podés revisar la carta y escribirnos por WhatsApp.");
+    return;
+  }
+  const h = now.getHours();
+  if (h >= settings.openHour && h < settings.closeHour) {
+    badge.textContent = "Abierto ahora";
+    badge.style.cssText = openStyle;
+    updateClosedNotice("");
+  } else {
+    badge.textContent = `Abrimos a las ${settings.openHour}:00`;
+    badge.style.cssText = closedStyle;
+    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${settings.openHour}:00.`);
+  }
+}
+
+async function load() {
+  CATS.forEach(cat => {
+    const grid = document.getElementById("grid-" + cat);
+    if (grid) grid.innerHTML = `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
+  });
+  try {
+    [products, settings] = await Promise.all([
+      fetch(`${API}/products`).then(r => r.json()),
+      fetch(`${API}/settings`).then(r => r.json())
+    ]);
+    updateStatus();
+    menuCats = [...CATS];
+    products.forEach(p => { if (p.category && !menuCats.includes(p.category)) menuCats.push(p.category); });
+    ensureCategorySections();
+    renderCategoryStrip();
+    reconcileCartWithProducts();
+    renderAllCats();
+    updateCart();
+  } catch (err) {
+    const whatsapp = buildWhatsAppUrl("Hola Kizuna, quiero hacer un pedido.");
+    CATS.forEach(cat => {
+      const grid = document.getElementById("grid-" + cat);
+      if (grid) grid.innerHTML = `<p class="empty-cat">No pudimos cargar la carta. <a class="fallback-whatsapp" href="${whatsapp}" target="_blank" rel="noopener">Escribinos por WhatsApp</a>.</p>`;
+    });
+    updateClosedNotice("No pudimos cargar la carta completa. Podés escribirnos por WhatsApp y te ayudamos con el pedido.");
+    updateCart();
+  }
+}
+
+function renderAllCats() {
+  let visibleTotal = 0;
+  menuCats.forEach(cat => { visibleTotal += renderCat(cat); });
+  document.getElementById("menuEmpty").classList.toggle("show", Boolean(searchQuery) && visibleTotal === 0);
+  updateNavHighlight();
+}
+
+function renderCat(cat) {
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = products.filter(p => {
+    if (p.category !== cat || p.active === false) return false;
+    if (!q) return true;
+    return [p.name, p.description, p.category].some(value => String(value || "").toLowerCase().includes(q));
+  });
+  const grid = document.getElementById("grid-" + cat);
+  const countEl = document.getElementById("count-" + cat);
+  const section = document.getElementById("cat-" + cat);
+  if (!grid) return 0;
+  section?.classList.toggle("hidden-by-search", Boolean(q) && !filtered.length);
+  if (!filtered.length) {
+    grid.innerHTML = q ? "" : `<p class="empty-cat">Sin productos disponibles por ahora.</p>`;
+    if (countEl) countEl.textContent = "";
+    return 0;
+  }
+  if (countEl) countEl.textContent = `${filtered.length} opciones`;
+  grid.innerHTML = filtered.map((p, i) => {
+    const available = getAvailableUnits(p);
+    const closed = !isAcceptingOrders();
+    const sinStock = available <= 0;
+    const stockTag = sinStock ? `<span class="card-stock-tag empty">Agotado</span>` : closed ? `<span class="card-stock-tag empty">Cerrado</span>` : available <= 3 ? `<span class="card-stock-tag low">Quedan ${available}</span>` : "";
+    const stockBadge = sinStock ? `<div class="stock-badge">Sin stock</div>` : closed ? `<div class="stock-badge">Local cerrado</div>` : available <= 3 ? `<div class="stock-badge">Últimas ${available}</div>` : `<div class="stock-badge ok">Disponible</div>`;
+    const tag = i === 0 && !sinStock ? `<span class="card-tag">Popular</span>` : "";
+    const desc = p.description || "";
+    const image = escapeAttr(p.image || "https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
+    return `
+    <div class="card ${sinStock ? "out-of-stock" : ""}" onclick="openModal('${escapeAttr(p._id)}')">
+      <div class="card-img-wrap">
+        <img src="${image}" alt="${escapeAttr(p.name)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
+        ${tag}
+        ${stockTag}
+        <div class="card-quick"><span>Vista rápida</span></div>
+      </div>
+      <div class="card-body">
+        <h3>${escapeHtml(p.name)}</h3>
+        <p class="card-desc">${escapeHtml(desc.substring(0, 60))}${desc.length > 60 ? "…" : ""}</p>
+        <div class="card-bottom">
+          <div>
+            <div class="price">$${p.price.toLocaleString("es-AR")}</div>
+            ${stockBadge}
+          </div>
+          <button class="btn-add" onclick="event.stopPropagation(); addToCartDirect('${escapeAttr(p._id)}')" ${sinStock || closed ? "disabled" : ""}>
+            ${closed ? "Cerrado" : sinStock ? "Agotado" : "Agregar al carrito"}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  return filtered.length;
+}
+
+function openModal(id) {
+  const p = products.find(x => x._id === id);
+  if (!p) return;
+  const available = getAvailableUnits(p);
+  modalProduct = p;
+  modalQty = 1;
+  document.getElementById("modalImg").src = p.image || "https://images.unsplash.com/photo-1579871494447-9811cf80d66c";
+  document.getElementById("modalImg").alt = p.name;
+  document.getElementById("modalCat").textContent = categoryLabel(p.category).toUpperCase();
+  document.getElementById("modalName").textContent = p.name;
+  document.getElementById("modalDesc").textContent = p.description || "";
+  document.getElementById("modalStock").textContent = available > 0 ? `Stock disponible: ${available} unidades` : "Sin stock disponible";
+  document.getElementById("modalQtyVal").textContent = "1";
+  document.getElementById("modalPrice").textContent = `$${p.price.toLocaleString("es-AR")}`;
+  document.getElementById("modalNote").value = "";
+  document.getElementById("modalAdded").classList.remove("show");
+  document.getElementById("modalAddBtn").disabled = available <= 0 || !isAcceptingOrders();
+  document.getElementById("modalAddBtn").textContent = !isAcceptingOrders() ? "Local cerrado" : available <= 0 ? "Sin stock" : "Agregar al pedido";
+  document.getElementById("modalOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function changeModalQty(delta) {
+  if (!modalProduct) return;
+  const available = getAvailableUnits(modalProduct);
+  const alreadyInCart = getCartQtyForProduct(modalProduct._id);
+  const maxQty = Math.max(1, available - alreadyInCart + modalQty);
+  modalQty = Math.max(1, Math.min(maxQty, modalQty + delta));
+  document.getElementById("modalQtyVal").textContent = modalQty;
+  document.getElementById("modalPrice").textContent = `$${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
+}
+
+function addFromModal() {
+  if (!modalProduct || modalProduct.active === false || getAvailableUnits(modalProduct) <= 0 || !isAcceptingOrders()) return;
+  const p = modalProduct;
+  const qty = modalQty;
+  const note = document.getElementById("modalNote").value.trim().slice(0, 120);
+  const available = getAvailableUnits(p);
+  if (getCartQtyForProduct(p._id) + qty > available) { toast("Stock máximo alcanzado"); return; }
+  const found = cart.find(i => i._id === p._id && (i.note || "") === note);
+  if (found) found.qty += qty;
+  else cart.push({ ...p, qty, note, lineId: makeLineId() });
+  updateCart();
+  document.getElementById("modalAdded").classList.add("show");
+  setTimeout(() => document.getElementById("modalAdded").classList.remove("show"), 2000);
+  toast(`✓ ${p.name} agregado al pedido`);
+}
+
+function updateCart() {
+  const itemsDiv = document.getElementById("cartItems");
+  let total = 0, count = 0;
+  if (!cart.length) {
+    itemsDiv.innerHTML = `<p style="opacity:.32;font-size:13px;padding:12px 0;letter-spacing:.3px;">Tu carrito está vacío</p>`;
+  } else {
+    itemsDiv.innerHTML = cart.map(i => {
+      total += i.price * i.qty;
+      count += i.qty;
+      const lineId = escapeAttr(i.lineId);
+      return `
+      <div class="cart-item">
+        <div class="cart-item-main">
+          <div class="cart-item-name">${escapeHtml(i.name)}</div>
+          <div class="cart-item-sub">$${i.price.toLocaleString("es-AR")} c/u</div>
+          <input class="cart-item-note" type="text" maxlength="120" value="${escapeAttr(i.note || "")}" placeholder="Nota: sin palta, sin sésamo..." oninput="updateCartNote('${lineId}', this.value)">
+        </div>
+        <div class="qty">
+          <button onclick="changeCartQty('${lineId}',-1)">−</button>
+          <span>${i.qty}</span>
+          <button onclick="changeCartQty('${lineId}',1)">+</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+  document.getElementById("cartTotal").textContent = `$${total.toLocaleString("es-AR")}`;
+  document.getElementById("cartCount").textContent = count;
+  document.getElementById("fabCount").textContent = count;
+  document.getElementById("btnConfirm").disabled = cart.length === 0 || !isAcceptingOrders();
+  if (!cart.length) {
+    document.getElementById("cart").classList.remove("mobile-open");
+    document.body.classList.remove("cart-open");
+  }
+  saveCart();
+}
+
+function changeCartQty(lineId, delta) {
+  const item = cart.find(x => x.lineId === lineId);
+  if (!item) return;
+  const product = products.find(p => p._id === item._id) || item;
+  if (delta > 0 && getCartQtyForProduct(item._id) >= getAvailableUnits(product)) {
+    toast("Stock máximo alcanzado");
+    return;
+  }
+  item.qty += delta;
+  if (item.qty <= 0) cart = cart.filter(x => x.lineId !== lineId);
+  updateCart();
+}
+
+function updateCartNote(lineId, value) {
+  const item = cart.find(x => x.lineId === lineId);
+  if (!item) return;
+  item.note = value.trim().slice(0, 120);
+  saveCart();
+  updateCheckoutSummary();
+}
+
+function addToCartDirect(id) {
+  const p = products.find(x => x._id === id);
+  if (!p || p.active === false || getAvailableUnits(p) <= 0 || !isAcceptingOrders()) return;
+  const available = getAvailableUnits(p);
+  if (getCartQtyForProduct(p._id) >= available) { toast("Stock máximo alcanzado"); return; }
+  const found = cart.find(i => i._id === p._id && !i.note);
+  if (found) found.qty += 1;
+  else cart.push({ ...p, qty: 1, note: "", lineId: makeLineId() });
+  updateCart();
+  toast(`✓ ${p.name} agregado al carrito`);
+}
+
+function updateCheckoutSummary() {
+  const name = (document.getElementById("clientName").value || "").trim();
+  const phone = (document.getElementById("clientPhone").value || "").trim();
+  const notes = (document.getElementById("orderNotes").value || "").trim();
+  const date = document.getElementById("deliveryDate")?.options[document.getElementById("deliveryDate").selectedIndex]?.text || "";
+  const time = document.getElementById("deliveryTime")?.value || "";
+  const address = document.getElementById("addressInput")?.value.trim() || "";
+  const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
+  const discount = settings.cashDiscount || 0;
+  const saving = paymentMethod === "cash" ? Math.round(base * discount / 100) : 0;
+  const final = base - saving;
+  const itemsText = cart.map(i => {
+    const note = i.note ? ` <em>(${escapeHtml(i.note)})</em>` : "";
+    return `<strong>${escapeHtml(i.name)}</strong> ×${i.qty}${note}`;
+  }).join(", ");
+  const entrega = deliveryType === "delivery"
+    ? `🛵 Delivery${address ? ` a <strong>${escapeHtml(address)}</strong>` : ""}`
+    : `🏃 Retiro en local`;
+  const pagoText = paymentMethod === "transfer" ? "🏦 Transferencia / MP"
+    : paymentMethod === "cash" ? "💵 Efectivo"
+    : "—";
+
+  document.getElementById("checkoutSummary").innerHTML = `
+    ${name ? `👤 <strong>${escapeHtml(name)}</strong><br>` : ""}
+    ${phone ? `📞 ${escapeHtml(phone)}<br>` : ""}
+    ${entrega}<br>
+    📅 ${escapeHtml(date)} a las ${escapeHtml(time)}<br>
+    💳 ${pagoText}<br>
+    ${notes ? `📝 <strong>Nota:</strong> ${escapeHtml(notes)}<br>` : ""}
+    🛒 ${itemsText}<br>
+    💰 Total: <strong>$${final.toLocaleString("es-AR")}</strong>${saving > 0 ? ` <span style="color:#1a6b3a;font-size:11px;">(ahorrás $${saving.toLocaleString("es-AR")})</span>` : ""}
+  `;
+}
+
+function buildOrderMessage(orderNumber, clientName, clientPhone, address, notes, dateText, timeText, total, saving, discount) {
+  const pagoLabel = paymentMethod === "transfer" ? "Transferencia / Mercado Pago" : "Efectivo";
+  let msg = `🍣 *Pedido Kizuna ${orderNumber ? `#${orderNumber}` : ""}*\n\n`;
+  msg += `Hola, hice mi pedido por la web.\n\n`;
+  msg += `👤 *${clientName}*\n`;
+  msg += `📞 ${clientPhone}\n`;
+  msg += deliveryType === "delivery" ? `🛵 *Delivery* a: ${address}\n` : `🏃 *Retiro en local*\n`;
+  msg += `📅 ${dateText} a las ${timeText}\n`;
+  msg += `💳 *Pago: ${pagoLabel}*\n\n`;
+  if (notes) msg += `📝 *Nota general:* ${notes}\n\n`;
+  cart.forEach(i => {
+    msg += `• ${i.name} ×${i.qty} — $${(i.price * i.qty).toLocaleString("es-AR")}\n`;
+    if (i.note) msg += `  Nota: ${i.note}\n`;
+  });
+  if (saving > 0) msg += `\n🎉 Descuento efectivo (${discount}%): − $${saving.toLocaleString("es-AR")}`;
+  msg += `\n\n💰 *Total: $${total.toLocaleString("es-AR")}*`;
+  return msg;
+}
+
+async function sendWhatsApp() {
+  if (!cart.length) return;
+  if (!isAcceptingOrders()) { toast("El local está cerrado en este momento"); return; }
+  if (!paymentMethod) { toast("❌ Elegí un método de pago"); return; }
+
+  const clientName = document.getElementById("clientName").value.trim();
+  const clientPhone = document.getElementById("clientPhone").value.trim();
+  const address = document.getElementById("addressInput").value.trim();
+  const notes = document.getElementById("orderNotes").value.trim();
+  const dateEl = document.getElementById("deliveryDate");
+  const timeEl = document.getElementById("deliveryTime");
+  const dateText = dateEl?.options[dateEl.selectedIndex]?.text || "";
+  const timeText = timeEl?.value || "";
+  const validationError = validateCheckoutFields();
+  if (validationError) { toast(`❌ ${validationError}`); return; }
+
+  const btn = document.getElementById("btnCheckoutConfirm");
+  btn.disabled = true;
+  btn.textContent = "Enviando pedido...";
+
+  const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
+  const discount = settings.cashDiscount || 0;
+  const saving = paymentMethod === "cash" ? Math.round(base * discount / 100) : 0;
+  const total = base - saving;
+  const snapshot = cart.map(i => ({ _id: i._id, name: i.name, qty: i.qty, price: i.price, note: i.note || "" }));
+  const orderPayload = {
+    items: snapshot, total,
+    deliveryType, address: deliveryType === "delivery" ? address : "",
+    clientName, clientPhone, notes, scheduledDate: dateText, scheduledTime: timeText,
+    paymentMethod
+  };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 18000);
+
+  try {
+    const res = await fetch(`${API}/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderPayload),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error((await res.json()).error || "Error al registrar el pedido");
+    const order = await res.json();
+    const msg = buildOrderMessage(order.number, clientName, clientPhone, address, notes, dateText, timeText, total, saving, discount);
+    const whatsappText = encodeURIComponent(msg);
+    const whatsappNumber = getWhatsAppNumber();
+    const confirmSummary = `
+      <strong>Total:</strong> $${total.toLocaleString("es-AR")}<br>
+      <strong>Entrega:</strong> ${deliveryType === "delivery" ? `Delivery a ${escapeHtml(address)}` : "Retiro en local"}<br>
+      <strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}<br>
+      <strong>Teléfono:</strong> ${escapeHtml(clientPhone)}
+      ${notes ? `<br><strong>Nota:</strong> ${escapeHtml(notes)}` : ""}
+    `;
+    cart = [];
+    updateCart();
+    closeCheckout();
+    toast(`✅ Pedido #${order.number || ""} registrado`);
+    openWhatsAppConfirm(order, confirmSummary, `whatsapp://send?phone=${whatsappNumber}&text=${whatsappText}`, `https://wa.me/${whatsappNumber}?text=${whatsappText}`);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const msg = buildOrderMessage("", clientName, clientPhone, address, notes, dateText, timeText, total, saving, discount);
+    btn.disabled = false;
+    btn.textContent = "Enviar pedido";
+    toast("No se pudo registrar, pero podés enviarlo por WhatsApp");
+    openWhatsAppConfirm(null, `<strong>Total:</strong> $${total.toLocaleString("es-AR")}<br><strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}`, buildWhatsAppUrl(msg), buildWhatsAppUrl(msg));
+  }
+}
+
+document.getElementById("menuSearch").addEventListener("input", e => {
+  searchQuery = e.target.value.trim();
+  renderAllCats();
+});
+
+loadSavedCart();
+updateCart();
 load();
 </script>
 
