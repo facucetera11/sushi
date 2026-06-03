@@ -856,7 +856,7 @@ function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
 
-function compressImageFile(file, maxSide = 1800, quality = 0.9) {
+function compressImageFile(file, maxSide = 900, quality = 0.82) {
   return new Promise((resolve, reject) => {
     if (!file || !file.type.startsWith("image/")) {
       reject(new Error("Elegí un archivo de imagen"));
