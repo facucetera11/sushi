@@ -1055,7 +1055,6 @@ async function loadAll() {
     prevOrderStatuses = new Map(orders.map(o => [o._id, o.status]));
 
     renderMetrics(products, orders);
-    renderKitchenSummary(orders);
     renderStockInventory(products);
     renderOrders(orders);
     renderSettings(settings);
@@ -1440,7 +1439,6 @@ async function updateOrder(id, status) {
     if (order) {
       order.status = status;
       applyFilters();
-      renderKitchenSummary(allOrders);
     }
     const res = await authFetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
     if (!res.ok) throw new Error();
