@@ -1382,7 +1382,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
       <button class="combo-modal-close" onclick="closeComboModal()">×</button>
     </div>
     <div class="combo-modal-body">
-      <p class="combo-modal-desc">Elegí cuántas piezas querés y sumá de cada roll lo que más te guste.</p>
+      <p class="combo-modal-desc">Elegí cuántas piezas querés y sumá de cada roll lo que más te guste. El precio se ajusta al promedio de lo que armes.</p>
 
       <div class="combo-size-label">¿Cuántas piezas?</div>
       <div class="combo-size-row" id="comboSizeRow"></div>
@@ -1894,29 +1894,51 @@ function updateStatus() {
   const now = new Date();
   const badge = document.getElementById("statusBadge");
   const closedStyle = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-  const openStyle = "background:rgba(26,107,58,.1);color:#1a6b3a;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
+  const openStyle   = "background:rgba(26,107,58,.1);color:#1a6b3a;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
+  const pendingStyle = "background:rgba(180,120,0,.1);color:#9a6800;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
 
+  // Admin cerró manualmente
   if (!isAcceptingOrders()) {
     badge.textContent = "Cerrado";
     badge.style.cssText = closedStyle;
     updateClosedNotice("El local está cerrado por ahora. Podés mirar la carta y dejar armado tu pedido para más tarde.");
     return;
   }
-  if (!settings.openDays?.includes(now.getDay())) {
+
+  const openDays   = settings.openDays  || [1,2,3,4,5,6];
+  const openHour   = settings.openHour  ?? 19;
+  const closeHour  = settings.closeHour ?? 23;
+  const deliveryHour = settings.deliveryHour ?? null; // null = sin distinción
+
+  const day = now.getDay();
+  const h   = now.getHours();
+
+  // Día que no abre
+  if (!openDays.includes(day)) {
     badge.textContent = "Cerrado hoy";
     badge.style.cssText = closedStyle;
     updateClosedNotice("Hoy no estamos tomando pedidos, pero podés revisar la carta y escribirnos por WhatsApp.");
     return;
   }
-  const h = now.getHours();
-  if (h >= settings.openHour && h < settings.closeHour) {
+
+  // Fuera de horario de pedidos
+  if (h < openHour || h >= closeHour) {
+    badge.textContent = `Abrimos a las ${openHour}:00`;
+    badge.style.cssText = closedStyle;
+    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${openHour}:00.`);
+    return;
+  }
+
+  // Dentro del horario de pedidos
+  if (deliveryHour !== null && h < deliveryHour) {
+    // Tomamos pedidos pero aún no repartimos
+    badge.textContent = `Abierto · reparto a las ${deliveryHour}:00`;
+    badge.style.cssText = pendingStyle;
+    updateClosedNotice(`Tomamos pedidos ahora. Los repartos salen a partir de las ${deliveryHour}:00 hs.`);
+  } else {
     badge.textContent = "Abierto ahora";
     badge.style.cssText = openStyle;
     updateClosedNotice("");
-  } else {
-    badge.textContent = `Abrimos a las ${settings.openHour}:00`;
-    badge.style.cssText = closedStyle;
-    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${settings.openHour}:00.`);
   }
 }
 
@@ -2436,7 +2458,9 @@ function renderComboGrid() {
     // No se puede tocar si no está seleccionado y no hay lugar para 1 pieza
     const disabled  = !isSelected && (!comboSelectedSize || remaining === 0);
 
-    const stockLabel = "";
+    const stockLabel = maxForThis <= 5
+      ? `<span class="combo-item-stock-warn">⚠ ${maxForThis} pz disponibles</span>`
+      : `<span class="combo-item-price-pp">${maxForThis} pz en stock</span>`;
 
     return `
       <div class="combo-item-btn ${isSelected ? "selected" : ""} ${disabled ? "combo-disabled" : ""}"

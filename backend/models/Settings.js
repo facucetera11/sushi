@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const SettingsSchema = new mongoose.Schema({
   openHour: Number,
   closeHour: Number,
+  deliveryHour: { type: Number, default: null },
   openDays: [Number],
   cashDiscount: { type: Number, default: 0 },
   transferAlias: { type: String, default: "" },
