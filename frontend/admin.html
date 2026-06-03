@@ -149,13 +149,13 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 
 /* ── ORDERS ── */
 .orders-topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px;}
-.orders-topbar input{
+.orders-topbar input[type="text"]{
   flex:1;min-width:180px;max-width:240px;
   padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);
   background:var(--bg);color:var(--navy);font-size:13px;font-family:'DM Sans',sans-serif;
   outline:none;transition:.2s;
 }
-.orders-topbar input:focus{border-color:rgba(22,32,74,.25);background:white;}
+.orders-topbar input[type="text"]:focus{border-color:rgba(22,32,74,.25);background:white;}
 .filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
 .filter-btn{
   padding:8px 14px;border-radius:var(--radius-xs);border:1px solid var(--border);
@@ -171,181 +171,123 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 }
 .btn-csv:hover{background:var(--green);color:white;}
 
-.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
-
-.order-card{
-  border-radius:16px;
-  border:1px solid var(--border);
-  padding:18px;
-  background:var(--surface);
-  transition:box-shadow .2s, border-color .2s;
+/* ── ORDERS TABLE ── */
+.orders-table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border);}
+.orders-table{width:100%;border-collapse:collapse;font-size:13px;}
+.orders-table thead tr{background:var(--bg);border-bottom:2px solid var(--border);}
+.orders-table thead th{
+  padding:10px 12px;text-align:left;
+  font-size:10px;font-weight:800;color:rgba(22,32,74,.4);
+  text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;
 }
-.order-card:hover{box-shadow:var(--shadow);border-color:rgba(22,32,74,.13);}
-.order-card.new-order{border-color:var(--red);box-shadow:0 0 0 3px rgba(216,106,94,.12);}
-.order-card.delivered{opacity:.55;border-style:dashed;}
-.order-card.delivered:hover{opacity:.85;}
-
-.order-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.order-num{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
-.status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;}
-.status-Pendiente{background:rgba(230,180,10,.12);color:#c48a00;}
-.status-Preparando{background:rgba(230,120,10,.12);color:#c46000;}
-.status-Listo{background:rgba(42,153,104,.12);color:var(--green);}
-.status-listo{background:rgba(42,153,104,.12);color:var(--green);}
-.status-Entregado{background:var(--green-soft);color:var(--green);}
-
-/* ── KANBAN BOARD ── */
-.orders-board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start;}
-.order-column{
-  border-radius:18px;padding:0;overflow:hidden;
-  border:1px solid var(--border);
-  background:var(--surface);
-  box-shadow:var(--shadow-sm);
-}
-.order-column-head{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:14px 16px;font-weight:800;font-size:13px;
+.orders-table tbody tr{
   border-bottom:1px solid var(--border);
-  position:sticky;top:62px;z-index:10;background:inherit;
-}
-.col-pendiente .order-column-head{background:#fffbf0;border-bottom-color:rgba(196,138,0,.15);}
-.col-preparando .order-column-head{background:#fff7f3;border-bottom-color:rgba(196,96,0,.15);}
-.col-listo .order-column-head{background:#f2fdf7;border-bottom-color:rgba(42,153,104,.2);}
-.order-column-label{display:flex;align-items:center;gap:8px;}
-.col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.col-pendiente .col-dot{background:#c48a00;}
-.col-preparando .col-dot{background:#c46000;}
-.col-listo .col-dot{background:var(--green);}
-.order-column-count{
-  background:white;border:1px solid var(--border);
-  border-radius:999px;padding:2px 9px;font-size:11px;color:rgba(22,32,74,.5);font-weight:700;
-}
-.order-column-body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:120px;}
-.order-column-empty{padding:20px 10px;text-align:center;font-size:12px;color:rgba(22,32,74,.3);font-weight:500;}
-
-/* ── ORDER CARD ── */
-.order-card{
-  border-radius:14px;
-  border:1px solid var(--border);
-  background:var(--surface);
-  transition:box-shadow .2s, border-color .2s;
+  transition:background .12s;
   cursor:pointer;
-  overflow:hidden;
-  position:relative;
 }
-.order-card:hover{box-shadow:0 4px 16px rgba(22,32,74,.1);border-color:rgba(22,32,74,.15);}
-.order-card.new-order{border-color:var(--red);box-shadow:0 0 0 3px rgba(216,106,94,.1);}
-.order-card.delivered{opacity:.45;cursor:default;}
-.order-card.delivered:hover{opacity:.7;box-shadow:none;}
-/* Acento lateral por estado */
-.col-pendiente .order-card{border-left:3px solid #e6b40a;}
-.col-preparando .order-card{border-left:3px solid #e07820;}
-.col-listo .order-card{border-left:3px solid var(--green);}
+.orders-table tbody tr:last-child{border-bottom:none;}
+.orders-table tbody tr:hover{background:rgba(22,32,74,.025);}
+.orders-table tbody tr.row-delivered{opacity:.5;}
+.orders-table tbody tr.row-new td:first-child{border-left:3px solid var(--red);}
+.orders-table td{padding:9px 12px;vertical-align:middle;}
 
-/* ── CABECERA: siempre visible ── */
-.card-head{
-  padding:13px 14px 13px 16px;
-  display:grid;
-  grid-template-columns:auto 1fr auto;
-  grid-template-rows:auto auto;
-  gap:2px 10px;
-  align-items:center;
-  user-select:none;
+/* Status accent strip */
+.orders-table tr.row-Pendiente td:first-child{border-left:3px solid #e6b40a;}
+.orders-table tr.row-Preparando td:first-child{border-left:3px solid #e07820;}
+.orders-table tr.row-Listo td:first-child{border-left:3px solid var(--green);}
+.orders-table tr.row-Entregado td:first-child{border-left:3px solid rgba(22,32,74,.15);}
+
+.td-num{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:rgba(22,32,74,.4);white-space:nowrap;}
+.td-client{font-weight:700;color:var(--navy);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
+.td-items{color:rgba(22,32,74,.55);font-size:12px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.td-total{font-family:'Syne',sans-serif;font-weight:800;color:var(--navy);white-space:nowrap;text-align:right;}
+.td-tags{white-space:nowrap;}
+.td-status select{
+  padding:5px 8px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg);color:var(--navy);font-size:12px;font-family:'DM Sans',sans-serif;
+  font-weight:700;cursor:pointer;outline:none;margin:0;width:auto;
 }
-.card-head-num{
-  grid-column:1;grid-row:1;
+.td-time{font-size:11px;color:rgba(22,32,74,.35);white-space:nowrap;}
+.td-actions{white-space:nowrap;text-align:right;}
+
+/* Row expanded detail */
+.order-detail-row td{
+  background:rgba(22,32,74,.02);
+  padding:10px 16px 14px 40px;
+  font-size:12px;
+  border-bottom:1px solid var(--border);
+}
+.order-detail-inner{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;}
+.order-detail-items{display:flex;flex-direction:column;gap:4px;min-width:160px;}
+.order-detail-item{display:flex;align-items:baseline;gap:6px;}
+.order-detail-qty{
   font-family:'Syne',sans-serif;font-size:10px;font-weight:800;
-  color:rgba(22,32,74,.35);letter-spacing:.8px;white-space:nowrap;
+  color:white;background:rgba(22,32,74,.3);border-radius:4px;
+  padding:0 5px;line-height:1.8;flex-shrink:0;min-width:20px;text-align:center;
 }
-.card-head-client{
-  grid-column:2;grid-row:1;
-  font-size:14px;font-weight:700;color:var(--navy);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+.order-detail-name{font-weight:600;color:var(--navy);}
+.order-detail-note{font-size:11px;color:rgba(22,32,74,.4);padding-left:26px;}
+.order-detail-meta{display:flex;flex-direction:column;gap:5px;}
+.order-detail-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;
+  background:rgba(22,32,74,.06);color:rgba(22,32,74,.6);
 }
-.card-head-total{
-  grid-column:3;grid-row:1;
-  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
-  color:var(--navy);white-space:nowrap;text-align:right;
+.order-detail-chip.blue{background:#deeaff;color:#2251c5;}
+.order-detail-chip.red{background:#fff0ee;color:var(--red);}
+.order-detail-note-block{
+  padding:6px 10px;background:rgba(255,236,0,.09);
+  border:1px solid rgba(200,160,0,.18);border-radius:8px;
+  font-size:12px;color:rgba(22,32,74,.65);font-style:italic;
 }
-.card-head-meta{
-  grid-column:1/-1;grid-row:2;
-  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
-  margin-top:2px;
-}
+.order-detail-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+
+/* Pills */
 .card-pill{
   font-size:10px;font-weight:700;padding:2px 7px;
-  border-radius:20px;line-height:1.7;letter-spacing:.2px;white-space:nowrap;
+  border-radius:20px;line-height:1.7;letter-spacing:.2px;white-space:nowrap;display:inline-block;
 }
 .pill-delivery{background:#deeaff;color:#2251c5;}
 .pill-retiro{background:#e6f9f0;color:#1a8a5a;}
 .pill-cash{background:#e6f9f0;color:#1a8a5a;}
 .pill-transfer{background:rgba(22,32,74,.07);color:rgba(22,32,74,.55);}
 .pill-scheduled{background:#fff0ee;color:var(--red);}
-.card-head-items-preview{
-  font-size:11px;color:rgba(22,32,74,.4);font-weight:500;
-  flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  min-width:0;
-}
-.card-chevron{
-  font-size:9px;color:rgba(22,32,74,.2);
-  transition:transform .25s ease;
-  flex-shrink:0;margin-left:auto;
-}
+
+/* Status badge */
+.status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;}
+.status-Pendiente{background:rgba(230,180,10,.12);color:#c48a00;}
+.status-Preparando{background:rgba(230,120,10,.12);color:#c46000;}
+.status-Listo{background:rgba(42,153,104,.12);color:var(--green);}
+.status-Entregado{background:var(--green-soft);color:var(--green);}
+
+/* legacy — kept for history grid cards */
+.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+.order-card{border-radius:14px;border:1px solid var(--border);background:var(--surface);transition:box-shadow .2s;overflow:hidden;position:relative;cursor:pointer;}
+.order-card:hover{box-shadow:0 4px 16px rgba(22,32,74,.1);border-color:rgba(22,32,74,.15);}
+.order-card.new-order{border-color:var(--red);}
+.order-card.delivered{opacity:.45;cursor:default;}
+.card-head{padding:13px 14px 13px 16px;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:2px 10px;align-items:center;user-select:none;}
+.card-head-num{grid-column:1;grid-row:1;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;color:rgba(22,32,74,.35);letter-spacing:.8px;white-space:nowrap;}
+.card-head-client{grid-column:2;grid-row:1;font-size:14px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-head-total{grid-column:3;grid-row:1;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--navy);white-space:nowrap;text-align:right;}
+.card-head-meta{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px;}
+.card-head-items-preview{font-size:11px;color:rgba(22,32,74,.4);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.card-chevron{font-size:9px;color:rgba(22,32,74,.2);transition:transform .25s;flex-shrink:0;margin-left:auto;}
 .order-card.expanded .card-chevron{transform:rotate(180deg);}
-
-/* ── BODY: expansión suave ── */
-.card-body{
-  max-height:0;
-  overflow:hidden;
-  transition:max-height .3s cubic-bezier(.4,0,.2,1);
-  border-top:0px solid rgba(22,32,74,.07);
-}
-.order-card.expanded .card-body{
-  max-height:600px;
-  border-top-width:1px;
-}
-
-/* Items */
+.card-body{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);border-top:0 solid rgba(22,32,74,.07);}
+.order-card.expanded .card-body{max-height:600px;border-top-width:1px;}
 .card-items{padding:12px 14px 10px 16px;display:flex;flex-direction:column;gap:5px;}
 .card-item-row{display:flex;align-items:baseline;gap:8px;}
-.card-item-qty{
-  font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
-  color:white;background:rgba(22,32,74,.25);border-radius:5px;
-  padding:0 5px;line-height:1.8;flex-shrink:0;min-width:22px;text-align:center;
-}
+.card-item-qty{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:white;background:rgba(22,32,74,.25);border-radius:5px;padding:0 5px;line-height:1.8;flex-shrink:0;min-width:22px;text-align:center;}
 .card-item-name{font-size:13px;font-weight:600;color:var(--navy);}
 .card-item-note{font-size:11px;color:rgba(22,32,74,.38);padding-left:30px;margin-top:-2px;}
-
-/* Info row */
-.card-info{
-  padding:8px 14px 10px 16px;
-  display:flex;flex-wrap:wrap;gap:6px;
-  border-top:1px solid rgba(22,32,74,.06);
-}
-.card-chip{
-  display:flex;align-items:center;gap:4px;
-  font-size:11px;font-weight:600;
-  padding:3px 10px;border-radius:8px;
-  background:rgba(22,32,74,.05);color:rgba(22,32,74,.6);
-}
+.card-info{padding:8px 14px 10px 16px;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid rgba(22,32,74,.06);}
+.card-chip{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:8px;background:rgba(22,32,74,.05);color:rgba(22,32,74,.6);}
 .card-chip.blue{background:#deeaff;color:#2251c5;}
 .card-chip.green{background:#e6f9f0;color:#1a8a5a;}
 .card-chip.red{background:#fff0ee;color:var(--red);}
-
-/* Nota */
-.card-note-block{
-  margin:0 14px 0 16px;padding:8px 11px;
-  background:rgba(255,236,0,.08);border:1px solid rgba(200,160,0,.15);
-  border-radius:9px;font-size:12px;color:rgba(22,32,74,.65);
-  font-style:italic;
-}
-
-/* Hora */
-.card-time-row{
-  padding:6px 14px 8px 16px;
-  font-size:11px;color:rgba(22,32,74,.3);font-weight:500;
-  border-top:1px solid rgba(22,32,74,.05);
-}
+.card-note-block{margin:0 14px 0 16px;padding:8px 11px;background:rgba(255,236,0,.08);border:1px solid rgba(200,160,0,.15);border-radius:9px;font-size:12px;color:rgba(22,32,74,.65);font-style:italic;}
+.card-time-row{padding:6px 14px 8px 16px;font-size:11px;color:rgba(22,32,74,.3);font-weight:500;border-top:1px solid rgba(22,32,74,.05);}
 
 /* Acciones */
 .card-actions{
@@ -439,7 +381,10 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 .history-toggle .arrow{margin-left:auto;transition:transform .2s;font-size:11px;}
 .history-toggle.open .arrow{transform:rotate(180deg);}
 #historyGrid{display:none;margin-top:14px;}
-#historyGrid.open{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+#historyGrid.open{display:block;}
+.orders-table tr.row-expanded > td{background:rgba(22,32,74,.025);}
+.orders-table tr.row-new > td:first-child{border-left:3px solid var(--red);}
+
 
 /* ── SETTINGS ── */
 .settings-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
@@ -1252,6 +1197,111 @@ function setFilter(btn) {
   btn.classList.add("active"); activeFilter = btn.dataset.filter; applyFilters();
 }
 
+function orderRowHTML(o, isDelivered) {
+  const time = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
+  const day  = new Date(o.createdAt).toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit" });
+  const isDelivery  = o.deliveryType === "delivery";
+  const isCash      = o.paymentMethod === "cash";
+  const isScheduled = o.scheduledDate || o.scheduledTime;
+  const clientName  = o.clientName || ("Pedido #" + o.number);
+  const itemsPreview = (o.items||[]).map(i => `${i.qty}× ${i.name}`).join(" · ");
+  const statusClass = `row-${o.status}`;
+  const isNew = false; // new order highlight via banner, not per-row
+
+  const pills = [
+    isDelivery ? `<span class="card-pill pill-delivery">🛵</span>` : `<span class="card-pill pill-retiro">🏃</span>`,
+    isCash     ? `<span class="card-pill pill-cash">💵</span>`     : `<span class="card-pill pill-transfer">🏦</span>`,
+    isScheduled ? `<span class="card-pill pill-scheduled">📅</span>` : "",
+  ].filter(Boolean).join(" ");
+
+  const statusSelect = !isDelivered ? `
+    <select onclick="event.stopPropagation()" onchange="confirmOrderStatus('${o._id}', this)"
+      style="padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);
+             color:var(--navy);font-size:11px;font-family:'DM Sans',sans-serif;font-weight:700;
+             cursor:pointer;outline:none;margin:0;width:auto;">
+      <option ${o.status==="Pendiente"?"selected":""}  value="Pendiente">🟡 Pendiente</option>
+      <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
+      <option ${o.status==="Listo"?"selected":""}      value="Listo">🟢 Listo</option>
+      <option ${o.status==="Entregado"?"selected":""}  value="Entregado">✅ Entregado</option>
+    </select>` :
+    `<span class="card-pill status-Entregado">✅ Entregado</span>`;
+
+  const actions = !isDelivered ? `
+    <button class="card-btn card-btn-green" onclick="event.stopPropagation();quickDeliver('${o._id}')" title="Marcar entregado">✓</button>
+    <button class="card-btn card-btn-gray"  onclick="event.stopPropagation();printOrder('${o._id}')" title="Imprimir ticket">🖨</button>
+    <button class="card-btn card-btn-gray"  onclick="event.stopPropagation();printKitchenOrder('${o._id}')" title="Cocina">🍳</button>
+  ` : `
+    <button class="card-btn card-btn-gray"  onclick="event.stopPropagation();printOrder('${o._id}')" title="Imprimir ticket">🖨</button>
+    <button class="card-btn card-btn-red"   onclick="event.stopPropagation();deleteOrder('${o._id}')" title="Eliminar">🗑</button>
+  `;
+
+  // Expanded detail row (hidden by default)
+  const itemsHTML = (o.items||[]).map(i => {
+    const note = i.note ? `<div class="order-detail-note">↳ ${escapeHtml(i.note)}</div>` : "";
+    return `<div class="order-detail-item"><span class="order-detail-qty">${i.qty}</span><span class="order-detail-name">${escapeHtml(i.name)}</span></div>${note}`;
+  }).join("");
+
+  const chips = [
+    o.clientPhone ? `<span class="order-detail-chip">📞 ${escapeHtml(o.clientPhone)}</span>` : "",
+    isDelivery && o.address ? `<span class="order-detail-chip blue">📍 ${escapeHtml(o.address)}</span>` : "",
+    isScheduled ? `<span class="order-detail-chip red">📅 ${escapeHtml((o.scheduledDate||"") + " " + (o.scheduledTime||""))}</span>` : "",
+  ].filter(Boolean).join("");
+
+  const noteBlock = o.notes ? `<div class="order-detail-note-block">💬 ${escapeHtml(o.notes)}</div>` : "";
+
+  const detailActions = !isDelivered ? `
+    <div class="order-detail-actions">
+      <button class="card-btn card-btn-green" onclick="quickDeliver('${o._id}')">✓ Entregar</button>
+      <button class="card-btn card-btn-gray"  onclick="printOrder('${o._id}')">🖨 Ticket</button>
+      <button class="card-btn card-btn-gray"  onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
+    </div>` : `
+    <div class="order-detail-actions">
+      <button class="card-btn card-btn-gray" onclick="printOrder('${o._id}')">🖨 Ticket</button>
+      <button class="card-btn card-btn-red"  onclick="deleteOrder('${o._id}')">🗑 Eliminar</button>
+    </div>`;
+
+  const chkCell = `<div class="order-checkbox-wrap" id="chk-wrap-${o._id}" style="display:none;margin:0;">
+    <input type="checkbox" id="chk-${o._id}" onclick="event.stopPropagation()" onchange="toggleOrderSelection('${o._id}', this.checked)">
+  </div>`;
+
+  return `
+    <tr class="${statusClass}${isDelivered?" row-delivered":""}" id="order-row-${o._id}"
+        onclick="toggleRow(event,'${o._id}')">
+      <td class="td-num">${chkCell}#${o.number}</td>
+      <td class="td-client">${escapeHtml(clientName)}</td>
+      <td class="td-items">${escapeHtml(itemsPreview)}</td>
+      <td class="td-total">$${Number(o.total||0).toLocaleString("es-AR")}</td>
+      <td class="td-tags">${pills}</td>
+      <td class="td-status" onclick="event.stopPropagation()">${statusSelect}</td>
+      <td class="td-time">${day} ${time}</td>
+      <td class="td-actions" onclick="event.stopPropagation()">${actions}</td>
+    </tr>
+    <tr class="order-detail-row" id="order-detail-${o._id}" style="display:none;">
+      <td colspan="8">
+        <div class="order-detail-inner">
+          <div class="order-detail-items">${itemsHTML}</div>
+          ${chips || noteBlock ? `<div class="order-detail-meta">${chips}${noteBlock}</div>` : ""}
+          ${detailActions}
+        </div>
+      </td>
+    </tr>`;
+}
+
+function ordersTableHTML(rows, showEmpty) {
+  if (!rows.length && showEmpty) return `<p style="opacity:.4;font-size:14px;padding:16px 0;">No hay pedidos activos. 🎉</p>`;
+  if (!rows.length) return "";
+  return `<div class="orders-table-wrap">
+    <table class="orders-table">
+      <thead><tr>
+        <th>#</th><th>Cliente</th><th>Items</th>
+        <th style="text-align:right">Total</th><th>Tipo</th>
+        <th>Estado</th><th>Hora</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
 function applyFilters() {
   const search = (document.getElementById("orderSearch")?.value || "").toLowerCase();
   let filtered = allOrders;
@@ -1260,65 +1310,65 @@ function applyFilters() {
   const active = filtered.filter(o => o.status !== "Entregado");
   const delivered = filtered.filter(o => o.status === "Entregado");
   const grid = document.getElementById("ordersGrid");
-  const colMeta = [
-    { status: "Pendiente", cls: "col-pendiente", emoji: "🟡" },
-    { status: "Preparando", cls: "col-preparando", emoji: "🟠" },
-    { status: "Listo",      cls: "col-listo",      emoji: "🟢" }
-  ];
+  grid.className = "";
   if (active.length) {
-    grid.className = "orders-board";
-    grid.innerHTML = colMeta.map(({ status, cls, emoji }) => {
-      const list = active.filter(o => o.status === status);
-      return `<div class="order-column ${cls}">
-        <div class="order-column-head">
-          <div class="order-column-label"><span class="col-dot"></span>${emoji} ${status}</div>
-          <span class="order-column-count">${list.length}</span>
-        </div>
-        <div class="order-column-body">
-          ${list.length ? list.map(o => orderCardHTML(o, false)).join("") : `<div class="order-column-empty">Sin pedidos</div>`}
-        </div>
-      </div>`;
-    }).join("");
+    const rows = active.map(o => orderRowHTML(o, false)).join("");
+    grid.innerHTML = ordersTableHTML(rows, false);
   } else {
-    grid.className = "orders-grid";
-    grid.innerHTML = `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
+    grid.innerHTML = `<p style="opacity:.4;font-size:14px;padding:16px 0;">No hay pedidos activos. 🎉</p>`;
   }
   const histGrid = document.getElementById("historyGrid");
   const histOpen = histGrid.classList.contains("open");
   document.getElementById("historyCount").textContent = delivered.length ? `(${delivered.length})` : "";
   if (histOpen) {
-    histGrid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+    histGrid.className = "open";
+    histGrid.style.display = "";
+    if (delivered.length) {
+      const rows = delivered.map(o => orderRowHTML(o, true)).join("");
+      histGrid.innerHTML = ordersTableHTML(rows, false);
+    } else {
+      histGrid.innerHTML = `<p style="opacity:.4;font-size:14px;">Sin pedidos entregados todavía.</p>`;
+    }
   }
   refreshCheckboxVisibility();
 }
 
 function renderOrders(orders) { allOrders = orders; applyFilters(); }
 
+function toggleRow(event, id) {
+  if (event.target.closest("button,select,input,label,a")) return;
+  const detail = document.getElementById(`order-detail-${id}`);
+  if (!detail) return;
+  const open = detail.style.display !== "none";
+  const table = detail.closest("table");
+  if (table) {
+    table.querySelectorAll(".order-detail-row").forEach(r => { if (r !== detail) r.style.display = "none"; });
+    table.querySelectorAll("tr.row-expanded").forEach(r => { if (r.id !== `order-row-${id}`) r.classList.remove("row-expanded"); });
+  }
+  detail.style.display = open ? "none" : "";
+  const mainRow = document.getElementById(`order-row-${id}`);
+  if (mainRow) mainRow.classList.toggle("row-expanded", !open);
+}
+
 function toggleCard(event, id) {
-  // No expandir si el click fue en un botón, select o checkbox
   if (event.target.closest("button,select,input,label,a")) return;
   const card = document.getElementById(`order-card-${id}`);
   if (!card || card.classList.contains("delivered")) return;
-  const isExpanded = card.classList.toggle("expanded");
-  // Colapsar otras cards de la misma columna para mantener densidad
-  if (isExpanded) {
-    const col = card.closest(".order-column-body");
-    if (col) col.querySelectorAll(".order-card.expanded").forEach(c => {
-      if (c !== card) c.classList.remove("expanded");
-    });
-  }
+  card.classList.toggle("expanded");
 }
 
 function refreshCheckboxVisibility() {
-  if (!multiPrintMode) return;
-  document.querySelectorAll(".order-checkbox-wrap").forEach(el => el.classList.add("visible"));
-  // Restore checked state
-  selectedOrderIds.forEach(id => {
-    const chk = document.getElementById(`chk-${id}`);
-    const card = document.getElementById(`order-card-${id}`);
-    if (chk) chk.checked = true;
-    if (card) card.classList.add("selected-for-print");
+  document.querySelectorAll(".order-checkbox-wrap").forEach(el => {
+    el.style.display = multiPrintMode ? "inline-flex" : "none";
   });
+  if (multiPrintMode) {
+    selectedOrderIds.forEach(id => {
+      const chk = document.getElementById(`chk-${id}`);
+      const row = document.getElementById(`order-row-${id}`);
+      if (chk) chk.checked = true;
+      if (row) row.classList.add("selected-for-print");
+    });
+  }
 }
 
 function exportCSV() {
@@ -1501,11 +1551,16 @@ function toggleHistory() {
   const btn = document.getElementById("historyToggleBtn");
   const grid = document.getElementById("historyGrid");
   btn.classList.toggle("open");
-  grid.classList.toggle("open");
-  // Renderizar al abrir por primera vez
-  if (grid.classList.contains("open") && !grid.innerHTML.trim()) {
+  const isOpen = grid.classList.toggle("open");
+  grid.style.display = isOpen ? "block" : "none";
+  if (isOpen) {
     const delivered = allOrders.filter(o => o.status === "Entregado");
-    grid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+    if (delivered.length) {
+      const rows = delivered.map(o => orderRowHTML(o, true)).join("");
+      grid.innerHTML = ordersTableHTML(rows, false);
+    } else {
+      grid.innerHTML = `<p style="opacity:.4;font-size:14px;">Sin pedidos entregados todavía.</p>`;
+    }
   }
 }
 
@@ -1938,17 +1993,17 @@ function toggleMultiPrintMode() {
   goBtn.style.display = multiPrintMode ? "" : "none";
   updateMultiPrintCount();
   document.querySelectorAll(".order-checkbox-wrap").forEach(el => {
-    el.classList.toggle("visible", multiPrintMode);
+    el.style.display = multiPrintMode ? "inline-flex" : "none";
   });
   document.querySelectorAll("input[id^='chk-']").forEach(el => { el.checked = false; });
-  document.querySelectorAll(".order-card").forEach(el => el.classList.remove("selected-for-print"));
+  document.querySelectorAll("[id^='order-row-']").forEach(el => el.classList.remove("selected-for-print"));
 }
 
 function toggleOrderSelection(id, checked) {
   if (checked) selectedOrderIds.add(id);
   else selectedOrderIds.delete(id);
-  const card = document.getElementById(`order-card-${id}`);
-  if (card) card.classList.toggle("selected-for-print", checked);
+  const row = document.getElementById(`order-row-${id}`);
+  if (row) row.classList.toggle("selected-for-print", checked);
   updateMultiPrintCount();
 }
 
