@@ -1284,25 +1284,32 @@ function renderComboEleccionAdminSection() {
   if (!container) return;
   const prices = (window._kizunaSettings && window._kizunaSettings.comboEleccionPrices) || {};
   const SIZES = [
-    { key: "p8",  pieces: 8,  label: "Pequeño", ph: "5000"  },
-    { key: "p16", pieces: 16, label: "Mediano",  ph: "9500"  },
-    { key: "p35", pieces: 35, label: "Grande",   ph: "19000" },
+    { key: "p8",  pieces: 8,  label: "Pequeño", ph: "17000" },
+    { key: "p16", pieces: 16, label: "Mediano",  ph: "31000" },
+    { key: "p35", pieces: 35, label: "Grande",   ph: "70000" },
   ];
-  container.innerHTML = SIZES.map(s => {
-    const price = prices[s.key] || "";
-    const hasPrice = price > 0;
-    const badge = hasPrice
-      ? `<div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:10px;">✓ Precio actual: <strong>$${Number(price).toLocaleString("es-AR")}</strong></div>`
-      : `<div style="font-size:11px;color:#c87400;font-weight:600;margin-bottom:10px;">Sin precio — no aparece en la web.</div>`;
-    return `<div class="product-card" style="border:2px dashed rgba(22,32,74,.18);background:rgba(22,32,74,.02);">
-      <div style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:600;margin-bottom:4px;">COMBO ELECCIÓN</div>
-      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:10px;">${s.pieces} pz — ${s.label}</div>
-      ${badge}
-      <div class="label" style="margin-bottom:6px;">Precio fijo</div>
-      <input id="ce-price-${s.key}" type="number" min="0" value="${price}" placeholder="Ej: ${s.ph}">
-      <button class="btn btn-success" style="margin-top:10px;" onclick="saveComboEleccionPrice('${s.key}', ${s.pieces})">Guardar precio</button>
+  container.innerHTML = `
+    <div style="grid-column:1/-1;background:white;border:1.5px solid rgba(22,32,74,.13);border-radius:14px;padding:20px 24px;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:700;">COMBO ELECCIÓN</span>
+        <span style="font-size:12px;color:rgba(22,32,74,.38);">Precios fijos por tamaño</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        ${SIZES.map(s => {
+          const price = prices[s.key] || "";
+          const hasPrice = price > 0;
+          return `<div style="border:1.5px solid ${hasPrice ? "rgba(22,32,74,.15)" : "rgba(200,116,0,.35)"};border-radius:10px;padding:14px;background:${hasPrice ? "rgba(22,32,74,.02)" : "rgba(255,248,240,.7)"};">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:var(--navy);line-height:1;">${s.pieces}<span style="font-size:12px;font-weight:500;margin-left:3px;opacity:.5;">pz</span></div>
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(22,32,74,.4);margin-bottom:10px;">${s.label}</div>
+            ${hasPrice
+              ? `<div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:10px;">✓ $${Number(price).toLocaleString("es-AR")}</div>`
+              : `<div style="font-size:12px;color:#c87400;font-weight:600;margin-bottom:10px;">Sin precio</div>`}
+            <input id="ce-price-${s.key}" type="number" min="0" value="${price}" placeholder="${s.ph}" style="margin-bottom:8px;">
+            <button class="btn btn-success" style="padding:7px 0;font-size:12px;width:100%;" onclick="saveComboEleccionPrice('${s.key}', ${s.pieces})">Guardar</button>
+          </div>`;
+        }).join("")}
+      </div>
     </div>`;
-  }).join("");
 }
 
 async function saveComboEleccionPrice(key, pieces) {
@@ -1394,7 +1401,15 @@ function renderStockInventory(products) {
     const ppu = p.piecesPerUnit || 8;
     const units = Math.floor((p.stock || 0) / ppu);
     const pieces = p.stock || 0;
-    return `<div class="stock-card">
+    const isEmpty = units === 0;
+    const isLow = !isEmpty && units <= 3;
+    const cardStyle = isEmpty ? "border-color:rgba(192,57,43,.5);background:#fff8f7;" : isLow ? "border-color:rgba(216,106,94,.4);background:#fff8f7;" : "";
+    const badge = isEmpty
+      ? `<div class="stock-low-badge">⚠️ Sin stock</div>`
+      : isLow ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} roll${units !== 1 ? "s" : ""}</div>`
+      : "";
+    return `<div class="stock-card" style="${cardStyle}">
+      ${badge}
       <h3>${p.name}</h3>
       <div class="label">Rolls disponibles</div>
       <input id="stock-only-${p._id}" type="number" value="${units}">
@@ -1445,8 +1460,7 @@ function renderProducts(products) {
       ${items.map(p => {
         const units = availableUnits(p, products);
         const recipeStock = usesRecipeStock(p);
-        return `<div class="product-card${units <= 3 ? ' stock-low' : ''}${p.active === false ? ' inactive' : ''}">
-          ${units <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} unidades</div>` : ''}
+        return `<div class="product-card${p.active === false ? ' inactive' : ''}">
           <img src="${p.image||''}" alt="${p.name}" onerror="this.style.display='none'" style="display:none;">
           <div class="label">${categoryLabel(p.category)}</div>
           <div class="product-status-row">
