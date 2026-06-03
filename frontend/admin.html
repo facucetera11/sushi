@@ -458,20 +458,80 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 #toast.success{background:var(--green);}
 #toast.error{background:var(--red);}
 
+/* ── RESUMEN COCINA ── */
+.kitchen-summary{
+  background:var(--navy);color:white;
+  border-radius:var(--radius);padding:20px 24px 20px 28px;
+  margin-bottom:16px;box-shadow:var(--shadow);
+}
+.kitchen-summary-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.kitchen-summary-head h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.kitchen-summary-empty{font-size:13px;opacity:.4;padding:4px 0;}
+.kitchen-items{display:flex;flex-wrap:wrap;gap:8px;}
+.kitchen-item{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px;}
+.kitchen-item-qty{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#ff8a6a;}
+.kitchen-item-name{font-size:13px;font-weight:600;opacity:.88;}
+
+/* ── BTN ENTREGADO RAPIDO ── */
+.btn-deliver{
+  width:100%;padding:10px;margin-top:10px;border:none;border-radius:var(--radius-xs);
+  background:var(--green);color:white;font-family:'DM Sans',sans-serif;
+  font-weight:700;font-size:13px;cursor:pointer;transition:.15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-deliver:hover{background:#228055;transform:translateY(-1px);}
+
+/* ── BANNER ── */
+#newOrderBanner{
+  display:none;position:fixed;top:72px;left:50%;transform:translateX(-50%);
+  background:var(--red);color:white;padding:11px 14px 11px 18px;border-radius:14px;
+  font-weight:700;font-size:14px;z-index:9998;
+  box-shadow:0 8px 32px rgba(216,106,94,.45);
+  animation:bannerIn .4s cubic-bezier(.34,1.4,.64,1);
+  cursor:pointer;align-items:center;gap:12px;white-space:nowrap;
+}
+#newOrderBanner.show{display:flex;}
+.banner-dismiss{
+  background:rgba(255,255,255,.2);border:none;color:white;
+  width:22px;height:22px;border-radius:50%;font-size:13px;font-weight:900;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  line-height:1;
+}
+
+@keyframes metricIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#analytics .metric:nth-child(1){animation:metricIn .4s .05s both;}
+#analytics .metric:nth-child(2){animation:metricIn .4s .1s both;}
+#analytics .metric:nth-child(3){animation:metricIn .4s .15s both;}
+#analytics .metric:nth-child(4){animation:metricIn .4s .2s both;}
+
+@media(max-width:900px){
+  .orders-board{
+    display:flex;overflow-x:auto;gap:12px;
+    padding-bottom:8px;scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+  }
+  .orders-board::-webkit-scrollbar{height:4px;}
+  .orders-board::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .order-column{min-width:285px;scroll-snap-align:start;flex-shrink:0;}
+  .order-column-head{position:static;}
+}
 @media(max-width:768px){
   .topbar{padding:0 16px;}
   .page{padding:16px;}
   #analytics{grid-template-columns:repeat(2,1fr);}
   .settings-row{grid-template-columns:1fr;}
-  .orders-grid,.orders-board,.products-grid,#historyGrid{grid-template-columns:1fr;}
+  .orders-grid,.products-grid,#historyGrid{grid-template-columns:1fr;}
   .discount-box{flex-direction:column;align-items:flex-start;}
   .orders-topbar{gap:8px;}
+  .panel::before{display:none;}
+  .panel-header,.panel-body,.panel-toggle-btn{padding-left:20px;}
+  .kitchen-summary{padding:16px;}
 }
 </style>
 </head>
 <body>
 
-<div id="newOrderBanner" onclick="dismissBanner()">🔔 ¡Nuevo pedido! Tocá para ver</div>
+<div id="newOrderBanner" onclick="dismissBanner()">🔔 <span id="bannerText">¡Nuevo pedido!</span> <span style="font-weight:500;opacity:.8;font-size:13px;">Tocá para ver</span><button class="banner-dismiss" onclick="event.stopPropagation();hideBanner()">×</button></div>
 
 <!-- LOGIN -->
 <div id="loginScreen">
@@ -507,6 +567,17 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
       <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
       <div class="metric warn"><div class="metric-value" id="mLowStock">—</div><div class="metric-label">⚠️ Stock bajo</div></div>
+    </div>
+
+    <!-- RESUMEN COCINA -->
+    <div class="kitchen-summary" id="kitchenSummary">
+      <div class="kitchen-summary-head">
+        <h3>🍳 Resumen de cocina</h3>
+        <span style="font-size:11px;opacity:.4;font-weight:600;">Pedidos activos (sin Entregado)</span>
+      </div>
+      <div class="kitchen-items" id="kitchenItems">
+        <span class="kitchen-summary-empty">Sin pedidos activos</span>
+      </div>
     </div>
 
     <!-- PEDIDOS ACTIVOS -->
@@ -761,6 +832,27 @@ function playNotif() {
     });
   } catch(e) {}
 }
+function playReadySound() {
+  if (!soundEnabled) return;
+  try {
+    initAudio();
+    // Sonido diferente: dos notas descendentes suaves
+    const notes = [1320, 1100];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.frequency.value = freq; osc.type = "sine";
+      const t = audioCtx.currentTime + i * 0.18;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.25, t + 0.04);
+      gain.gain.linearRampToValueAtTime(0, t + 0.22);
+      osc.start(t); osc.stop(t + 0.25);
+    });
+  } catch(e) {}
+}
+
+/* ── RESUMEN COCINA ── */
 function toggleSound() {
   soundEnabled = !soundEnabled;
   localStorage.setItem("kizuna_sound", soundEnabled ? "on" : "off");
@@ -793,13 +885,20 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ── BANNER ── */
-function showNewOrderBanner() {
+let bannerCount = 0;
+function showNewOrderBanner(count = 1) {
+  bannerCount = count;
   const b = document.getElementById("newOrderBanner");
-  b.style.display = "block"; playNotif();
-  setTimeout(() => b.style.display = "none", 6000);
+  const t = document.getElementById("bannerText");
+  if (t) t.textContent = count > 1 ? `¡${count} pedidos nuevos!` : "¡Nuevo pedido!";
+  b.classList.add("show");
+  playNotif();
+}
+function hideBanner() {
+  document.getElementById("newOrderBanner").classList.remove("show");
 }
 function dismissBanner() {
-  document.getElementById("newOrderBanner").style.display = "none";
+  hideBanner();
   document.getElementById("ordersGrid").scrollIntoView({ behavior:"smooth" });
 }
 
@@ -928,6 +1027,7 @@ async function loadImageFile(input, targetInputId, previewId) {
 }
 
 /* ── LOAD ALL ── */
+let prevOrderStatuses = new Map();
 async function loadAll() {
   try {
     const [productsRes, ordersRes, settingsRes] = await Promise.all([
@@ -936,10 +1036,26 @@ async function loadAll() {
     const [products, orders, settings] = await Promise.all([productsRes.json(), ordersRes.json(), settingsRes.json()]);
     allProducts = products;
     window._kizunaSettings = settings;
+
+    // Detectar pedidos nuevos
     const activeCount = orders.filter(o => o.status !== "Entregado").length;
-    if (lastOrderCount !== null && activeCount > lastOrderCount) showNewOrderBanner();
+    if (lastOrderCount !== null && activeCount > lastOrderCount) {
+      showNewOrderBanner(activeCount - lastOrderCount);
+    }
     lastOrderCount = activeCount;
+
+    // Detectar transición a "Listo" para sonar
+    if (prevOrderStatuses.size > 0) {
+      orders.forEach(o => {
+        if (o.status === "Listo" && prevOrderStatuses.get(o._id) !== "Listo") {
+          playReadySound();
+        }
+      });
+    }
+    prevOrderStatuses = new Map(orders.map(o => [o._id, o.status]));
+
     renderMetrics(products, orders);
+    renderKitchenSummary(orders);
     renderStockInventory(products);
     renderOrders(orders);
     renderSettings(settings);
@@ -1024,7 +1140,9 @@ function orderCardHTML(o, isDelivered) {
         <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
         <option ${o.status==="Listo"?"selected":""} value="Listo">🟢 Listo</option>
         <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
-      </select>${noteBlock}` : `<div style="font-size:12px;color:rgba(22,32,74,.3);margin-top:2px;margin-bottom:8px;">✓ Entregado</div>${noteBlock}`}
+      </select>
+      <button class="btn-deliver" onclick="event.stopPropagation();quickDeliver('${o._id}')">✓ Marcar como entregado</button>
+      ${noteBlock}` : `<div style="font-size:12px;color:rgba(22,32,74,.3);margin-top:2px;margin-bottom:8px;">✓ Entregado</div>${noteBlock}`}
       <div class="order-actions" onclick="event.stopPropagation()">
         <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Ticket</button>
         <button class="btn-print" onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
@@ -1073,8 +1191,11 @@ function applyFilters() {
     grid.innerHTML = `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">No hay pedidos activos. 🎉</p>`;
   }
   const histGrid = document.getElementById("historyGrid");
+  const histOpen = histGrid.classList.contains("open");
   document.getElementById("historyCount").textContent = delivered.length ? `(${delivered.length})` : "";
-  histGrid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+  if (histOpen) {
+    histGrid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+  }
   refreshCheckboxVisibility();
 }
 
@@ -1286,7 +1407,13 @@ function printKitchenOrder(id) {
 function toggleHistory() {
   const btn = document.getElementById("historyToggleBtn");
   const grid = document.getElementById("historyGrid");
-  btn.classList.toggle("open"); grid.classList.toggle("open");
+  btn.classList.toggle("open");
+  grid.classList.toggle("open");
+  // Renderizar al abrir por primera vez
+  if (grid.classList.contains("open") && !grid.innerHTML.trim()) {
+    const delivered = allOrders.filter(o => o.status === "Entregado");
+    grid.innerHTML = delivered.length ? delivered.map(o => orderCardHTML(o, true)).join("") : `<p style="opacity:.4;font-size:14px;grid-column:1/-1;">Sin pedidos entregados todavía.</p>`;
+  }
 }
 
 function confirmOrderStatus(id, selectEl) {
@@ -1301,12 +1428,31 @@ function confirmOrderStatus(id, selectEl) {
   updateOrder(id, status);
 }
 
+async function quickDeliver(id) {
+  if (!confirm("¿Marcar como Entregado?")) return;
+  updateOrder(id, "Entregado");
+}
+
 async function updateOrder(id, status) {
   try {
+    // Update optimista: actualizar estado local y re-renderizar sin esperar al server
+    const order = allOrders.find(o => o._id === id);
+    if (order) {
+      order.status = status;
+      applyFilters();
+      renderKitchenSummary(allOrders);
+    }
     const res = await authFetch(`${API}/orders/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status }) });
     if (!res.ok) throw new Error();
-    toast("✓ Pedido actualizado", "success"); startAutoRefresh(); loadAll();
-  } catch { toast("Error al actualizar pedido", "error"); }
+    toast("✓ Estado actualizado", "success");
+    startAutoRefresh();
+    // Refresh silencioso para sincronizar
+    loadAll();
+  } catch {
+    toast("Error al actualizar pedido", "error");
+    // Rollback: recargar desde server
+    loadAll();
+  }
 }
 
 async function deleteOrder(id) {
