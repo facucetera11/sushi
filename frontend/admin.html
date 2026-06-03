@@ -228,78 +228,148 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
   border-radius:14px;
   border:1px solid var(--border);
   background:var(--surface);
-  transition:box-shadow .18s, border-color .18s, transform .15s;
+  transition:box-shadow .2s, border-color .2s;
   cursor:pointer;
   overflow:hidden;
   position:relative;
 }
-.order-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+.order-card:hover{box-shadow:0 4px 16px rgba(22,32,74,.1);border-color:rgba(22,32,74,.15);}
 .order-card.new-order{border-color:var(--red);box-shadow:0 0 0 3px rgba(216,106,94,.1);}
-.order-card.delivered{opacity:.5;cursor:default;}
-.order-card.delivered:hover{opacity:.75;transform:none;}
+.order-card.delivered{opacity:.45;cursor:default;}
+.order-card.delivered:hover{opacity:.7;box-shadow:none;}
 /* Acento lateral por estado */
-.col-pendiente .order-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#e6b40a;border-radius:3px 0 0 3px;}
-.col-preparando .order-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#e07820;border-radius:3px 0 0 3px;}
-.col-listo .order-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green);border-radius:3px 0 0 3px;}
+.col-pendiente .order-card{border-left:3px solid #e6b40a;}
+.col-preparando .order-card{border-left:3px solid #e07820;}
+.col-listo .order-card{border-left:3px solid var(--green);}
 
-/* Cabecera siempre visible */
-.card-head{padding:12px 14px 12px 18px;display:flex;align-items:center;gap:10px;user-select:none;}
-.card-num{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:rgba(22,32,74,.35);letter-spacing:.5px;white-space:nowrap;}
-.card-client{font-size:13px;font-weight:700;color:var(--navy);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.card-total{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy);white-space:nowrap;}
-.card-pills{display:flex;gap:4px;align-items:center;flex-shrink:0;}
-.card-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;line-height:1.7;letter-spacing:.2px;}
-.pill-delivery{background:#e8f0ff;color:#2a5bd7;}
-.pill-retiro{background:var(--green-soft);color:var(--green);}
-.pill-cash{background:#f0faf5;color:#1a8a5a;}
-.pill-transfer{background:rgba(22,32,74,.06);color:rgba(22,32,74,.6);}
-.pill-scheduled{background:var(--red-soft);color:var(--red);}
-.card-chevron{font-size:9px;color:rgba(22,32,74,.25);transition:transform .2s;flex-shrink:0;}
+/* ── CABECERA: siempre visible ── */
+.card-head{
+  padding:13px 14px 13px 16px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  grid-template-rows:auto auto;
+  gap:2px 10px;
+  align-items:center;
+  user-select:none;
+}
+.card-head-num{
+  grid-column:1;grid-row:1;
+  font-family:'Syne',sans-serif;font-size:10px;font-weight:800;
+  color:rgba(22,32,74,.35);letter-spacing:.8px;white-space:nowrap;
+}
+.card-head-client{
+  grid-column:2;grid-row:1;
+  font-size:14px;font-weight:700;color:var(--navy);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card-head-total{
+  grid-column:3;grid-row:1;
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
+  color:var(--navy);white-space:nowrap;text-align:right;
+}
+.card-head-meta{
+  grid-column:1/-1;grid-row:2;
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  margin-top:2px;
+}
+.card-pill{
+  font-size:10px;font-weight:700;padding:2px 7px;
+  border-radius:20px;line-height:1.7;letter-spacing:.2px;white-space:nowrap;
+}
+.pill-delivery{background:#deeaff;color:#2251c5;}
+.pill-retiro{background:#e6f9f0;color:#1a8a5a;}
+.pill-cash{background:#e6f9f0;color:#1a8a5a;}
+.pill-transfer{background:rgba(22,32,74,.07);color:rgba(22,32,74,.55);}
+.pill-scheduled{background:#fff0ee;color:var(--red);}
+.card-head-items-preview{
+  font-size:11px;color:rgba(22,32,74,.4);font-weight:500;
+  flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-width:0;
+}
+.card-chevron{
+  font-size:9px;color:rgba(22,32,74,.2);
+  transition:transform .25s ease;
+  flex-shrink:0;margin-left:auto;
+}
 .order-card.expanded .card-chevron{transform:rotate(180deg);}
 
-/* Detalle expandible */
+/* ── BODY: expansión suave ── */
 .card-body{
-  display:none;
-  border-top:1px solid rgba(22,32,74,.06);
-  animation:bodyIn .18s ease both;
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .3s cubic-bezier(.4,0,.2,1);
+  border-top:0px solid rgba(22,32,74,.07);
 }
-.order-card.expanded .card-body{display:block;}
-@keyframes bodyIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.order-card.expanded .card-body{
+  max-height:600px;
+  border-top-width:1px;
+}
 
-/* Secciones internas del detalle */
-.card-section{padding:10px 14px 10px 18px;}
-.card-section + .card-section{border-top:1px solid rgba(22,32,74,.05);}
+/* Items */
+.card-items{padding:12px 14px 10px 16px;display:flex;flex-direction:column;gap:5px;}
+.card-item-row{display:flex;align-items:baseline;gap:8px;}
+.card-item-qty{
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
+  color:white;background:rgba(22,32,74,.25);border-radius:5px;
+  padding:0 5px;line-height:1.8;flex-shrink:0;min-width:22px;text-align:center;
+}
+.card-item-name{font-size:13px;font-weight:600;color:var(--navy);}
+.card-item-note{font-size:11px;color:rgba(22,32,74,.38);padding-left:30px;margin-top:-2px;}
 
-/* Items del pedido */
-.card-items{display:flex;flex-direction:column;gap:3px;}
-.card-item-row{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--navy);}
-.card-item-qty{font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:rgba(22,32,74,.4);min-width:20px;text-align:right;}
-.card-item-name{font-weight:600;flex:1;}
-.card-item-note{font-size:11px;color:rgba(22,32,74,.4);padding-left:28px;margin-top:1px;}
+/* Info row */
+.card-info{
+  padding:8px 14px 10px 16px;
+  display:flex;flex-wrap:wrap;gap:6px;
+  border-top:1px solid rgba(22,32,74,.06);
+}
+.card-chip{
+  display:flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;
+  padding:3px 10px;border-radius:8px;
+  background:rgba(22,32,74,.05);color:rgba(22,32,74,.6);
+}
+.card-chip.blue{background:#deeaff;color:#2251c5;}
+.card-chip.green{background:#e6f9f0;color:#1a8a5a;}
+.card-chip.red{background:#fff0ee;color:var(--red);}
 
-/* Tags de info */
-.card-info-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
-.card-info-tag{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:rgba(22,32,74,.55);background:rgba(22,32,74,.04);border-radius:8px;padding:3px 9px;}
-.card-info-tag.highlight{background:#e8f0ff;color:#2a5bd7;}
-.card-info-tag.warn{background:var(--red-soft);color:var(--red);}
-.card-info-tag.success{background:var(--green-soft);color:var(--green);}
-
-/* Nota del cliente */
-.card-note{font-size:12px;font-style:italic;color:rgba(22,32,74,.5);background:rgba(22,32,74,.03);border-radius:8px;padding:7px 10px;}
+/* Nota */
+.card-note-block{
+  margin:0 14px 0 16px;padding:8px 11px;
+  background:rgba(255,236,0,.08);border:1px solid rgba(200,160,0,.15);
+  border-radius:9px;font-size:12px;color:rgba(22,32,74,.65);
+  font-style:italic;
+}
 
 /* Hora */
-.card-time{font-size:11px;color:rgba(22,32,74,.3);font-weight:500;}
+.card-time-row{
+  padding:6px 14px 8px 16px;
+  font-size:11px;color:rgba(22,32,74,.3);font-weight:500;
+  border-top:1px solid rgba(22,32,74,.05);
+}
 
 /* Acciones */
-.card-actions{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 12px 18px;border-top:1px solid rgba(22,32,74,.05);}
-.card-actions select{flex:1;min-width:130px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:white;color:var(--navy);font-weight:600;cursor:pointer;}
-.card-action-btn{font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;transition:background .15s,opacity .15s;display:flex;align-items:center;gap:5px;}
-.btn-deliver-quick{background:var(--green);color:white;}
-.btn-deliver-quick:hover{background:#228a5c;}
-.btn-print-ticket{background:rgba(22,32,74,.07);color:var(--navy);}
-.btn-print-ticket:hover{background:rgba(22,32,74,.12);}
-.btn-delete-card{background:var(--red-soft);color:var(--red);}
-.btn-delete-card:hover{background:rgba(216,106,94,.2);}
+.card-actions{
+  display:flex;flex-wrap:wrap;gap:6px;
+  padding:10px 14px 12px 16px;
+  border-top:1px solid rgba(22,32,74,.06);
+  background:rgba(22,32,74,.015);
+}
+.card-actions select{
+  flex:1;min-width:120px;font-size:12px;font-weight:600;
+  padding:7px 10px;border-radius:9px;
+  border:1px solid rgba(22,32,74,.12);background:white;color:var(--navy);cursor:pointer;
+}
+.card-btn{
+  font-size:11px;font-weight:700;padding:7px 13px;
+  border-radius:9px;border:none;cursor:pointer;
+  transition:background .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;
+}
+.card-btn-green{background:var(--green);color:white;}
+.card-btn-green:hover{background:#1e7a4e;}
+.card-btn-gray{background:rgba(22,32,74,.08);color:var(--navy);}
+.card-btn-gray:hover{background:rgba(22,32,74,.14);}
+.card-btn-red{background:#fff0ee;color:var(--red);}
+.card-btn-red:hover{background:#fdddd9;}
 
 .order-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
 .order-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;line-height:1.5;}
@@ -1104,40 +1174,38 @@ function orderDeductionsHTML(o) {
 function orderCardHTML(o, isDelivered) {
   const time   = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
   const day    = new Date(o.createdAt).toLocaleDateString("es-AR", { day:"2-digit", month:"short" });
-  const isDelivery = o.deliveryType === "delivery";
-  const isCash     = o.paymentMethod === "cash";
+  const isDelivery  = o.deliveryType === "delivery";
+  const isCash      = o.paymentMethod === "cash";
   const isScheduled = o.scheduledDate || o.scheduledTime;
-  const clientDisplay = o.clientName || ("Pedido #" + o.number);
+  const clientName  = o.clientName || ("Pedido #" + o.number);
 
-  // Pills cabecera
-  const deliveryPill = isDelivery
-    ? `<span class="card-pill pill-delivery">Delivery</span>`
-    : `<span class="card-pill pill-retiro">Retiro</span>`;
-  const pagoPill = isCash
-    ? `<span class="card-pill pill-cash">Efectivo</span>`
-    : `<span class="card-pill pill-transfer">Transfer</span>`;
-  const schedPill = isScheduled
-    ? `<span class="card-pill pill-scheduled">Programado</span>` : "";
+  // Pills siempre visibles en la cabecera
+  const pills = [
+    isDelivery ? `<span class="card-pill pill-delivery">🛵 Delivery</span>` : `<span class="card-pill pill-retiro">🏃 Retiro</span>`,
+    isCash     ? `<span class="card-pill pill-cash">💵 Efectivo</span>`    : `<span class="card-pill pill-transfer">🏦 Transfer</span>`,
+    isScheduled ? `<span class="card-pill pill-scheduled">📅 Programado</span>` : "",
+  ].filter(Boolean).join("");
 
-  // Items
+  // Preview de items en cabecera (colapsado)
+  const itemsPreview = o.items.map(i => `${i.qty}× ${i.name}`).join(" · ");
+
+  // Items expandidos
   const itemsHTML = o.items.map(i => {
     const note = i.note ? `<div class="card-item-note">↳ ${escapeHtml(i.note)}</div>` : "";
-    return `<div><div class="card-item-row"><span class="card-item-qty">×${i.qty}</span><span class="card-item-name">${escapeHtml(i.name)}</span></div>${note}</div>`;
+    return `<div class="card-item-row"><span class="card-item-qty">${i.qty}</span><span class="card-item-name">${escapeHtml(i.name)}</span></div>${note}`;
   }).join("");
 
-  // Info tags (detalle)
-  const infoTags = [
-    isDelivery ? `<span class="card-info-tag highlight">🛵 Delivery</span>` : `<span class="card-info-tag success">🏃 Retiro</span>`,
-    isCash ? `<span class="card-info-tag success">💵 Efectivo</span>` : `<span class="card-info-tag">🏦 Transferencia</span>`,
-    o.clientPhone ? `<span class="card-info-tag">📞 ${escapeHtml(o.clientPhone)}</span>` : "",
-    isScheduled ? `<span class="card-info-tag warn">📅 ${o.scheduledDate || ""} ${o.scheduledTime || ""}</span>` : "",
-    isDelivery && o.address ? `<span class="card-info-tag">📍 ${escapeHtml(o.address)}</span>` : "",
+  // Chips de info
+  const chips = [
+    o.clientPhone ? `<span class="card-chip">📞 ${escapeHtml(o.clientPhone)}</span>` : "",
+    isDelivery && o.address ? `<span class="card-chip blue">📍 ${escapeHtml(o.address)}</span>` : "",
+    isScheduled ? `<span class="card-chip red">📅 ${(o.scheduledDate||"") + " " + (o.scheduledTime||"")}</span>` : "",
   ].filter(Boolean).join("");
 
   const noteHTML = o.notes
-    ? `<div class="card-section"><div class="card-note">💬 ${escapeHtml(o.notes)}</div></div>` : "";
+    ? `<div class="card-note-block">💬 ${escapeHtml(o.notes)}</div><div style="height:8px;"></div>` : "";
 
-  const statusSection = !isDelivered ? `
+  const actions = !isDelivered ? `
     <div class="card-actions" onclick="event.stopPropagation()">
       <select onclick="event.stopPropagation()" onchange="confirmOrderStatus('${o._id}', this)">
         <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
@@ -1145,30 +1213,34 @@ function orderCardHTML(o, isDelivered) {
         <option ${o.status==="Listo"?"selected":""} value="Listo">🟢 Listo</option>
         <option ${o.status==="Entregado"?"selected":""} value="Entregado">✅ Entregado</option>
       </select>
-      <button class="card-action-btn btn-deliver-quick" onclick="event.stopPropagation();quickDeliver('${o._id}')">✓ Entregado</button>
-      <button class="card-action-btn btn-print-ticket" onclick="printOrder('${o._id}')">🖨 Ticket</button>
-      <button class="card-action-btn btn-print-ticket" onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
+      <button class="card-btn card-btn-green" onclick="event.stopPropagation();quickDeliver('${o._id}')">✓ Entregar</button>
+      <button class="card-btn card-btn-gray" onclick="printOrder('${o._id}')">🖨 Ticket</button>
+      <button class="card-btn card-btn-gray" onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
     </div>` : `
     <div class="card-actions" onclick="event.stopPropagation()">
-      <button class="card-action-btn btn-print-ticket" onclick="printOrder('${o._id}')">🖨 Ticket</button>
-      <button class="card-action-btn btn-delete-card" onclick="deleteOrder('${o._id}')">🗑 Eliminar</button>
+      <span style="font-size:11px;color:rgba(22,32,74,.3);font-weight:600;flex:1;">✓ Entregado · ${day} ${time}</span>
+      <button class="card-btn card-btn-gray" onclick="printOrder('${o._id}')">🖨 Ticket</button>
+      <button class="card-btn card-btn-red" onclick="deleteOrder('${o._id}')">🗑 Eliminar</button>
     </div>`;
 
   return `<div class="${isDelivered ? "order-card delivered" : "order-card"}" id="order-card-${o._id}" onclick="toggleCard(event,'${o._id}')">
     <div class="order-checkbox-wrap" id="chk-wrap-${o._id}"><input type="checkbox" id="chk-${o._id}" onclick="event.stopPropagation()" onchange="toggleOrderSelection('${o._id}', this.checked)"><label for="chk-${o._id}" onclick="event.stopPropagation()">Imprimir</label></div>
     <div class="card-head">
-      <span class="card-num">#${o.number}</span>
-      <span class="card-client">${escapeHtml(clientDisplay)}</span>
-      <div class="card-pills">${deliveryPill}${pagoPill}${schedPill}</div>
-      <span class="card-total">$${o.total.toLocaleString("es-AR")}</span>
-      <span class="card-chevron">▼</span>
+      <span class="card-head-num">#${o.number}</span>
+      <span class="card-head-client">${escapeHtml(clientName)}</span>
+      <span class="card-head-total">$${o.total.toLocaleString("es-AR")}</span>
+      <div class="card-head-meta">
+        ${pills}
+        <span class="card-head-items-preview">${escapeHtml(itemsPreview)}</span>
+        <span class="card-chevron">▼</span>
+      </div>
     </div>
     <div class="card-body">
-      <div class="card-section"><div class="card-items">${itemsHTML}</div></div>
-      <div class="card-section"><div class="card-info-row">${infoTags}</div></div>
+      <div class="card-items">${itemsHTML}</div>
+      ${chips ? `<div class="card-info">${chips}</div>` : ""}
       ${noteHTML}
-      <div class="card-section" style="padding-top:6px;padding-bottom:6px;"><span class="card-time">🕐 ${day} · ${time}</span></div>
-      ${statusSection}
+      <div class="card-time-row">🕐 ${day} · ${time}</div>
+      ${actions}
     </div>
   </div>`;
 }
