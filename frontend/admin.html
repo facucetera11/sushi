@@ -10,37 +10,58 @@
 :root {
   --red: #d86a5e;
   --red-soft: rgba(216,106,94,.12);
+  --red-mid: rgba(216,106,94,.22);
   --navy: #16204a;
   --navy-soft: rgba(22,32,74,.06);
   --navy-mid: rgba(22,32,74,.12);
   --cream: #ffffff;
   --green: #2a9968;
   --green-soft: rgba(42,153,104,.1);
-  --bg: #f0f1f5;
+  --bg: #f2f0ee;
   --surface: #ffffff;
   --border: rgba(22,32,74,.07);
-  --shadow-sm: 0 2px 8px rgba(22,32,74,.06);
-  --shadow: 0 8px 28px rgba(22,32,74,.08);
-  --shadow-lg: 0 20px 60px rgba(22,32,74,.12);
+  --shadow-sm: 0 2px 12px rgba(22,32,74,.07);
+  --shadow: 0 8px 32px rgba(22,32,74,.10);
+  --shadow-lg: 0 20px 60px rgba(22,32,74,.14);
   --radius: 20px;
   --radius-sm: 12px;
   --radius-xs: 8px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 100% 0%, rgba(216,106,94,.07) 0%, transparent 60%),radial-gradient(ellipse 60% 40% at 0% 100%, rgba(22,32,74,.04) 0%, transparent 60%);pointer-events:none;z-index:0;}
+.page{position:relative;z-index:1;}
 
 /* ── LOGIN ── */
-#loginScreen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:20px;
-  background-image: radial-gradient(ellipse at 20% 50%, rgba(216,106,94,.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,255,255,.03) 0%, transparent 50%);
+#loginScreen{
+  position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:24px;
+  background-image:
+    radial-gradient(ellipse at 15% 55%, rgba(216,106,94,.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(255,255,255,.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 85%, rgba(22,32,74,.6) 0%, transparent 60%);
 }
-#loginScreen h1{font-family:'Syne',sans-serif;color:white;font-size:44px;letter-spacing:-1px;}
-#loginScreen p{color:rgba(255,255,255,.4);font-size:14px;letter-spacing:.3px;}
-#loginBox{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);border-radius:28px;padding:36px;width:340px;display:flex;flex-direction:column;gap:14px;}
+#loginScreen::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;
+}
+.login-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:0px;animation:loginFadeDown .6s cubic-bezier(.34,1.4,.64,1) both;}
+.login-logo-wrap img{width:180px;filter:brightness(0) invert(1);opacity:.95;}
+.login-subtitle{color:rgba(255,255,255,.35);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-top:4px;}
+#loginBox{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-radius:28px;padding:36px;width:340px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:0 32px 80px rgba(0,0,0,.3);
+  animation:loginFadeUp .6s .1s cubic-bezier(.34,1.4,.64,1) both;
+}
+@keyframes loginFadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+@keyframes loginFadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 #pwInput{padding:16px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:white;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;transition:.2s;}
 #pwInput::placeholder{color:rgba(255,255,255,.28);}
-#pwInput:focus{background:rgba(255,255,255,.12);border-color:rgba(216,106,94,.6);}
-#loginBtn{padding:16px;border-radius:14px;border:none;background:var(--red);color:white;font-weight:700;font-size:15px;cursor:pointer;transition:.2s;letter-spacing:.2px;}
-#loginBtn:hover{background:#c45a4f;transform:translateY(-1px);}
+#pwInput:focus{background:rgba(255,255,255,.12);border-color:rgba(216,106,94,.6);box-shadow:0 0 0 4px rgba(216,106,94,.12);}
+#loginBtn{padding:16px;border-radius:14px;border:none;background:var(--red);color:white;font-weight:700;font-size:15px;cursor:pointer;transition:.2s;letter-spacing:.2px;box-shadow:0 4px 20px rgba(216,106,94,.35);}
+#loginBtn:hover{background:#c45a4f;transform:translateY(-1px);box-shadow:0 6px 24px rgba(216,106,94,.45);}
 #loginError{color:rgba(255,150,130,.9);font-size:13px;text-align:center;min-height:18px;}
 
 /* ── MAIN LAYOUT ── */
@@ -50,18 +71,20 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 .topbar{
   background:var(--navy);
   padding:0 32px;
-  height:60px;
+  height:62px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   position:sticky;
   top:0;
   z-index:100;
-  box-shadow:0 1px 0 rgba(255,255,255,.05);
+  box-shadow:0 1px 0 rgba(255,255,255,.06), 0 4px 20px rgba(22,32,74,.18);
 }
-.topbar-left{display:flex;align-items:center;gap:12px;}
-.topbar-logo{font-family:'Syne',sans-serif;color:white;font-size:22px;letter-spacing:-.5px;}
-.topbar-logo span{color:var(--red);}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--red) 0%,transparent 40%);}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.topbar-logo{display:flex;align-items:center;gap:10px;}
+.topbar-logo img{height:32px;filter:brightness(0) invert(1);opacity:.92;}
+.topbar-divider{width:1px;height:20px;background:rgba(255,255,255,.12);margin:0 2px;}
 .topbar-right{display:flex;align-items:center;gap:10px;}
 
 .topbar-btn{
@@ -97,22 +120,34 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 }
 .metric{
   background:var(--surface);
-  padding:20px 20px 18px;
+  padding:22px 22px 20px;
   border-radius:var(--radius);
   box-shadow:var(--shadow-sm);
   border:1px solid var(--border);
   position:relative;
   overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  transition:box-shadow .2s, transform .2s;
 }
-.metric::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--red);opacity:.35;
-  border-radius:3px 3px 0 0;
+.metric:hover{box-shadow:var(--shadow);transform:translateY(-2px);}
+.metric::after{
+  content:'';position:absolute;bottom:-30px;right:-20px;
+  width:90px;height:90px;border-radius:50%;
+  background:var(--red);opacity:.045;
 }
-.metric-value{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--navy);line-height:1;margin-bottom:6px;}
-.metric-label{font-size:11px;font-weight:700;color:rgba(22,32,74,.45);letter-spacing:.6px;text-transform:uppercase;}
+.metric-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--red-soft);display:flex;align-items:center;justify-content:center;
+  margin-bottom:14px;flex-shrink:0;
+}
+.metric-icon svg{width:18px;height:18px;stroke:var(--red);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.metric-value{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--navy);line-height:1;margin-bottom:5px;}
+.metric-label{font-size:11px;font-weight:700;color:rgba(22,32,74,.42);letter-spacing:.6px;text-transform:uppercase;}
+.metric.warn .metric-icon{background:rgba(216,106,94,.1);}
 .metric.warn .metric-value{color:var(--red);}
-.metric.warn::before{background:var(--red);opacity:.7;}
+.metric.warn::after{opacity:.06;}
 
 /* ── PANEL ── */
 .panel{
@@ -123,20 +158,26 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
   border:1px solid var(--border);
   margin-bottom:16px;
   overflow:hidden;
+  position:relative;
+}
+.panel::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:100%;
+  background:linear-gradient(180deg, var(--red) 0%, rgba(216,106,94,.1) 100%);
+  border-radius:3px 0 0 3px;
 }
 .panel-header{
-  padding:20px 24px;
+  padding:20px 24px 20px 28px;
   display:flex;align-items:center;justify-content:space-between;
   border-bottom:1px solid var(--border);
 }
 .panel-header h2{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:9px;}
-.panel-body{padding:24px;}
+.panel-body{padding:24px 24px 24px 28px;}
 
 /* Collapsible panel */
 .panel-toggle-btn{
   display:flex;align-items:center;gap:8px;
   background:transparent;border:none;cursor:pointer;
-  padding:20px 24px;width:100%;text-align:left;
+  padding:20px 24px 20px 28px;width:100%;text-align:left;
   transition:.15s;
 }
 .panel-toggle-btn:hover{background:rgba(22,32,74,.02);}
@@ -395,6 +436,13 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 #toast.success{background:var(--green);}
 #toast.error{background:var(--red);}
 
+/* ── ANIMATIONS ── */
+@keyframes metricIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#analytics .metric:nth-child(1){animation:metricIn .4s .05s both;}
+#analytics .metric:nth-child(2){animation:metricIn .4s .1s both;}
+#analytics .metric:nth-child(3){animation:metricIn .4s .15s both;}
+#analytics .metric:nth-child(4){animation:metricIn .4s .2s both;}
+
 @media(max-width:768px){
   .topbar{padding:0 16px;}
   .page{padding:16px;}
@@ -403,6 +451,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   .orders-grid,.orders-board,.products-grid,#historyGrid{grid-template-columns:1fr;}
   .discount-box{flex-direction:column;align-items:flex-start;}
   .orders-topbar{gap:8px;}
+  .panel::before{display:none;}
+  .panel-header,.panel-body,.panel-toggle-btn{padding-left:20px;}
 }
 </style>
 </head>
@@ -412,8 +462,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
 <!-- LOGIN -->
 <div id="loginScreen">
-  <h1>🍣 Kizuna <span style="color:var(--red)">Admin</span></h1>
-  <p>Panel de administración</p>
+  <div class="login-logo-wrap">
+    <img src="logo.png" alt="Kizuna Sushi">
+    <span class="login-subtitle">Panel de administración</span>
+  </div>
   <div id="loginBox">
     <input type="password" id="pwInput" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
     <button id="loginBtn" onclick="login()">Ingresar</button>
@@ -426,7 +478,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
-      <span class="topbar-logo">🍣 Kizuna</span>
+      <div class="topbar-logo">
+        <img src="logo.png" alt="Kizuna Sushi">
+      </div>
+      <div class="topbar-divider"></div>
     </div>
     <div class="topbar-right">
       <button class="store-pill" id="storeToggleBtn" onclick="toggleStoreStatus()">…</button>
@@ -440,10 +495,34 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
     <!-- MÉTRICAS -->
     <div id="analytics">
-      <div class="metric"><div class="metric-value" id="mProducts">—</div><div class="metric-label">Productos</div></div>
-      <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
-      <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
-      <div class="metric warn"><div class="metric-value" id="mLowStock">—</div><div class="metric-label">⚠️ Stock bajo</div></div>
+      <div class="metric">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </div>
+        <div class="metric-value" id="mProducts">—</div>
+        <div class="metric-label">Productos activos</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <div class="metric-value" id="mOrders">—</div>
+        <div class="metric-label">Pedidos hoy</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="metric-value" id="mRevenue">—</div>
+        <div class="metric-label">Ventas hoy</div>
+      </div>
+      <div class="metric warn">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="metric-value" id="mLowStock">—</div>
+        <div class="metric-label">Stock bajo</div>
+      </div>
     </div>
 
     <!-- PEDIDOS ACTIVOS -->
