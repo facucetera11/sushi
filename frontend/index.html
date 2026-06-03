@@ -1382,7 +1382,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
       <button class="combo-modal-close" onclick="closeComboModal()">×</button>
     </div>
     <div class="combo-modal-body">
-      <p class="combo-modal-desc">Elegí cuántas piezas querés y sumá de cada roll lo que más te guste. El precio se ajusta al promedio de lo que armes.</p>
+      <p class="combo-modal-desc">Elegí cuántas piezas querés y sumá de cada roll lo que más te guste.</p>
 
       <div class="combo-size-label">¿Cuántas piezas?</div>
       <div class="combo-size-row" id="comboSizeRow"></div>
@@ -2436,14 +2436,11 @@ function renderComboGrid() {
     // No se puede tocar si no está seleccionado y no hay lugar para 1 pieza
     const disabled  = !isSelected && (!comboSelectedSize || remaining === 0);
 
-    const stockLabel = maxForThis <= 5
-      ? `<span class="combo-item-stock-warn">⚠ ${maxForThis} pz disponibles</span>`
-      : `<span class="combo-item-price-pp">${maxForThis} pz en stock</span>`;
+    const stockLabel = "";
 
     return `
       <div class="combo-item-btn ${isSelected ? "selected" : ""} ${disabled ? "combo-disabled" : ""}"
-           id="combo-btn-${escapeAttr(p._id)}"
-           onclick="${!isSelected ? `adjustComboPieces('${escapeAttr(p._id)}', 1)` : ''}">
+           id="combo-btn-${escapeAttr(p._id)}">
         <span class="combo-item-check">✓</span>
         <img class="combo-item-img" src="${img}" alt="${escapeAttr(p.name)}" loading="lazy"
           onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
