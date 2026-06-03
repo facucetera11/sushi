@@ -24,6 +24,14 @@ app.use((req, res, next) => {
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
 const authAttempts = new Map();
 const orderAttempts = new Map();
+const sseClients = new Set();
+
+function broadcast(type, data) {
+  const msg = `data: ${JSON.stringify({ type, data })}\n\n`;
+  for (const client of sseClients) {
+    try { client.write(msg); } catch { sseClients.delete(client); }
+  }
+}
 
 function rateLimit(store, limit, windowMs) {
   return (req, res, next) => {
@@ -50,6 +58,9 @@ function base64url(value) {
 function signTokenPayload(payload) {
   const secret = process.env.ADMIN_TOKEN_SECRET || process.env.ADMIN_PASSWORD;
   if (!secret) throw new Error("ADMIN_TOKEN_SECRET o ADMIN_PASSWORD no configurado");
+  if (!process.env.ADMIN_TOKEN_SECRET) {
+    console.warn("⚠️  ADMIN_TOKEN_SECRET no está configurado. Se usa ADMIN_PASSWORD como fallback. Configurar ADMIN_TOKEN_SECRET por separado es más seguro.");
+  }
   return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
@@ -95,7 +106,8 @@ async function isAdminPassword(password) {
 async function requireAdmin(req, res, next) {
   try {
     const header = req.get("authorization") || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+    const queryToken = req.query.token || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : queryToken;
     const [payload, signature] = token.split(".");
     if (!payload || !signature || signature !== signTokenPayload(payload)) {
       return res.status(401).json({ error: "Sesion invalida" });
@@ -147,6 +159,24 @@ app.get("/health", (req, res) => {
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
   });
+});
+
+/* ── SSE ── */
+app.get("/events", requireAdmin, (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+  sseClients.add(res);
+
+  const heartbeat = setInterval(() => {
+    try { res.write(": heartbeat\n\n"); } catch { clearInterval(heartbeat); sseClients.delete(res); }
+  }, 25000);
+
+  req.on("close", () => { clearInterval(heartbeat); sseClients.delete(res); });
 });
 
 /* ── AUTH ── */
@@ -259,6 +289,7 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
 
     // Calcular piezas a descontar por producto, validando existencia y estado.
     const stockDeductions = new Map();
+    const productPriceMap = new Map(); // para recalcular total
     for (const item of items) {
       const product = await Product.findById(item._id);
       if (!product) return res.status(400).json({ error: `Producto no encontrado: ${item.name}` });
@@ -267,12 +298,34 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
       const qty = Number(item.qty) || 0;
       if (qty <= 0) return res.status(400).json({ error: `Cantidad invalida para: ${item.name}` });
 
+      // Guardar precio real del producto (solo items sin _piecesOverride tienen precio propio)
+      if (!(item._piecesOverride > 0)) {
+        productPriceMap.set(item._id?.toString(), { price: product.price, qty });
+      }
+
       for (const recipeItem of getStockRecipe(product, item)) {
         const id = recipeItem.product.toString();
         const pieces = (Number(recipeItem.pieces) || 0) * qty;
         stockDeductions.set(id, (stockDeductions.get(id) || 0) + pieces);
       }
     }
+
+    // Recalcular total server-side para no confiar en el cliente
+    let calculatedBase = 0;
+    for (const { price, qty } of productPriceMap.values()) {
+      calculatedBase += price * qty;
+    }
+    // Sumar combos elección (líneas con precio fijo enviadas por separado)
+    const comboLines = Array.isArray(req.body.comboLines) ? req.body.comboLines : [];
+    for (const line of comboLines) {
+      const qty = Number(line.qty) || 0;
+      const price = Number(line.price) || 0;
+      calculatedBase += price * qty;
+    }
+    const discount = (paymentMethod === "cash" && settings.cashDiscount > 0)
+      ? Math.round(calculatedBase * settings.cashDiscount / 100)
+      : 0;
+    const calculatedTotal = calculatedBase - discount;
 
     // Pre-cargar nombres para los detalles del pedido.
     const stockProducts = await Product.find({ _id: { $in: [...stockDeductions.keys()] } });
@@ -311,7 +364,7 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
     const order = new Order({
       number: orderNumber,
       items,
-      total,
+      total: calculatedTotal,
       deliveryType: deliveryType || "retiro",
       address: address || "",
       clientName: clientName || "",
@@ -323,7 +376,7 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
       stockDeductions: stockDeductionDetails
     });
     await order.save();
-
+    broadcast("order_new", order);
     res.json(order);
   } catch (err) {
     // Rollback de stock si el guardado del pedido falló después de descontar.
@@ -340,6 +393,7 @@ app.put("/orders/:id", requireAdmin, async (req, res) => {
   try {
     const o = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!o) return res.status(404).json({ error: "Pedido no encontrado" });
+    broadcast("order_updated", o);
     res.json(o);
   } catch (err) { res.status(400).json({ error: "Error al actualizar pedido", detalle: err.message }); }
 });
@@ -354,6 +408,7 @@ app.delete("/orders/:id", requireAdmin, async (req, res) => {
         Product.findByIdAndUpdate(d.product, { $inc: { stock: d.pieces } })
       ));
     }
+    broadcast("order_deleted", { _id: o._id });
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: "Error al eliminar pedido" }); }
 });

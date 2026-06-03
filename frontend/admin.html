@@ -440,7 +440,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
     <div class="topbar-right">
       <button class="store-pill" id="storeToggleBtn" onclick="toggleStoreStatus()">…</button>
       <button class="topbar-btn" id="soundBtn" onclick="toggleSound()">🔔 Sonido</button>
-      <span class="refresh-badge" id="refreshBadge">↻ 30s</span>
+      <span class="refresh-badge" id="refreshBadge" style="transition:color .4s;">↻</span>
       <button id="logoutBtn" onclick="logout()">Salir</button>
     </div>
   </div>
@@ -640,6 +640,7 @@ let allProducts = [];
 let lastOrderCount = null;
 let soundEnabled = localStorage.getItem("kizuna_sound") !== "off";
 let audioCtx = null;
+let sseConnection = null;
 const ORDER_STATUSES = ["Pendiente", "Preparando", "Listo", "Entregado"];
 const BASE_CATEGORIES = ["rolls","combos","veggie","bandejas","panchos","extras"];
 const CATEGORY_LABELS = { rolls:"🍣 Rolls", combos:"🎁 Combos", veggie:"🥗 Veggie Rolls", bandejas:"🍱 Bandejas", panchos:"🌭 Panchos", extras:"➕ Extras" };
@@ -778,7 +779,8 @@ async function login() {
 }
 
 function logout() {
-  sessionStorage.removeItem(SESSION_KEY); clearInterval(refreshTimer); clearInterval(countdownTimer);
+  sessionStorage.removeItem(SESSION_KEY); clearInterval(refreshTimer);
+  if (sseConnection) { sseConnection.close(); sseConnection = null; }
   document.title = "Admin — Kizuna Sushi";
   document.getElementById("loginScreen").style.display = "flex";
   document.getElementById("adminMain").style.display = "none";
@@ -786,16 +788,47 @@ function logout() {
   lastOrderCount = null;
 }
 
-let refreshCountdown = 30, countdownTimer = null;
 function startAutoRefresh() {
-  clearInterval(refreshTimer); clearInterval(countdownTimer);
-  refreshCountdown = 30; updateRefreshBadge();
-  countdownTimer = setInterval(() => { refreshCountdown--; updateRefreshBadge(); if (refreshCountdown <= 0) refreshCountdown = 30; }, 1000);
-  refreshTimer = setInterval(() => { refreshCountdown = 30; loadAll(); }, 30000);
+  clearInterval(refreshTimer);
+  // Fallback polling cada 60s por si SSE falla
+  refreshTimer = setInterval(() => loadAll(), 60000);
+  startSSE();
 }
-function updateRefreshBadge() {
+
+function startSSE() {
+  if (sseConnection) { sseConnection.close(); sseConnection = null; }
+  const token = sessionStorage.getItem(SESSION_KEY);
+  if (!token) return;
+
+  const es = new EventSource(`${API}/events?token=${encodeURIComponent(token)}`);
+  sseConnection = es;
+
+  es.onopen = () => updateRefreshBadge(true);
+  es.onerror = () => {
+    updateRefreshBadge(false);
+    es.close();
+    sseConnection = null;
+    // Reintentar en 10s
+    setTimeout(() => { if (sessionStorage.getItem(SESSION_KEY)) startSSE(); }, 10000);
+  };
+  es.onmessage = (e) => {
+    try {
+      const { type } = JSON.parse(e.data);
+      if (type === "connected") return;
+      // Cualquier evento de pedido recarga todo para mantener consistencia
+      if (type === "order_new" || type === "order_updated" || type === "order_deleted") {
+        loadAll();
+      }
+    } catch {}
+  };
+}
+
+function updateRefreshBadge(live) {
   const el = document.getElementById("refreshBadge");
-  if (el) el.textContent = `↻ ${refreshCountdown}s`;
+  if (!el) return;
+  if (live === true)  { el.textContent = "● En vivo"; el.style.color = "#3ecf8e"; }
+  else if (live === false) { el.textContent = "○ Reconectando…"; el.style.color = "rgba(255,255,255,.3)"; }
+  else { el.textContent = "↻"; el.style.color = "rgba(255,255,255,.3)"; }
 }
 
 /* ── TOAST ── */

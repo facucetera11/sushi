@@ -2219,8 +2219,11 @@ async function sendWhatsApp() {
   const saving = paymentMethod === "cash" ? Math.round(base * discount / 100) : 0;
   const total = base - saving;
   const snapshot = buildOrderSnapshot();
+  const comboLines = cart
+    .filter(i => i.isComboEleccion)
+    .map(i => ({ name: i.name, price: i.price, qty: i.qty }));
   const orderPayload = {
-    items: snapshot, total,
+    items: snapshot, total, comboLines,
     deliveryType, address: deliveryType === "delivery" ? address : "",
     clientName, clientPhone, notes, scheduledDate: dateText, scheduledTime: timeText,
     paymentMethod
