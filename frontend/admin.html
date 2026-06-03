@@ -223,51 +223,83 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 .order-column-body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:120px;}
 .order-column-empty{padding:20px 10px;text-align:center;font-size:12px;color:rgba(22,32,74,.3);font-weight:500;}
 
-/* ── CARD COMPACTA ── */
+/* ── ORDER CARD ── */
 .order-card{
-  border-radius:12px;
+  border-radius:14px;
   border:1px solid var(--border);
   background:var(--surface);
-  transition:box-shadow .18s, border-color .18s;
+  transition:box-shadow .18s, border-color .18s, transform .15s;
   cursor:pointer;
   overflow:hidden;
+  position:relative;
 }
-.order-card:hover{box-shadow:var(--shadow);border-color:rgba(22,32,74,.14);}
+.order-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
 .order-card.new-order{border-color:var(--red);box-shadow:0 0 0 3px rgba(216,106,94,.1);}
-.order-card.delivered{opacity:.55;border-style:dashed;cursor:default;}
-.order-card.delivered:hover{opacity:.82;}
-/* Acento lateral por columna */
-.col-pendiente .order-card{border-left:3px solid #e6b40a;}
-.col-preparando .order-card{border-left:3px solid #e07820;}
-.col-listo .order-card{border-left:3px solid var(--green);}
+.order-card.delivered{opacity:.5;cursor:default;}
+.order-card.delivered:hover{opacity:.75;transform:none;}
+/* Acento lateral por estado */
+.col-pendiente .order-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#e6b40a;border-radius:3px 0 0 3px;}
+.col-preparando .order-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#e07820;border-radius:3px 0 0 3px;}
+.col-listo .order-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green);border-radius:3px 0 0 3px;}
 
-/* Row compacto siempre visible */
-.card-compact{padding:11px 14px;display:flex;align-items:center;gap:10px;user-select:none;}
-.card-compact-num{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy);white-space:nowrap;}
-.card-compact-client{font-size:13px;font-weight:600;color:var(--navy);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.card-compact-total{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--navy);white-space:nowrap;}
-.card-compact-tags{display:flex;gap:4px;align-items:center;flex-shrink:0;}
-.card-compact-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;line-height:1.6;}
-.tag-delivery{background:rgba(22,32,74,.07);color:var(--navy);}
-.tag-retiro{background:var(--green-soft);color:var(--green);}
-.tag-cash{background:var(--green-soft);color:var(--green);}
-.tag-transfer{background:rgba(22,32,74,.07);color:var(--navy);}
-.tag-scheduled{background:var(--red-soft);color:var(--red);}
-.card-expand-arrow{font-size:10px;color:rgba(22,32,74,.3);transition:transform .2s;flex-shrink:0;margin-left:2px;}
-.order-card.expanded .card-expand-arrow{transform:rotate(180deg);}
+/* Cabecera siempre visible */
+.card-head{padding:12px 14px 12px 18px;display:flex;align-items:center;gap:10px;user-select:none;}
+.card-num{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:rgba(22,32,74,.35);letter-spacing:.5px;white-space:nowrap;}
+.card-client{font-size:13px;font-weight:700;color:var(--navy);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.card-total{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--navy);white-space:nowrap;}
+.card-pills{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+.card-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;line-height:1.7;letter-spacing:.2px;}
+.pill-delivery{background:#e8f0ff;color:#2a5bd7;}
+.pill-retiro{background:var(--green-soft);color:var(--green);}
+.pill-cash{background:#f0faf5;color:#1a8a5a;}
+.pill-transfer{background:rgba(22,32,74,.06);color:rgba(22,32,74,.6);}
+.pill-scheduled{background:var(--red-soft);color:var(--red);}
+.card-chevron{font-size:9px;color:rgba(22,32,74,.25);transition:transform .2s;flex-shrink:0;}
+.order-card.expanded .card-chevron{transform:rotate(180deg);}
 
 /* Detalle expandible */
-.card-detail{
-  display:none;padding:0 14px 14px;
-  border-top:1px solid var(--border);
-  animation:detailIn .2s ease both;
+.card-body{
+  display:none;
+  border-top:1px solid rgba(22,32,74,.06);
+  animation:bodyIn .18s ease both;
 }
-.order-card.expanded .card-detail{display:block;}
-@keyframes detailIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.card-detail-meta{display:flex;flex-wrap:wrap;gap:4px;padding-top:10px;margin-bottom:10px;}
-.card-detail-items{font-size:13px;color:rgba(22,32,74,.7);margin-bottom:10px;line-height:1.9;}
-.card-detail-address{font-size:12px;color:rgba(22,32,74,.55);margin-bottom:8px;}
-.card-detail-time{font-size:11px;color:rgba(22,32,74,.35);margin-bottom:10px;}
+.order-card.expanded .card-body{display:block;}
+@keyframes bodyIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* Secciones internas del detalle */
+.card-section{padding:10px 14px 10px 18px;}
+.card-section + .card-section{border-top:1px solid rgba(22,32,74,.05);}
+
+/* Items del pedido */
+.card-items{display:flex;flex-direction:column;gap:3px;}
+.card-item-row{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--navy);}
+.card-item-qty{font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:rgba(22,32,74,.4);min-width:20px;text-align:right;}
+.card-item-name{font-weight:600;flex:1;}
+.card-item-note{font-size:11px;color:rgba(22,32,74,.4);padding-left:28px;margin-top:1px;}
+
+/* Tags de info */
+.card-info-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.card-info-tag{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:rgba(22,32,74,.55);background:rgba(22,32,74,.04);border-radius:8px;padding:3px 9px;}
+.card-info-tag.highlight{background:#e8f0ff;color:#2a5bd7;}
+.card-info-tag.warn{background:var(--red-soft);color:var(--red);}
+.card-info-tag.success{background:var(--green-soft);color:var(--green);}
+
+/* Nota del cliente */
+.card-note{font-size:12px;font-style:italic;color:rgba(22,32,74,.5);background:rgba(22,32,74,.03);border-radius:8px;padding:7px 10px;}
+
+/* Hora */
+.card-time{font-size:11px;color:rgba(22,32,74,.3);font-weight:500;}
+
+/* Acciones */
+.card-actions{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 12px 18px;border-top:1px solid rgba(22,32,74,.05);}
+.card-actions select{flex:1;min-width:130px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:white;color:var(--navy);font-weight:600;cursor:pointer;}
+.card-action-btn{font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;transition:background .15s,opacity .15s;display:flex;align-items:center;gap:5px;}
+.btn-deliver-quick{background:var(--green);color:white;}
+.btn-deliver-quick:hover{background:#228a5c;}
+.btn-print-ticket{background:rgba(22,32,74,.07);color:var(--navy);}
+.btn-print-ticket:hover{background:rgba(22,32,74,.12);}
+.btn-delete-card{background:var(--red-soft);color:var(--red);}
+.btn-delete-card:hover{background:rgba(216,106,94,.2);}
 
 .order-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
 .order-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;line-height:1.5;}
@@ -458,19 +490,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 #toast.success{background:var(--green);}
 #toast.error{background:var(--red);}
 
-/* ── RESUMEN COCINA ── */
-.kitchen-summary{
-  background:var(--navy);color:white;
-  border-radius:var(--radius);padding:20px 24px 20px 28px;
-  margin-bottom:16px;box-shadow:var(--shadow);
-}
-.kitchen-summary-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.kitchen-summary-head h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
-.kitchen-summary-empty{font-size:13px;opacity:.4;padding:4px 0;}
-.kitchen-items{display:flex;flex-wrap:wrap;gap:8px;}
-.kitchen-item{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px;}
-.kitchen-item-qty{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#ff8a6a;}
-.kitchen-item-name{font-size:13px;font-weight:600;opacity:.88;}
+
 
 /* ── BTN ENTREGADO RAPIDO ── */
 .btn-deliver{
@@ -567,17 +587,6 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="metric"><div class="metric-value" id="mOrders">—</div><div class="metric-label">Pedidos hoy</div></div>
       <div class="metric"><div class="metric-value" id="mRevenue">—</div><div class="metric-label">Ventas hoy</div></div>
       <div class="metric warn"><div class="metric-value" id="mLowStock">—</div><div class="metric-label">⚠️ Stock bajo</div></div>
-    </div>
-
-    <!-- RESUMEN COCINA -->
-    <div class="kitchen-summary" id="kitchenSummary">
-      <div class="kitchen-summary-head">
-        <h3>🍳 Resumen de cocina</h3>
-        <span style="font-size:11px;opacity:.4;font-weight:600;">Pedidos activos (sin Entregado)</span>
-      </div>
-      <div class="kitchen-items" id="kitchenItems">
-        <span class="kitchen-summary-empty">Sin pedidos activos</span>
-      </div>
     </div>
 
     <!-- PEDIDOS ACTIVOS -->
@@ -1093,60 +1102,73 @@ function orderDeductionsHTML(o) {
 }
 
 function orderCardHTML(o, isDelivered) {
-  const fecha = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
-  const fechaDia = new Date(o.createdAt).toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit" });
-  const itemsList = o.items.map(i => `${escapeHtml(i.name)} ×${i.qty}${i.note ? `<br><small style="opacity:.6">↳ ${escapeHtml(i.note)}</small>` : ""}`).join("<br>");
+  const time   = new Date(o.createdAt).toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
+  const day    = new Date(o.createdAt).toLocaleDateString("es-AR", { day:"2-digit", month:"short" });
   const isDelivery = o.deliveryType === "delivery";
+  const isCash     = o.paymentMethod === "cash";
+  const isScheduled = o.scheduledDate || o.scheduledTime;
+  const clientDisplay = o.clientName || ("Pedido #" + o.number);
 
-  // Tags compactos
-  const deliveryTag = isDelivery
-    ? `<span class="card-compact-tag tag-delivery">🛵</span>`
-    : `<span class="card-compact-tag tag-retiro">🏃</span>`;
-  const pagoTag = o.paymentMethod === "cash"
-    ? `<span class="card-compact-tag tag-cash">💵</span>`
-    : `<span class="card-compact-tag tag-transfer">🏦</span>`;
-  const schedTag = (o.scheduledDate || o.scheduledTime)
-    ? `<span class="card-compact-tag tag-scheduled">📅</span>` : "";
+  // Pills cabecera
+  const deliveryPill = isDelivery
+    ? `<span class="card-pill pill-delivery">Delivery</span>`
+    : `<span class="card-pill pill-retiro">Retiro</span>`;
+  const pagoPill = isCash
+    ? `<span class="card-pill pill-cash">Efectivo</span>`
+    : `<span class="card-pill pill-transfer">Transfer</span>`;
+  const schedPill = isScheduled
+    ? `<span class="card-pill pill-scheduled">Programado</span>` : "";
 
-  // Tags detalle
-  const deliveryTagFull = isDelivery ? `<span class="order-tag tag-delivery">🛵 Delivery</span>` : `<span class="order-tag tag-retiro">🏃 Retiro</span>`;
-  const pagoTagFull = o.paymentMethod === "cash" ? `<span class="order-tag tag-cash">💵 Efectivo</span>` : `<span class="order-tag tag-transfer">🏦 Transferencia</span>`;
-  const schedTagFull = (o.scheduledDate && o.scheduledTime) ? `<span class="order-tag tag-scheduled">📅 ${o.scheduledDate} ${o.scheduledTime}</span>` : "";
-  const phoneTag = o.clientPhone ? `<span class="order-tag" style="background:rgba(22,32,74,.06);color:var(--navy);">📞 ${escapeHtml(o.clientPhone)}</span>` : "";
+  // Items
+  const itemsHTML = o.items.map(i => {
+    const note = i.note ? `<div class="card-item-note">↳ ${escapeHtml(i.note)}</div>` : "";
+    return `<div><div class="card-item-row"><span class="card-item-qty">×${i.qty}</span><span class="card-item-name">${escapeHtml(i.name)}</span></div>${note}</div>`;
+  }).join("");
 
-  const addressLine = isDelivery && o.address ? `<div class="card-detail-address">📍 ${escapeHtml(o.address)}</div>` : "";
-  const noteBlock = o.notes ? `<div class="customer-note"><strong>Nota del cliente</strong><span>${escapeHtml(o.notes)}</span></div>` : "";
-  const cardClass = isDelivered ? "order-card delivered" : "order-card";
-  const clientDisplay = o.clientName || `#${o.number}`;
+  // Info tags (detalle)
+  const infoTags = [
+    isDelivery ? `<span class="card-info-tag highlight">🛵 Delivery</span>` : `<span class="card-info-tag success">🏃 Retiro</span>`,
+    isCash ? `<span class="card-info-tag success">💵 Efectivo</span>` : `<span class="card-info-tag">🏦 Transferencia</span>`,
+    o.clientPhone ? `<span class="card-info-tag">📞 ${escapeHtml(o.clientPhone)}</span>` : "",
+    isScheduled ? `<span class="card-info-tag warn">📅 ${o.scheduledDate || ""} ${o.scheduledTime || ""}</span>` : "",
+    isDelivery && o.address ? `<span class="card-info-tag">📍 ${escapeHtml(o.address)}</span>` : "",
+  ].filter(Boolean).join("");
 
-  return `<div class="${cardClass}" id="order-card-${o._id}" onclick="toggleCard(event,'${o._id}')">
-    <div class="order-checkbox-wrap" id="chk-wrap-${o._id}"><input type="checkbox" id="chk-${o._id}" onclick="event.stopPropagation()" onchange="toggleOrderSelection('${o._id}', this.checked)"><label for="chk-${o._id}" onclick="event.stopPropagation()">Imprimir</label></div>
-    <div class="card-compact">
-      <span class="card-compact-num">#${o.number}</span>
-      <span class="card-compact-client">${escapeHtml(clientDisplay)}</span>
-      <div class="card-compact-tags">${deliveryTag}${pagoTag}${schedTag}</div>
-      <span class="card-compact-total">$${o.total.toLocaleString("es-AR")}</span>
-      <span class="card-expand-arrow">▼</span>
-    </div>
-    <div class="card-detail">
-      <div class="card-detail-meta">${deliveryTagFull}${pagoTagFull}${phoneTag}${schedTagFull}</div>
-      ${addressLine}
-      <div class="card-detail-items">${itemsList}</div>
-      ${orderDeductionsHTML(o)}
-      <div class="card-detail-time">🕐 ${fechaDia} · ${fecha}</div>
-      ${!isDelivered ? `<select class="order-select" onclick="event.stopPropagation()" onchange="confirmOrderStatus('${o._id}', this)">
+  const noteHTML = o.notes
+    ? `<div class="card-section"><div class="card-note">💬 ${escapeHtml(o.notes)}</div></div>` : "";
+
+  const statusSection = !isDelivered ? `
+    <div class="card-actions" onclick="event.stopPropagation()">
+      <select onclick="event.stopPropagation()" onchange="confirmOrderStatus('${o._id}', this)">
         <option ${o.status==="Pendiente"?"selected":""} value="Pendiente">🟡 Pendiente</option>
         <option ${o.status==="Preparando"?"selected":""} value="Preparando">🟠 Preparando</option>
         <option ${o.status==="Listo"?"selected":""} value="Listo">🟢 Listo</option>
-        <option ${o.status==="Entregado"?"selected":""} value="Entregado">🟢 Entregado</option>
+        <option ${o.status==="Entregado"?"selected":""} value="Entregado">✅ Entregado</option>
       </select>
-      <button class="btn-deliver" onclick="event.stopPropagation();quickDeliver('${o._id}')">✓ Marcar como entregado</button>
-      ${noteBlock}` : `<div style="font-size:12px;color:rgba(22,32,74,.3);margin-top:2px;margin-bottom:8px;">✓ Entregado</div>${noteBlock}`}
-      <div class="order-actions" onclick="event.stopPropagation()">
-        <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Ticket</button>
-        <button class="btn-print" onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
-        ${isDelivered ? `<button class="btn-delete-order" onclick="deleteOrder('${o._id}')">🗑️ Eliminar</button>` : ""}
-      </div>
+      <button class="card-action-btn btn-deliver-quick" onclick="event.stopPropagation();quickDeliver('${o._id}')">✓ Entregado</button>
+      <button class="card-action-btn btn-print-ticket" onclick="printOrder('${o._id}')">🖨 Ticket</button>
+      <button class="card-action-btn btn-print-ticket" onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
+    </div>` : `
+    <div class="card-actions" onclick="event.stopPropagation()">
+      <button class="card-action-btn btn-print-ticket" onclick="printOrder('${o._id}')">🖨 Ticket</button>
+      <button class="card-action-btn btn-delete-card" onclick="deleteOrder('${o._id}')">🗑 Eliminar</button>
+    </div>`;
+
+  return `<div class="${isDelivered ? "order-card delivered" : "order-card"}" id="order-card-${o._id}" onclick="toggleCard(event,'${o._id}')">
+    <div class="order-checkbox-wrap" id="chk-wrap-${o._id}"><input type="checkbox" id="chk-${o._id}" onclick="event.stopPropagation()" onchange="toggleOrderSelection('${o._id}', this.checked)"><label for="chk-${o._id}" onclick="event.stopPropagation()">Imprimir</label></div>
+    <div class="card-head">
+      <span class="card-num">#${o.number}</span>
+      <span class="card-client">${escapeHtml(clientDisplay)}</span>
+      <div class="card-pills">${deliveryPill}${pagoPill}${schedPill}</div>
+      <span class="card-total">$${o.total.toLocaleString("es-AR")}</span>
+      <span class="card-chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="card-section"><div class="card-items">${itemsHTML}</div></div>
+      <div class="card-section"><div class="card-info-row">${infoTags}</div></div>
+      ${noteHTML}
+      <div class="card-section" style="padding-top:6px;padding-bottom:6px;"><span class="card-time">🕐 ${day} · ${time}</span></div>
+      ${statusSection}
     </div>
   </div>`;
 }
