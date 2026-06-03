@@ -261,6 +261,15 @@ body{background:var(--bg);color:var(--navy);font-family:'DM Sans',sans-serif;min
 .order-checkbox-wrap label{font-size:12px;font-weight:600;color:rgba(22,32,74,.55);cursor:pointer;}
 .order-card.selected-for-print{border-color:var(--navy);box-shadow:0 0 0 3px rgba(22,32,74,.1);}
 
+/* Collapsed card */
+.order-card.collapsed .order-card-body{display:none;}
+.order-card.collapsed{opacity:.75;}
+.order-card.collapsed:hover{opacity:1;}
+.btn-collapse{background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:6px;color:rgba(22,32,74,.35);font-size:14px;line-height:1;transition:.15s;margin-left:4px;flex-shrink:0;}
+.btn-collapse:hover{background:rgba(22,32,74,.07);color:var(--navy);}
+.btn-collapse svg{display:block;transition:transform .2s;}
+.order-card.collapsed .btn-collapse svg{transform:rotate(-90deg);}
+
 /* History toggle inside orders panel */
 .history-sep{border:none;border-top:1px solid var(--border);margin:20px 0 16px;}
 .history-toggle{
@@ -929,12 +938,15 @@ function orderCardHTML(o, isDelivered) {
   const noteBlock = o.notes ? `<div class="customer-note"><strong>Nota del cliente</strong><span>${escapeHtml(o.notes)}</span></div>` : "";
   const statusClass = `status-${String(o.status || "").toLowerCase()}`;
 
+  const collapseBtn = `<button class="btn-collapse" title="Minimizar" onclick="toggleCardCollapse('${o._id}', event)"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+
   return `<div class="${cardClass}" id="order-card-${o._id}">
     <div class="order-checkbox-wrap" id="chk-wrap-${o._id}"><input type="checkbox" id="chk-${o._id}" onchange="toggleOrderSelection('${o._id}', this.checked)"><label for="chk-${o._id}">Seleccionar para imprimir</label></div>
     <div class="order-head">
       <span class="order-num">Pedido #${o.number}</span>
-      <span class="status-badge status-${o.status} ${statusClass}">${o.status}</span>
+      <div style="display:flex;align-items:center;gap:6px;"><span class="status-badge status-${o.status} ${statusClass}">${o.status}</span>${collapseBtn}</div>
     </div>
+    <div class="order-card-body">
     <div class="order-meta">${clientTag}${phoneTag}${deliveryTag}${pagoTag}${schedTag}</div>
     ${addressLine}
     <div class="order-items">${itemsList}</div>
@@ -951,6 +963,7 @@ function orderCardHTML(o, isDelivered) {
       <button class="btn-print" onclick="printOrder('${o._id}')">🖨️ Ticket</button>
       <button class="btn-print" onclick="printKitchenOrder('${o._id}')">🍳 Cocina</button>
       ${isDelivered ? `<button class="btn-delete-order" onclick="deleteOrder('${o._id}')">🗑️ Eliminar</button>` : ""}
+    </div>
     </div>
   </div>`;
 }
@@ -991,6 +1004,12 @@ function applyFilters() {
 }
 
 function renderOrders(orders) { allOrders = orders; applyFilters(); }
+
+function toggleCardCollapse(id, e) {
+  e.stopPropagation();
+  const card = document.getElementById(`order-card-${id}`);
+  if (card) card.classList.toggle("collapsed");
+}
 
 function refreshCheckboxVisibility() {
   if (!multiPrintMode) return;
