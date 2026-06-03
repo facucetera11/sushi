@@ -16,7 +16,8 @@ const SettingsSchema = new mongoose.Schema({
   },
   adminPasswordHash: { type: String, default: "" },
   adminPasswordSalt: { type: String, default: "" },
-  adminTokenVersion: { type: Number, default: 0 }
+  adminTokenVersion: { type: Number, default: 0 },
+  _orderSeq: { type: Number, default: 0 }
 });
 
 module.exports = mongoose.model("Settings", SettingsSchema);

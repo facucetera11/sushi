@@ -124,7 +124,18 @@ function getStockRecipe(product, itemOverride) {
 }
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB conectado"))
+  .then(async () => {
+    console.log("✅ MongoDB conectado");
+    // Sincronizar _orderSeq con el último número de pedido real si es la primera vez.
+    const s = await Settings.findOne();
+    if (s && (s._orderSeq || 0) === 0) {
+      const last = await Order.findOne().sort({ number: -1 });
+      if (last && last.number > 0) {
+        await Settings.findOneAndUpdate({}, { $set: { _orderSeq: last.number } });
+        console.log(`✅ Contador de pedidos inicializado en ${last.number}`);
+      }
+    }
+  })
   .catch((err) => { console.error("❌ Error conectando a MongoDB:", err.message); process.exit(1); });
 
 app.get("/health", (req, res) => {
@@ -233,6 +244,7 @@ app.get("/orders", requireAdmin, async (req, res) => {
 });
 
 app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) => {
+  const deductedIds = []; // para rollback si algo falla a mitad
   try {
     const { items, total, deliveryType, address, clientName, clientPhone, notes, scheduledDate, scheduledTime, paymentMethod } = req.body;
 
@@ -245,7 +257,7 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
       return res.status(403).json({ error: "El local esta cerrado y no esta aceptando pedidos en este momento" });
     }
 
-    // Validar stock y calcular piezas a descontar por tipo de sushi.
+    // Calcular piezas a descontar por producto, validando existencia y estado.
     const stockDeductions = new Map();
     for (const item of items) {
       const product = await Product.findById(item._id);
@@ -262,21 +274,42 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
       }
     }
 
+    // Pre-cargar nombres para los detalles del pedido.
     const stockProducts = await Product.find({ _id: { $in: [...stockDeductions.keys()] } });
-    const stockById = new Map(stockProducts.map(product => [product._id.toString(), product]));
+    const stockById = new Map(stockProducts.map(p => [p._id.toString(), p]));
+
+    // Descontar stock de forma atómica: solo aplica si stock >= piezas requeridas.
+    // Si el documento no existe o el stock no alcanza, findOneAndUpdate devuelve null.
     const stockDeductionDetails = [];
     for (const [id, pieces] of stockDeductions) {
-      const product = stockById.get(id);
-      if (!product) return res.status(400).json({ error: "Producto de stock no encontrado" });
-      if (product.stock < pieces) {
-        return res.status(400).json({ error: `Stock insuficiente para: ${product.name}` });
+      const updated = await Product.findOneAndUpdate(
+        { _id: id, stock: { $gte: pieces } },
+        { $inc: { stock: -pieces } },
+        { new: false } // devuelve el doc antes del update (para el nombre)
+      );
+      if (!updated) {
+        // Rollback: restaurar todo lo que ya descontamos antes de este fallo.
+        await Promise.all(deductedIds.map(({ did, dpieces }) =>
+          Product.findByIdAndUpdate(did, { $inc: { stock: dpieces } })
+        ));
+        const name = stockById.get(id)?.name || id;
+        return res.status(400).json({ error: `Stock insuficiente para: ${name}` });
       }
-      stockDeductionDetails.push({ product: id, name: product.name, pieces });
+      deductedIds.push({ did: id, dpieces: pieces });
+      stockDeductionDetails.push({ product: id, name: updated.name, pieces });
     }
 
-    const last = await Order.findOne().sort({ number: -1 });
+    // Número de pedido: usar findOneAndUpdate atómico para evitar duplicados.
+    // Incrementamos un contador en Settings en lugar de buscar el último Order.
+    const settingsUpdated = await Settings.findOneAndUpdate(
+      {},
+      { $inc: { _orderSeq: 1 } },
+      { new: true, upsert: true }
+    );
+    const orderNumber = settingsUpdated._orderSeq || 1;
+
     const order = new Order({
-      number: last ? last.number + 1 : 1,
+      number: orderNumber,
       items,
       total,
       deliveryType: deliveryType || "retiro",
@@ -291,13 +324,16 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
     });
     await order.save();
 
-    // Descontar stock en piezas por tipo de sushi.
-    for (const [id, pieces] of stockDeductions) {
-      await Product.findByIdAndUpdate(id, { $inc: { stock: -pieces } });
-    }
-
     res.json(order);
-  } catch (err) { res.status(400).json({ error: "Error al crear pedido", detalle: err.message }); }
+  } catch (err) {
+    // Rollback de stock si el guardado del pedido falló después de descontar.
+    if (deductedIds.length) {
+      await Promise.all(deductedIds.map(({ did, dpieces }) =>
+        Product.findByIdAndUpdate(did, { $inc: { stock: dpieces } })
+      )).catch(e => console.error("Error en rollback de stock:", e));
+    }
+    res.status(400).json({ error: "Error al crear pedido", detalle: err.message });
+  }
 });
 
 app.put("/orders/:id", requireAdmin, async (req, res) => {
