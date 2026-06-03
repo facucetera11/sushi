@@ -189,7 +189,7 @@ nav a:hover { opacity: 1; }
   border-bottom: 0.5px solid var(--border);
 }
 .section-title { font-family: 'Cormorant Garamond', serif; font-size: 44px; font-weight: 700; letter-spacing: 1px; }
-.section-count { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,0,0,.35); font-weight: 400; }
+.section-count { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,0,0,.5); font-weight: 400; }
 .empty-cat { opacity: .35; font-size: 14px; padding: 24px 0; letter-spacing: .5px; }
 .menu-empty {
   display: none;
@@ -315,7 +315,7 @@ nav a:hover { opacity: 1; }
 .modal-desc { font-size: 13px; color: rgba(0,0,0,.52); line-height: 1.75; margin-bottom: 18px; font-weight: 300; }
 .modal-stock-info { display: none; }
 .modal-qty-row { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-.modal-qty-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(0,0,0,.4); }
+.modal-qty-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(0,0,0,.52); }
 .modal-qty { display: flex; align-items: center; gap: 10px; }
 .modal-qty button {
   width: 34px; height: 34px;
@@ -453,7 +453,7 @@ nav a:hover { opacity: 1; }
 /* tipo entrega */
 .checkout-label {
   font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-  color: rgba(0,0,0,.38); font-weight: 500; margin-bottom: 10px;
+  color: rgba(0,0,0,.52); font-weight: 500; margin-bottom: 10px;
 }
 .delivery-toggle {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -592,7 +592,7 @@ nav a:hover { opacity: 1; }
 }
 .payment-opt.selected .opt-label { color: white; }
 .payment-opt .opt-sublabel {
-  font-size: 10px; color: rgba(0,0,0,.4); margin-top: 3px; transition: color .18s;
+  font-size: 10px; color: rgba(0,0,0,.52); margin-top: 3px; transition: color .18s;
 }
 .payment-opt.selected .opt-sublabel { color: rgba(255,255,255,.55); }
 .discount-badge {
@@ -1211,11 +1211,11 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 </div>
 
 <!-- MODAL VISTA RÁPIDA -->
-<div class="modal-overlay" id="modalOverlay" onclick="onOverlayClick(event)">
+<div class="modal-overlay" id="modalOverlay" onclick="onOverlayClick(event)" role="dialog" aria-modal="true" aria-labelledby="modalName">
   <div class="modal" id="modal">
     <div class="modal-img">
       <img id="modalImg" src="" alt="">
-      <button class="modal-close" onclick="closeModal()">×</button>
+      <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">×</button>
     </div>
     <div class="modal-body">
       <div class="modal-cat" id="modalCat"></div>
@@ -1245,7 +1245,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 <div id="cart">
   <div class="cart-header">
     <h2>Tu pedido</h2>
-    <span id="cartCount">0</span>
+    <span id="cartCount" aria-live="polite" aria-atomic="true">0</span>
   </div>
   <div id="cartItems"></div>
   <div id="cartTotal">$0</div>
@@ -1253,11 +1253,11 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 </div>
 
 <!-- CHECKOUT MODAL -->
-<div class="checkout-overlay" id="checkoutOverlay" onclick="onCheckoutOverlayClick(event)">
+<div class="checkout-overlay" id="checkoutOverlay" onclick="onCheckoutOverlayClick(event)" role="dialog" aria-modal="true" aria-label="Finalizar pedido">
   <div class="checkout-modal">
     <div class="checkout-head">
       <h2>Finalizar pedido</h2>
-      <button class="checkout-close" onclick="closeCheckout()">×</button>
+      <button class="checkout-close" onclick="closeCheckout()" aria-label="Cerrar">×</button>
     </div>
 
     <!-- Tabs indicadores de paso -->
@@ -1359,7 +1359,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 </div>
 
 <!-- CONFIRMAR WHATSAPP -->
-<div class="whatsapp-confirm-overlay" id="whatsappConfirmOverlay">
+<div class="whatsapp-confirm-overlay" id="whatsappConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="whatsappConfirmTitle">
   <div class="whatsapp-confirm-modal">
     <div class="whatsapp-confirm-kicker">Pedido registrado</div>
     <h2 id="whatsappConfirmTitle">Pedido listo</h2>
@@ -1372,7 +1372,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 </div>
 
 <!-- COMBO ELECCIÓN MODAL -->
-<div class="combo-modal-overlay" id="comboModalOverlay" onclick="onComboOverlayClick(event)">
+<div class="combo-modal-overlay" id="comboModalOverlay" onclick="onComboOverlayClick(event)" role="dialog" aria-modal="true" aria-label="Armar combo elección">
   <div class="combo-modal" id="comboModal">
     <div class="combo-modal-head">
       <div>
@@ -1409,9 +1409,9 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 </div>
 
 <!-- FAB MOBILE -->
-<button id="cartFab" onclick="toggleCartMobile()">
+<button id="cartFab" onclick="toggleCartMobile()" aria-label="Ver carrito">
   🛒
-  <span id="fabCount">0</span>
+  <span id="fabCount" aria-live="polite" aria-atomic="true">0</span>
 </button>
 
 <div id="toast"></div>
@@ -2194,7 +2194,10 @@ function buildOrderMessage(orderNumber, clientName, clientPhone, address, notes,
   return msg;
 }
 
+let orderInFlight = false;
+
 async function sendWhatsApp() {
+  if (orderInFlight) return;
   if (!cart.length) return;
   if (!isAcceptingOrders()) { toast("El local está cerrado en este momento"); return; }
   if (!paymentMethod) { toast("❌ Elegí un método de pago"); return; }
@@ -2213,6 +2216,7 @@ async function sendWhatsApp() {
   const btn = document.getElementById("btnCheckoutConfirm");
   btn.disabled = true;
   btn.textContent = "Enviando pedido...";
+  orderInFlight = true;
 
   const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
   const discount = settings.cashDiscount || 0;
@@ -2252,12 +2256,14 @@ async function sendWhatsApp() {
       ${notes ? `<br><strong>Nota:</strong> ${escapeHtml(notes)}` : ""}
     `;
     cart = [];
+    orderInFlight = false;
     updateCart();
     closeCheckout();
     toast(`✅ Pedido #${order.number || ""} registrado`);
     openWhatsAppConfirm(order, confirmSummary, `whatsapp://send?phone=${whatsappNumber}&text=${whatsappText}`, `https://wa.me/${whatsappNumber}?text=${whatsappText}`);
   } catch (err) {
     clearTimeout(timeoutId);
+    orderInFlight = false;
     const msg = buildOrderMessage("", clientName, clientPhone, address, notes, dateText, timeText, total, saving, discount);
     btn.disabled = false;
     btn.textContent = "Enviar pedido";
