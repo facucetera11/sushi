@@ -505,7 +505,6 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
         <div class="settings-row">
           <div><div class="label">Hora apertura</div><input id="openHour" type="number" min="0" max="23" placeholder="19"></div>
           <div><div class="label">Hora cierre</div><input id="closeHour" type="number" min="0" max="23" placeholder="23"></div>
-          <div><div class="label">Hora inicio reparto</div><input id="deliveryHour" type="number" min="0" max="23" placeholder="Ej: 20 (opcional)"></div>
         </div>
         <div class="label" style="margin-bottom:10px;">Días de atención</div>
         <div class="days-grid" id="daysGrid"></div>
@@ -1226,7 +1225,6 @@ async function deleteOrder(id) {
 function renderSettings(s) {
   document.getElementById("openHour").value = s.openHour;
   document.getElementById("closeHour").value = s.closeHour;
-  document.getElementById("deliveryHour").value = s.deliveryHour ?? "";
   document.getElementById("cashDiscount").value = s.cashDiscount ?? 0;
   document.getElementById("transferAlias").value = s.transferAlias || "";
   document.getElementById("mercadoPagoLink").value = s.mercadoPagoLink || "";
@@ -1261,7 +1259,7 @@ async function toggleStoreStatus() {
 }
 async function saveSettings() {
   await authFetch(`${API}/settings`, { method:"PUT", headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ acceptingOrders: document.getElementById("acceptingOrders").value === "true", openHour:+document.getElementById("openHour").value, closeHour:+document.getElementById("closeHour").value, deliveryHour: document.getElementById("deliveryHour").value !== "" ? +document.getElementById("deliveryHour").value : null, openDays }) });
+    body:JSON.stringify({ acceptingOrders: document.getElementById("acceptingOrders").value === "true", openHour:+document.getElementById("openHour").value, closeHour:+document.getElementById("closeHour").value, openDays }) });
   updateStoreToggleBtn(document.getElementById("acceptingOrders").value === "true");
   toast("✓ Horario guardado", "success");
 }
@@ -1396,7 +1394,16 @@ function renderStockInventory(products) {
     const ppu = p.piecesPerUnit || 8;
     const units = Math.floor((p.stock || 0) / ppu);
     const pieces = p.stock || 0;
-    return `<div class="stock-card">
+    const isLow = units > 0 && units <= 3;
+    const isEmpty = units === 0;
+    const cardBorder = isEmpty ? "border-color:rgba(192,57,43,.5);background:#fff8f7;" : isLow ? "border-color:rgba(216,106,94,.4);background:#fff8f7;" : "";
+    const badge = isEmpty
+      ? `<div class="stock-low-badge">⚠️ Sin stock</div>`
+      : isLow
+      ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} roll${units !== 1 ? "s" : ""}</div>`
+      : "";
+    return `<div class="stock-card" style="${cardBorder}">
+      ${badge}
       <h3>${p.name}</h3>
       <div class="label">Rolls disponibles</div>
       <input id="stock-only-${p._id}" type="number" value="${units}">
@@ -1447,8 +1454,8 @@ function renderProducts(products) {
       ${items.map(p => {
         const units = availableUnits(p, products);
         const recipeStock = usesRecipeStock(p);
-        return `<div class="product-card${units <= 3 ? ' stock-low' : ''}${p.active === false ? ' inactive' : ''}">
-          ${units <= 3 ? `<div class="stock-low-badge">⚠️ Stock bajo: ${units} unidades</div>` : ''}
+        return `<div class="product-card${p.active === false ? ' inactive' : ''}">
+          
           <img src="${p.image||''}" alt="${p.name}" onerror="this.style.display='none'">
           <div class="label">${categoryLabel(p.category)}</div>
           <div class="product-status-row">
