@@ -2305,7 +2305,7 @@ function getEligibleProducts() {
   return products.filter(p =>
     p.active !== false &&
     COMBO_ELIGIBLE_CATS.includes(normalizeCategory(p.category)) &&
-    (p.stock || 0) > 0
+    (p.stock || 0) * (p.piecesPerUnit || 1) > 0
   );
 }
 
@@ -2319,9 +2319,9 @@ function getComboPrice() {
   return comboSelectedSize ? (comboSelectedSize.price || 0) : 0;
 }
 
-// Cuántas piezas máximas puedo elegir de un producto (limitado por stock en piezas)
+// Cuántas piezas máximas puedo elegir de un producto (stock en unidades × piezas por unidad)
 function maxPiecesForProduct(p) {
-  return p.stock || 0;
+  return (p.stock || 0) * (p.piecesPerUnit || 1);
 }
 
 // Carga los precios fijos desde settings.comboEleccionPrices (guardados desde el admin).
@@ -2436,7 +2436,7 @@ function renderComboGrid() {
     // No se puede tocar si no está seleccionado y no hay lugar para 1 pieza
     const disabled  = !isSelected && (!comboSelectedSize || remaining === 0);
 
-    const stockLabel = maxForThis <= 5
+    const stockLabel = maxForThis <= 10
       ? `<span class="combo-item-stock-warn">⚠ ${maxForThis} pz disponibles</span>`
       : `<span class="combo-item-price-pp">${maxForThis} pz en stock</span>`;
 
