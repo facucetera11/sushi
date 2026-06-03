@@ -1692,16 +1692,10 @@ function openWhatsAppConfirm(order, summaryHtml, whatsappUrl, fallbackUrl) {
 function confirmWhatsAppOrder() {
   if (!pendingWhatsAppUrl) return;
   const fallback = pendingWhatsAppFallbackUrl || pendingWhatsAppUrl;
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if (isIOS) {
-    // On iOS, use native whatsapp:// scheme directly to avoid blank-tab issue
-    // If app not installed, redirect to wa.me after a short delay
-    window.location.href = pendingWhatsAppUrl;
-    setTimeout(() => { window.location.href = fallback; }, 1200);
-  } else {
-    const opened = window.open(fallback, "_blank", "noopener");
-    if (!opened) window.location.href = fallback;
-  }
+  // En iOS Safari, window.open puede ser bloqueado si no es click directo,
+  // y el esquema whatsapp:// + setTimeout causa un loop de carga al volver.
+  // Usar wa.me directamente funciona en todos los casos (iOS/Android/desktop).
+  window.location.href = fallback;
 }
 
 function goToStep1(silent) {
@@ -1894,51 +1888,29 @@ function updateStatus() {
   const now = new Date();
   const badge = document.getElementById("statusBadge");
   const closedStyle = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-  const openStyle   = "background:rgba(26,107,58,.1);color:#1a6b3a;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-  const pendingStyle = "background:rgba(180,120,0,.1);color:#9a6800;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
+  const openStyle = "background:rgba(26,107,58,.1);color:#1a6b3a;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
 
-  // Admin cerró manualmente
   if (!isAcceptingOrders()) {
     badge.textContent = "Cerrado";
     badge.style.cssText = closedStyle;
     updateClosedNotice("El local está cerrado por ahora. Podés mirar la carta y dejar armado tu pedido para más tarde.");
     return;
   }
-
-  const openDays   = settings.openDays  || [1,2,3,4,5,6];
-  const openHour   = settings.openHour  ?? 19;
-  const closeHour  = settings.closeHour ?? 23;
-  const deliveryHour = settings.deliveryHour ?? null; // null = sin distinción
-
-  const day = now.getDay();
-  const h   = now.getHours();
-
-  // Día que no abre
-  if (!openDays.includes(day)) {
+  if (!settings.openDays?.includes(now.getDay())) {
     badge.textContent = "Cerrado hoy";
     badge.style.cssText = closedStyle;
     updateClosedNotice("Hoy no estamos tomando pedidos, pero podés revisar la carta y escribirnos por WhatsApp.");
     return;
   }
-
-  // Fuera de horario de pedidos
-  if (h < openHour || h >= closeHour) {
-    badge.textContent = `Abrimos a las ${openHour}:00`;
-    badge.style.cssText = closedStyle;
-    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${openHour}:00.`);
-    return;
-  }
-
-  // Dentro del horario de pedidos
-  if (deliveryHour !== null && h < deliveryHour) {
-    // Tomamos pedidos pero aún no repartimos
-    badge.textContent = `Abierto · reparto a las ${deliveryHour}:00`;
-    badge.style.cssText = pendingStyle;
-    updateClosedNotice(`Tomamos pedidos ahora. Los repartos salen a partir de las ${deliveryHour}:00 hs.`);
-  } else {
+  const h = now.getHours();
+  if (h >= settings.openHour && h < settings.closeHour) {
     badge.textContent = "Abierto ahora";
     badge.style.cssText = openStyle;
     updateClosedNotice("");
+  } else {
+    badge.textContent = `Abrimos a las ${settings.openHour}:00`;
+    badge.style.cssText = closedStyle;
+    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${settings.openHour}:00.`);
   }
 }
 
