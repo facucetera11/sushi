@@ -1907,13 +1907,13 @@ function updateStatus() {
   if (!isAcceptingOrders()) {
     badge.textContent = "Cerrado";
     badge.style.cssText = closedStyle;
-    updateClosedNotice("El local está cerrado por ahora. Podés mirar la carta y dejar armado tu pedido para más tarde.");
+    updateClosedNotice("Podés mirar la carta y dejar armado tu pedido para cuando abramos.");
     return;
   }
   if (!settings.openDays?.includes(now.getDay())) {
     badge.textContent = "Cerrado hoy";
     badge.style.cssText = closedStyle;
-    updateClosedNotice("Hoy no estamos tomando pedidos, pero podés revisar la carta y escribirnos por WhatsApp.");
+    updateClosedNotice("Podés mirar la carta y dejar armado tu pedido para cuando abramos.");
     return;
   }
   const h = now.getHours();
@@ -1922,21 +1922,16 @@ function updateStatus() {
   const deliveryHour = settings.deliveryHour != null ? settings.deliveryHour : openHour;
 
   if (h >= openHour && h < closeHour) {
-    // Siempre verde cuando está abierto, con o sin delivery disponible aún
     const deliveryInfo = deliveryHour > openHour
       ? ` · Delivery desde las ${deliveryHour}:00`
       : "";
     badge.textContent = `Abierto${deliveryInfo}`;
     badge.style.cssText = openStyle;
     updateClosedNotice("");
-  } else if (h < openHour) {
-    badge.textContent = `Abrimos a las ${openHour}:00`;
-    badge.style.cssText = closedStyle;
-    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${openHour}:00.`);
   } else {
     badge.textContent = "Cerrado";
     badge.style.cssText = closedStyle;
-    updateClosedNotice("Ya cerramos por hoy. ¡Nos vemos mañana!");
+    updateClosedNotice("Podés mirar la carta y dejar armado tu pedido para cuando abramos.");
   }
 }
 
