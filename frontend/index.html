@@ -1797,6 +1797,8 @@ function selectDelivery(type) {
   document.getElementById("optRetiro").classList.toggle("selected", type === "retiro");
   document.getElementById("optDelivery").classList.toggle("selected", type === "delivery");
   document.getElementById("addressRow").classList.toggle("show", type === "delivery");
+  // Actualizar horarios disponibles según el tipo seleccionado
+  populateDateTimeSelects();
   updateCheckoutSummary();
 }
 
@@ -1806,8 +1808,12 @@ function populateDateTimeSelects() {
   const days = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
   const months = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
   const openDays = settings.openDays || [1,2,3,4,5,6];
-  const openHour = settings.openHour || 19;
+  const openHour = settings.openHour || 15;
   const closeHour = settings.closeHour || 23;
+  // Para delivery usamos deliveryHour si está configurado, sino openHour
+  const deliveryStartHour = (deliveryType === "delivery" && settings.deliveryHour != null)
+    ? settings.deliveryHour
+    : openHour;
 
   const dates = [];
   const now = new Date();
@@ -1820,7 +1826,7 @@ function populateDateTimeSelects() {
   ).join("") || `<option value="">Sin días disponibles</option>`;
 
   timeEl.innerHTML = "";
-  for (let h = openHour; h < closeHour; h++) {
+  for (let h = deliveryStartHour; h < closeHour; h++) {
     timeEl.innerHTML += `<option value="${h}:00">${h}:00</option>`;
     timeEl.innerHTML += `<option value="${h}:30">${h}:30</option>`;
   }
@@ -1911,14 +1917,26 @@ function updateStatus() {
     return;
   }
   const h = now.getHours();
-  if (h >= settings.openHour && h < settings.closeHour) {
-    badge.textContent = "Abierto ahora";
+  const openHour = settings.openHour || 15;
+  const closeHour = settings.closeHour || 23;
+  const deliveryHour = settings.deliveryHour != null ? settings.deliveryHour : openHour;
+
+  if (h >= openHour && h < closeHour) {
+    // Siempre verde cuando está abierto, con o sin delivery disponible aún
+    const deliveryInfo = deliveryHour > openHour
+      ? ` · Delivery desde las ${deliveryHour}:00`
+      : "";
+    badge.textContent = `Abierto${deliveryInfo}`;
     badge.style.cssText = openStyle;
     updateClosedNotice("");
-  } else {
-    badge.textContent = `Abrimos a las ${settings.openHour}:00`;
+  } else if (h < openHour) {
+    badge.textContent = `Abrimos a las ${openHour}:00`;
     badge.style.cssText = closedStyle;
-    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${settings.openHour}:00.`);
+    updateClosedNotice(`Estamos fuera de horario. Abrimos a las ${openHour}:00.`);
+  } else {
+    badge.textContent = "Cerrado";
+    badge.style.cssText = closedStyle;
+    updateClosedNotice("Ya cerramos por hoy. ¡Nos vemos mañana!");
   }
 }
 
