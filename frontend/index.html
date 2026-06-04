@@ -64,10 +64,15 @@ header {
 }
 .logo em { color: var(--red); font-style: normal; }
 
+/* Badge usa clases para que CSS media query lo pueda pisar */
 #statusBadge {
   font-size: 11px; font-weight: 500; letter-spacing: 0.3px;
-  padding: 4px 13px; border-radius: 20px; margin-left: 14px; transition: .3s;
+  padding: 5px 14px; border-radius: 20px; margin-left: 14px;
+  transition: background .3s, color .3s;
+  white-space: nowrap;
 }
+#statusBadge.badge-open  { background: rgba(26,107,58,.1);  color: #1a6b3a; }
+#statusBadge.badge-closed { background: rgba(192,57,43,.08); color: #C0392B; }
 
 nav { display: flex; gap: 24px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 nav a {
@@ -77,7 +82,7 @@ nav a {
 }
 nav a:hover { opacity: 1; }
 .header-logo-img {
-  height: 48px;
+  height: 46px;
   width: auto;
   display: block;
   filter: brightness(0);
@@ -143,7 +148,16 @@ nav a:hover { opacity: 1; }
   border-bottom: 0.5px solid var(--border);
   padding: 14px 7% 12px;
 }
-.closed-notice { display: none; }
+.closed-notice {
+  display: none;
+  font-size: 11.5px;
+  color: var(--red);
+  font-weight: 400;
+  line-height: 1.4;
+  padding: 0 0 10px;
+  letter-spacing: 0.1px;
+}
+.closed-notice.show { display: block; }
 .category-strip {
   display: flex;
   gap: 8px;
@@ -701,42 +715,42 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 @media(max-width:768px) {
   body.cart-open { overflow: hidden; }
 
+  /* Header: una sola fila limpia, ~54px */
   header {
-    padding: 10px 4%;
+    padding: 0 5%;
     flex-direction: row;
     align-items: center;
+    height: 56px;
     gap: 0;
   }
   .header-main-row {
     width: 100%;
+    display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  header > div img {
-    max-width: 130px;
-    height: auto !important;
+  .header-logo-img {
+    height: 34px !important;
+    width: auto !important;
   }
+  /* Ocultar nav en header — los chips de categoría cubren la navegación */
+  .header-main-row nav { display: none; }
+  /* Ocultar notice del header — se muestra en menu-tools */
+  .header-notice-row { display: none !important; }
+
+  /* Badge compacto solo con estado (sin detalle de delivery) */
   #statusBadge {
-    margin-left: 8px !important;
-    padding: 4px 10px !important;
     font-size: 10px !important;
-    white-space: nowrap;
-    max-width: 200px;
-  }
-  /* Ocultar nav en móvil — los chips de categoría ya cubren la navegación */
-  .header-main-row nav {
-    display: none;
-  }
-  .header-notice-row {
-    margin-top: 0;
-    border-top: none;
-    padding-top: 0;
+    padding: 4px 10px !important;
+    margin-left: 0 !important;
+    letter-spacing: 0.2px !important;
+    border-radius: 999px !important;
   }
 
   .hero {
     height: 55vh;
     min-height: 300px;
-    padding: 92px 8% 56px;
+    padding: 56px 8% 56px;
   }
   .hero-content img { width: min(330px, 82vw) !important; }
   .hero h1 { font-size: 52px; letter-spacing: 3px; }
@@ -744,9 +758,9 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .hero-scroll { bottom: 18px; }
 
   .tabs { padding: 0 4%; }
-  .menu-tools { top: 58px; }
+  .menu-tools { top: 56px; padding: 12px 5% 10px; }
   .menu-body { padding: 38px 4% 120px; }
-  .cat-section { scroll-margin-top: 88px; }
+  .cat-section { scroll-margin-top: 56px; }
   .cat-section + .cat-section { margin-top: 42px; }
   .section-header {
     margin-bottom: 18px;
@@ -962,7 +976,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 }
 .combo-eleccion-cta:hover { background: var(--red); border-color: var(--red); }
 .combo-eleccion-cta:disabled { opacity: .4; cursor: not-allowed; }
-.combo-eleccion-right { position: relative; overflow: hidden; background: #1a1a1a; }
+.combo-eleccion-right { position: relative; overflow: hidden; background: #1c1c1c; }
 .combo-eleccion-right img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; filter: brightness(.6); }
 .combo-eleccion-card:hover .combo-eleccion-right img { transform: scale(1.04); }
 .combo-eleccion-overlay { position: absolute; inset: 0; background: linear-gradient(to right, var(--navy) 0%, transparent 65%); pointer-events: none; }
@@ -1894,27 +1908,38 @@ function scrollToCategory(cat) {
 }
 
 function updateClosedNotice(message) {
-  const notice = document.getElementById("headerNotice");
-  if (!notice) return;
-  notice.textContent = message || "";
-  notice.classList.toggle("show", Boolean(message));
+  // Desktop: notice dentro del header
+  const headerNotice = document.getElementById("headerNotice");
+  if (headerNotice) {
+    headerNotice.textContent = message || "";
+    headerNotice.classList.toggle("show", Boolean(message));
+  }
+  // Móvil: notice en menu-tools (debajo de los chips de categoría)
+  const menuNotice = document.getElementById("closedNotice");
+  if (menuNotice) {
+    menuNotice.textContent = message || "";
+    menuNotice.classList.toggle("show", Boolean(message));
+  }
 }
 
 function updateStatus() {
   const now = new Date();
   const badge = document.getElementById("statusBadge");
-  const closedStyle = "background:rgba(192,57,43,.08);color:#C0392B;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
-  const openStyle = "background:rgba(26,107,58,.1);color:#1a6b3a;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;margin-left:14px;";
+  const isMobile = window.innerWidth <= 768;
+
+  function setBadge(text, isOpen) {
+    badge.textContent = text;
+    badge.className = isOpen ? "badge-open" : "badge-closed";
+    badge.removeAttribute("style");
+  }
 
   if (!isAcceptingOrders()) {
-    badge.textContent = "Cerrado";
-    badge.style.cssText = closedStyle;
+    setBadge("Cerrado", false);
     updateClosedNotice("Podés mirar la carta y dejar armado tu pedido para cuando abramos.");
     return;
   }
   if (!settings.openDays?.includes(now.getDay())) {
-    badge.textContent = "Cerrado hoy";
-    badge.style.cssText = closedStyle;
+    setBadge("Cerrado hoy", false);
     updateClosedNotice("Podés mirar la carta y dejar armado tu pedido para cuando abramos.");
     return;
   }
@@ -1927,16 +1952,15 @@ function updateStatus() {
     const deliveryInfo = deliveryHour > openHour
       ? ` · Delivery desde las ${deliveryHour}:00`
       : "";
-    badge.textContent = `Abierto${deliveryInfo}`;
-    badge.style.cssText = openStyle;
+    // En móvil el badge es solo "Abierto" — el detalle va en el aviso de menu-tools
+    setBadge(isMobile ? "Abierto" : `Abierto${deliveryInfo}`, true);
     if (deliveryHour > openHour && h < deliveryHour) {
       updateClosedNotice(`Podés pedir ahora y elegir el horario de entrega a partir de las ${deliveryHour}:00.`);
     } else {
       updateClosedNotice("");
     }
   } else {
-    badge.textContent = "Cerrado";
-    badge.style.cssText = closedStyle;
+    setBadge("Cerrado", false);
     updateClosedNotice("Podés mirar la carta y dejar armado tu pedido para cuando abramos.");
   }
 }
