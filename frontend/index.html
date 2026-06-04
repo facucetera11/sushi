@@ -1489,6 +1489,7 @@ function getCartQtyForProduct(productId) {
 function reconcileCartWithProducts() {
   if (!products.length || !cart.length) return;
   cart = cart.reduce((next, item) => {
+    if (item.isComboEleccion) { next.push(item); return next; } // preservar combos armados
     const product = products.find(p => p._id === item._id && p.active !== false);
     if (!product) return next;
     const available = getAvailableUnits(product);
@@ -2446,8 +2447,9 @@ function renderComboGrid() {
       : `<span class="combo-item-price-pp">${maxForThis} pz en stock</span>`;
 
     return `
-      <div class="combo-item-btn ${isSelected ? "selected" : ""} ${disabled ? "combo-disabled" : ""}"
-           id="combo-btn-${escapeAttr(p._id)}">
+    <div class="combo-item-btn ${isSelected ? "selected" : ""} ${disabled ? "combo-disabled" : ""}"
+           id="combo-btn-${escapeAttr(p._id)}"
+           onclick="if(!this.classList.contains('combo-disabled')) adjustComboPieces('${escapeAttr(p._id)}', 1)">
         <span class="combo-item-check">✓</span>
         <img class="combo-item-img" src="${img}" alt="${escapeAttr(p.name)}" loading="lazy"
           onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
