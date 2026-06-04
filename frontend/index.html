@@ -379,7 +379,7 @@ nav a:hover { opacity: 1; }
   border: 0.5px solid rgba(0,0,0,.1);
   border-radius: 6px;
   font-family: 'Jost', sans-serif;
-  font-size: 11px;
+  font-size: 16px;
   color: var(--navy);
   background: rgba(0,0,0,.025);
   outline: none;
@@ -739,7 +739,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 
   .hero {
     height: 55vh;
-    min-height: 540px;
+    min-height: 300px;
     padding: 118px 8% 56px;
   }
   .hero-content img { width: min(330px, 82vw) !important; }
@@ -1066,6 +1066,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 .combo-item-btn:hover:not(:disabled) { border-color: rgba(0,0,0,.22); box-shadow: 0 4px 14px rgba(0,0,0,.07); }
 .combo-item-btn.selected { border-color: var(--navy); border-width: 1.5px; }
 .combo-item-btn:disabled { opacity: .38; cursor: not-allowed; }
+.combo-item-btn.combo-disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
 .combo-item-price-pp { color: #1a6b3a; font-size: 10px; font-weight: 500; }
 .combo-item-stock-warn { color: #c87400; font-size: 10px; font-weight: 500; }
 
@@ -2024,7 +2025,7 @@ function openModal(id) {
   document.getElementById("modalDesc").textContent = p.description || "";
   document.getElementById("modalStock").textContent = available > 0 ? `Stock disponible: ${available} unidades` : "Sin stock disponible";
   document.getElementById("modalQtyVal").textContent = "1";
-  document.getElementById("modalPrice").textContent = `${p.price.toLocaleString("es-AR")}`;
+  document.getElementById("modalPrice").textContent = `$${p.price.toLocaleString("es-AR")}`;
   document.getElementById("modalAdded").classList.remove("show");
   document.getElementById("modalAddBtn").disabled = available <= 0 || !isAcceptingOrders();
   document.getElementById("modalAddBtn").textContent = !isAcceptingOrders() ? "Local cerrado" : available <= 0 ? "Sin stock" : "Agregar al pedido";
@@ -2039,7 +2040,7 @@ function changeModalQty(delta) {
   const maxQty = Math.max(1, available - alreadyInCart + modalQty);
   modalQty = Math.max(1, Math.min(maxQty, modalQty + delta));
   document.getElementById("modalQtyVal").textContent = modalQty;
-  document.getElementById("modalPrice").textContent = `${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
+  document.getElementById("modalPrice").textContent = `$${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
 }
 
 function addFromModal() {
@@ -2085,7 +2086,7 @@ function updateCart() {
       <div class="cart-item">
         <div class="cart-item-main">
           <div class="cart-item-name">${escapeHtml(i.name)}</div>
-          <div class="cart-item-sub">${i.price.toLocaleString("es-AR")} c/u</div>
+          <div class="cart-item-sub">$${i.price.toLocaleString("es-AR")} c/u</div>
           <input class="cart-item-note" type="text" maxlength="120" value="${escapeAttr(i.note || "")}" placeholder="Nota: sin palta, sin sésamo..." oninput="updateCartNote('${lineId}', this.value)">
         </div>
         <div class="qty">
