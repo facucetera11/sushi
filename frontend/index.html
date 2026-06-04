@@ -1311,9 +1311,9 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
           <input id="clientPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 11 2345 6789">
           <div class="checkout-hint">Lo usamos solo para coordinar el pedido.</div>
         </div>
-        <div>
-          <div class="checkout-label">Nota especial</div>
-          <textarea id="orderNotes" class="checkout-textarea" maxlength="240" placeholder="Ej: sin salsa de soja, sin wasabi, aclaraciones del pedido..."></textarea>
+        <div id="deliveryNotesRow" style="display:none;">
+          <div class="checkout-label">Indicaciones de entrega</div>
+          <textarea id="orderNotes" class="checkout-textarea" maxlength="240" placeholder="Ej: rejas negras, portón negro, timbre roto, piso 2..."></textarea>
         </div>
         <div>
           <div class="checkout-label">¿Cuándo querés recibirlo?</div>
@@ -1805,6 +1805,8 @@ function selectDelivery(type) {
   document.getElementById("optRetiro").classList.toggle("selected", type === "retiro");
   document.getElementById("optDelivery").classList.toggle("selected", type === "delivery");
   document.getElementById("addressRow").classList.toggle("show", type === "delivery");
+  document.getElementById("deliveryNotesRow").style.display = type === "delivery" ? "" : "none";
+  if (type === "retiro") document.getElementById("orderNotes").value = "";
   // Actualizar horarios disponibles según el tipo seleccionado
   populateDateTimeSelects();
   updateCheckoutSummary();
