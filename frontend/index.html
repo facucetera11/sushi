@@ -2160,15 +2160,10 @@ function updateStatus() {
 
   if (h >= openHour && h < closeHour) {
     const deliveryInfo = deliveryHour > openHour
-      ? ` · Delivery desde las ${deliveryHour}:00`
+      ? ` · Entrega desde las ${deliveryHour}:00`
       : "";
-    // En móvil el badge es solo "Abierto" — el detalle va en el aviso de menu-tools
-    setBadge(isMobile ? "Abierto" : `Abierto${deliveryInfo}`, true);
-    if (deliveryHour > openHour && h < deliveryHour) {
-      updateClosedNotice(`Podés pedir ahora y elegir el horario de entrega a partir de las ${deliveryHour}:00.`);
-    } else {
-      updateClosedNotice("");
-    }
+    setBadge(`Abierto${deliveryInfo}`, true);
+    updateClosedNotice("");
   } else {
     setBadge("Cerrado", false);
     updateClosedNotice("Podés mirar la carta y dejar armado tu pedido para cuando abramos.");
