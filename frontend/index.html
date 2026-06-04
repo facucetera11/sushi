@@ -702,50 +702,41 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   body.cart-open { overflow: hidden; }
 
   header {
-    padding: 10px 4% 8px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    padding: 10px 4%;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
   }
-  header > div {
+  .header-main-row {
+    width: 100%;
     justify-content: space-between;
-    min-height: 38px;
+    align-items: center;
   }
   header > div img {
-    max-width: 152px;
+    max-width: 130px;
     height: auto !important;
-    margin-right: 8px !important;
   }
   #statusBadge {
     margin-left: 8px !important;
     padding: 4px 10px !important;
     font-size: 10px !important;
     white-space: nowrap;
+    max-width: 200px;
   }
-  nav {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 2px 0 4px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+  /* Ocultar nav en móvil — los chips de categoría ya cubren la navegación */
+  .header-main-row nav {
+    display: none;
   }
-  nav::-webkit-scrollbar { display: none; }
-  nav a {
-    flex: 0 0 auto;
-    padding: 8px 12px;
-    border: 0.5px solid rgba(0,0,0,.1);
-    border-radius: 999px;
-    background: rgba(255,255,255,.78);
-    font-size: 10px;
-    letter-spacing: 1px;
-    opacity: .72;
+  .header-notice-row {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
   }
 
   .hero {
     height: 55vh;
     min-height: 300px;
-    padding: 118px 8% 56px;
+    padding: 92px 8% 56px;
   }
   .hero-content img { width: min(330px, 82vw) !important; }
   .hero h1 { font-size: 52px; letter-spacing: 3px; }
@@ -753,8 +744,9 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .hero-scroll { bottom: 18px; }
 
   .tabs { padding: 0 4%; }
+  .menu-tools { top: 58px; }
   .menu-body { padding: 38px 4% 120px; }
-  .cat-section { scroll-margin-top: 112px; }
+  .cat-section { scroll-margin-top: 88px; }
   .cat-section + .cat-section { margin-top: 42px; }
   .section-header {
     margin-bottom: 18px;
@@ -970,7 +962,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 }
 .combo-eleccion-cta:hover { background: var(--red); border-color: var(--red); }
 .combo-eleccion-cta:disabled { opacity: .4; cursor: not-allowed; }
-.combo-eleccion-right { position: relative; overflow: hidden; }
+.combo-eleccion-right { position: relative; overflow: hidden; background: #1a1a1a; }
 .combo-eleccion-right img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; filter: brightness(.6); }
 .combo-eleccion-card:hover .combo-eleccion-right img { transform: scale(1.04); }
 .combo-eleccion-overlay { position: absolute; inset: 0; background: linear-gradient(to right, var(--navy) 0%, transparent 65%); pointer-events: none; }
@@ -2655,7 +2647,8 @@ function renderComboEleccionCard() {
         </button>
       </div>
       <div class="combo-eleccion-right">
-        <img src="https://images.unsplash.com/photo-1617196034183-421b4040ed20" alt="Combo Elección" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600&q=80" alt="Combo Elección" loading="lazy"
+          onerror="this.style.display='none'">
         <div class="combo-eleccion-overlay"></div>
         <div class="combo-eleccion-pieces-badge">8 · 16 · 35 pz</div>
       </div>
