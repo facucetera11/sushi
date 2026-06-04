@@ -478,39 +478,72 @@ nav a:hover { opacity: 1; }
 
 /* Step tabs */
 .checkout-steps {
-  display: flex; gap: 0;
+  display: flex; align-items: center;
   background: var(--navy);
   border-bottom: none !important;
-  padding: 0 28px 20px;
+  padding: 0 28px 22px;
   margin-bottom: 0 !important;
-  border-bottom: none;
+  gap: 0;
 }
 .checkout-step-tab {
-  flex: 1; padding: 0 8px 12px; text-align: left;
-  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;
-  color: rgba(255,255,255,.35); border-bottom: 2px solid rgba(255,255,255,.12);
-  cursor: default; transition: color .2s, border-color .2s;
-  display: flex; align-items: center; gap: 8px;
+  flex: 1; display: flex; align-items: center; gap: 10px;
+  cursor: default; transition: opacity .2s;
+  position: relative;
 }
-.checkout-step-tab::before {
-  content: attr(data-n);
-  width: 20px; height: 20px; border-radius: 50%;
-  background: rgba(255,255,255,.12); color: rgba(255,255,255,.4);
-  font-size: 9px; font-weight: 700; letter-spacing: 0;
+/* connector line between steps */
+.checkout-step-tab:not(:last-child)::after {
+  content: "";
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: calc(50% - 18px); height: 1px;
+  background: rgba(255,255,255,.18);
+  transition: background .3s;
+}
+.checkout-step-tab.done:not(:last-child)::after {
+  background: #4caf7d;
+}
+/* number bubble */
+.checkout-step-tab .step-num {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,.25);
+  background: transparent; color: rgba(255,255,255,.35);
+  font-size: 12px; font-weight: 700; letter-spacing: 0;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: background .2s, color .2s;
+  transition: background .25s, border-color .25s, color .25s, box-shadow .25s;
 }
-.checkout-step-tab.active {
-  color: white; border-bottom-color: rgba(255,255,255,.6);
+/* label text */
+.checkout-step-tab .step-label {
+  display: flex; flex-direction: column; gap: 1px;
 }
-.checkout-step-tab.active::before {
-  background: white; color: var(--navy);
+.checkout-step-tab .step-label span {
+  font-size: 9px; letter-spacing: 1.8px; text-transform: uppercase; font-weight: 500;
+  color: rgba(255,255,255,.3); transition: color .25s;
+  line-height: 1;
 }
-.checkout-step-tab.done {
-  color: rgba(255,255,255,.55); border-bottom-color: #4caf7d;
+.checkout-step-tab .step-label strong {
+  font-size: 13px; font-weight: 600; letter-spacing: .2px;
+  color: rgba(255,255,255,.3); transition: color .25s;
+  font-family: inherit;
 }
-.checkout-step-tab.done::before {
-  content: "✓"; background: #4caf7d; color: white;
+/* active state */
+.checkout-step-tab.active .step-num {
+  background: white; border-color: white; color: var(--navy);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.15);
+}
+.checkout-step-tab.active .step-label span,
+.checkout-step-tab.active .step-label strong {
+  color: white;
+}
+/* done state */
+.checkout-step-tab.done .step-num {
+  background: #4caf7d; border-color: #4caf7d; color: white;
+  font-size: 0;
+}
+.checkout-step-tab.done .step-num::after {
+  content: "✓"; font-size: 13px;
+}
+.checkout-step-tab.done .step-label span,
+.checkout-step-tab.done .step-label strong {
+  color: rgba(255,255,255,.55);
 }
 
 .checkout-body {
@@ -823,19 +856,7 @@ nav a:hover { opacity: 1; }
 }
 .price-line.discount { color: #1a6b3a; }
 
-/* checkout step nav */
-.checkout-steps {
-  display: flex; gap: 0;
-  border-bottom: 0.5px solid var(--border); margin-bottom: 24px;
-}
-.checkout-step-tab {
-  flex: 1; padding: 12px 8px; text-align: center;
-  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;
-  color: rgba(0,0,0,.35); border-bottom: 2px solid transparent;
-  cursor: default; transition: color .2s, border-color .2s;
-}
-.checkout-step-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
-.checkout-step-tab.done { color: #1a6b3a; border-bottom-color: #1a6b3a; }
+
 
 .checkout-step { display: none; flex-direction: column; gap: 22px; }
 .checkout-step.active { display: flex; }
@@ -1089,7 +1110,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 
   .checkout-head { padding: 18px 18px 14px; }
   .checkout-head h2 { font-size: 24px; }
-  .checkout-steps { margin: 0 18px 18px !important; }
+  .checkout-steps { padding: 0 18px 18px; }
   .checkout-body { padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); }
   .checkout-step { gap: 18px; }
   .delivery-opt,
@@ -1457,9 +1478,15 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
     </div>
 
     <!-- Tabs indicadores de paso -->
-    <div class="checkout-steps" style="margin: 0 28px; border-bottom: 0.5px solid var(--border);">
-      <div class="checkout-step-tab active" id="tab1" data-n="1">Entrega</div>
-      <div class="checkout-step-tab" id="tab2" data-n="2">Pago</div>
+    <div class="checkout-steps">
+      <div class="checkout-step-tab active" id="tab1" data-n="1">
+        <div class="step-num">1</div>
+        <div class="step-label"><span>Paso 1</span><strong>Entrega</strong></div>
+      </div>
+      <div class="checkout-step-tab" id="tab2" data-n="2">
+        <div class="step-num">2</div>
+        <div class="step-label"><span>Paso 2</span><strong>Pago</strong></div>
+      </div>
     </div>
 
     <div class="checkout-body">
