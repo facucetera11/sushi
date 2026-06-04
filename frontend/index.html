@@ -840,7 +840,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .cart-header { margin-bottom: 12px; padding-bottom: 12px; }
   .cart-item { gap: 12px; }
   .cart-item-name { font-size: 14px; line-height: 1.25; }
-  .qty button { width: 34px; height: 34px; }
+  .qty button { width: 42px; height: 42px; }
   #btnConfirm { min-height: 48px; }
 
   #cartFab {
@@ -915,6 +915,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .checkout-select,
   #addressInput,
   #clientName,
+  #clientPhone,
   .checkout-textarea {
     min-height: 46px;
     font-size: 16px;
@@ -1125,6 +1126,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .combo-modal-head { padding: 18px 18px 14px; }
   .combo-modal-footer { padding: 14px 18px calc(18px + env(safe-area-inset-bottom)); }
   .combo-picker-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); max-height: 260px; }
+  .combo-item-qty-row button { width: 38px; height: 38px; }
   .combo-item-img { height: 74px; }
 }
 </style>
@@ -1994,7 +1996,7 @@ function renderCat(cat) {
         <p class="card-desc">${escapeHtml(desc.substring(0, 60))}${desc.length > 60 ? "…" : ""}</p>
         <div class="card-bottom">
           <div>
-            <div class="price">${p.price.toLocaleString("es-AR")}</div>
+            <div class="price">$${p.price.toLocaleString("es-AR")}</div>
             ${stockBadge}
           </div>
           <button class="btn-add" onclick="event.stopPropagation(); addToCartDirect('${escapeAttr(p._id)}')" ${sinStock || closed ? "disabled" : ""}>
