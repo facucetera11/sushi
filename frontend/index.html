@@ -157,6 +157,10 @@ nav a:hover { opacity: 1; }
   padding: 0 0 10px;
   letter-spacing: 0.1px;
 }
+/* Solo visible en móvil (el header-notice-row cubre desktop) */
+@media(min-width:769px) {
+  #closedNotice { display: none !important; }
+}
 .closed-notice.show { display: block; }
 .category-strip {
   display: flex;
