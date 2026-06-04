@@ -738,7 +738,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   }
 
   .hero {
-    height: 78vh;
+    height: 55vh;
     min-height: 540px;
     padding: 118px 8% 56px;
   }
@@ -1006,7 +1006,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 .combo-modal-kicker { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--red); font-weight: 600; margin-bottom: 4px; }
 .combo-modal-head h2 { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; line-height: 1; }
 .combo-modal-close {
-  width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,.06); border: none;
+  width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,.06); border: none;
   cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; margin-left: 12px; color: var(--navy); transition: background .15s;
 }
@@ -1066,6 +1066,8 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 .combo-item-btn:hover:not(:disabled) { border-color: rgba(0,0,0,.22); box-shadow: 0 4px 14px rgba(0,0,0,.07); }
 .combo-item-btn.selected { border-color: var(--navy); border-width: 1.5px; }
 .combo-item-btn:disabled { opacity: .38; cursor: not-allowed; }
+.combo-item-price-pp { color: #1a6b3a; font-size: 10px; font-weight: 500; }
+.combo-item-stock-warn { color: #c87400; font-size: 10px; font-weight: 500; }
 
 .combo-item-img { width: 100%; height: 86px; object-fit: cover; display: block; }
 .combo-item-body { padding: 8px 10px 6px; flex: 1; }
@@ -1125,7 +1127,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
   .combo-modal-body { padding: 16px 18px 10px; }
   .combo-modal-head { padding: 18px 18px 14px; }
   .combo-modal-footer { padding: 14px 18px calc(18px + env(safe-area-inset-bottom)); }
-  .combo-picker-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); max-height: 260px; }
+  .combo-picker-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); max-height: none; }
   .combo-item-qty-row button { width: 38px; height: 38px; }
   .combo-item-img { height: 74px; }
 }
@@ -2094,7 +2096,7 @@ function updateCart() {
       </div>`;
     }).join("");
   }
-  document.getElementById("cartTotal").textContent = `${total.toLocaleString("es-AR")}`;
+  document.getElementById("cartTotal").textContent = `$${total.toLocaleString("es-AR")}`;
   document.getElementById("cartCount").textContent = count;
   document.getElementById("fabCount").textContent = count;
   document.getElementById("btnConfirm").disabled = cart.length === 0 || !isAcceptingOrders();
