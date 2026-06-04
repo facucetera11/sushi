@@ -1384,7 +1384,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
       <button class="combo-modal-close" onclick="closeComboModal()">×</button>
     </div>
     <div class="combo-modal-body">
-      <p class="combo-modal-desc">Elegí cuántas piezas querés y sumá de cada roll lo que más te guste. El precio se ajusta al promedio de lo que armes.</p>
+      <p class="combo-modal-desc">Elegí cuántas piezas querés y sumá de cada roll lo que más te guste.</p>
 
       <div class="combo-size-label">¿Cuántas piezas?</div>
       <div class="combo-size-row" id="comboSizeRow"></div>
@@ -2368,7 +2368,7 @@ function onComboOverlayClick(e) {
 function renderComboSizes() {
   document.getElementById("comboSizeRow").innerHTML = COMBO_SIZES.map((size, idx) => {
     const active = comboSelectedSize?.pieces === size.pieces ? "active" : "";
-    const priceLabel = size.price ? size.price.toLocaleString("es-AR") : "—";
+    const priceLabel = size.price ? `$${size.price.toLocaleString("es-AR")}` : "—";
     return `
       <button class="combo-size-btn ${active}" onclick="selectComboSize(${idx})">
         <span class="csb-pieces">${size.pieces}</span>
@@ -2443,8 +2443,8 @@ function renderComboGrid() {
     const disabled  = !isSelected && (!comboSelectedSize || remaining === 0);
 
     const stockLabel = maxForThis <= 5
-      ? `<span class="combo-item-stock-warn">⚠ ${maxForThis} pz disponibles</span>`
-      : `<span class="combo-item-price-pp">${maxForThis} pz en stock</span>`;
+      ? `<span class="combo-item-stock-warn">⚠ Últimas ${maxForThis} piezas</span>`
+      : `<span class="combo-item-price-pp">Disponible</span>`;
 
     return `
     <div class="combo-item-btn ${isSelected ? "selected" : ""} ${disabled ? "combo-disabled" : ""}"
