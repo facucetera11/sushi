@@ -2888,6 +2888,25 @@ function renderComboEleccionCard() {
 loadSavedCart();
 updateCart();
 load();
+
+// Polling silencioso: refresca stock cada 60s sin mover nada en la UI
+setInterval(async () => {
+  try {
+    const fresh = await fetch(`${API}/products`).then(r => r.json());
+    // Actualizar solo el stock de cada producto ya cargado
+    fresh.forEach(fp => {
+      const idx = products.findIndex(p => p._id === fp._id);
+      if (idx !== -1) {
+        products[idx].stock = fp.stock;
+        products[idx].active = fp.active;
+      }
+    });
+    // Re-renderizar cards sin tocar scroll, carrito ni estado
+    renderAllCats();
+    reconcileCartWithProducts();
+    updateCart();
+  } catch (_) { /* silencioso, no hacer nada si falla */ }
+}, 60000);
 </script>
 
 </body>
