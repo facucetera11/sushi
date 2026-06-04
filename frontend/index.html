@@ -1827,7 +1827,7 @@ function populateDateTimeSelects() {
 
   const dates = [];
   const now = new Date();
-  for (let i = 0; i < 14 && dates.length < 7; i++) {
+  for (let i = 0; i < 14 && dates.length < 4; i++) {
     const d = new Date(now); d.setDate(d.getDate() + i);
     if (openDays.includes(d.getDay())) dates.push(d);
   }
