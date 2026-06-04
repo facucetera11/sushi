@@ -1820,8 +1820,8 @@ function populateDateTimeSelects() {
   const openDays = settings.openDays || [1,2,3,4,5,6];
   const openHour = settings.openHour || 15;
   const closeHour = settings.closeHour || 23;
-  // Para delivery usamos deliveryHour si está configurado, sino openHour
-  const deliveryStartHour = (deliveryType === "delivery" && settings.deliveryHour != null)
+  // Tanto retiro como delivery arrancan desde deliveryHour
+  const deliveryStartHour = (settings.deliveryHour != null)
     ? settings.deliveryHour
     : openHour;
 
