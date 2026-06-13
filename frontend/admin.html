@@ -1030,7 +1030,7 @@ function orderDeductionsHTML(o) {
     ? `<div class="stock-deductions" style="background:rgba(216,106,94,.07);border-color:rgba(216,106,94,.2);">
         <strong>🎁 Promos aplicadas</strong>
         ${promoIds.map(id => {
-          const promo = (allPromos || []).find(p => p._id === id);
+          const promo = (allPromotions || []).find(p => p._id === id);
           return promo ? escapeHtml(promo.label) : id;
         }).join("<br>")}
        </div>`
