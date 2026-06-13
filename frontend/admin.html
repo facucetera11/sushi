@@ -1024,8 +1024,23 @@ function renderMetrics(products, orders) {
 /* ── ORDERS ── */
 function orderDeductionsHTML(o) {
   const d = o.stockDeductions || [];
-  if (!d.length) return "";
-  return `<div class="stock-deductions"><strong>Piezas descontadas</strong>${d.map(x => `${x.name}: ${x.pieces}`).join("<br>")}</div>`;
+  const promoIds = o.appliedPromoIds || [];
+  
+  const promoHTML = promoIds.length
+    ? `<div class="stock-deductions" style="background:rgba(216,106,94,.07);border-color:rgba(216,106,94,.2);">
+        <strong>🎁 Promos aplicadas</strong>
+        ${promoIds.map(id => {
+          const promo = (allPromos || []).find(p => p._id === id);
+          return promo ? escapeHtml(promo.label) : id;
+        }).join("<br>")}
+       </div>`
+    : "";
+
+  const deductHTML = d.length
+    ? `<div class="stock-deductions"><strong>Piezas descontadas</strong>${d.map(x => `${x.name}: ${x.pieces}`).join("<br>")}</div>`
+    : "";
+
+  return promoHTML + deductHTML;
 }
 
 function orderCardHTML(o, isDelivered) {
