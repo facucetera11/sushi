@@ -605,7 +605,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           <div>
             <div class="label">Imagen</div>
             <div class="image-upload-row">
-              <input id="imageInput" placeholder="URL o imagen subida">
+              <input id="imageInput" type="hidden">
               <input id="imageFileInput" type="file" accept="image/*" onchange="loadImageFile(this,'imageInput','imagePreview')">
               <img id="imagePreview" class="image-preview" alt="Vista previa">
             </div>
@@ -1486,7 +1486,7 @@ function renderProducts(products) {
             <div><div class="label" style="font-size:11px;">Stock (${isStockType(p) ? "rolls" : "unidades"})</div><input id="st-${p._id}" type="number" value="${isStockType(p) ? units : p.stock}"></div>
             <div><div class="label" style="font-size:11px;">Piezas/unidad</div><input id="pp-${p._id}" type="number" value="${p.piecesPerUnit||1}"></div>
           </div>
-          <input id="im-${p._id}" value="${p.image||''}" placeholder="URL o imagen subida">
+          <input id="im-${p._id}" type="hidden" value="${p.image||''}">
           <input type="file" accept="image/*" onchange="loadImageFile(this,'im-${p._id}','preview-${p._id}')">
           <img id="preview-${p._id}" class="image-preview ${p.image ? "show" : ""}" src="${p.image||''}" alt="Vista previa">
           <textarea id="de-${p._id}">${p.description||''}</textarea>
