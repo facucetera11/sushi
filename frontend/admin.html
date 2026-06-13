@@ -1281,6 +1281,26 @@ async function deleteOrder(id) {
   } catch { toast("Error al eliminar pedido", "error"); }
 }
 
+async function deleteAllDelivered() {
+  const delivered = allOrders.filter(o => o.status === "Entregado");
+  if (!delivered.length) return toast("No hay pedidos entregados para eliminar", "error");
+  if (!confirm(`¿Eliminar ${delivered.length} pedido(s) entregado(s)? Esta acción no se puede deshacer.`)) return;
+
+  let errores = 0;
+  for (const o of delivered) {
+    try {
+      const res = await authFetch(`${API}/orders/${o._id}`, { method: "DELETE" });
+      if (!res.ok) errores++;
+    } catch { errores++; }
+  }
+
+  if (errores) toast(`Se eliminaron algunos pedidos, pero ${errores} fallaron`, "error");
+  else toast("✓ Historial de entregados eliminado", "success");
+
+  startAutoRefresh();
+  loadAll();
+}
+
 /* ── SETTINGS ── */
 function renderSettings(s) {
   document.getElementById("openHour").value = s.openHour;
