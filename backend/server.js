@@ -329,6 +329,10 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
       ? Math.round(calculatedBase * settings.cashDiscount / 100)
       : 0;
     const calculatedTotal = calculatedBase - discount;
+    const submittedTotal = Number(total);
+    if (Number.isFinite(submittedTotal) && Math.abs(submittedTotal - calculatedTotal) > 10) {
+      return res.status(409).json({ error: "El total cambio. Actualiza el pedido y volve a intentarlo." });
+    }
 
     // Pre-cargar nombres para los detalles del pedido.
     const stockProducts = await Product.find({ _id: { $in: [...stockDeductions.keys()] } });

@@ -1718,7 +1718,15 @@ function getCartQtyForProduct(productId) {
 function reconcileCartWithProducts() {
   if (!products.length || !cart.length) return;
   cart = cart.reduce((next, item) => {
-    if (item.isComboEleccion) { next.push(item); return next; } // preservar combos armados
+    if (item.isComboEleccion) {
+      const selections = item.comboSelections || {};
+      next.push({
+        ...item,
+        price: getComboPriceForSelections(selections),
+        note: getComboNoteForSelections(selections) || item.note || ""
+      });
+      return next;
+    }
     const product = products.find(p => p._id === item._id && p.active !== false);
     if (!product) return next;
     const available = getAvailableUnits(product);
@@ -2496,7 +2504,12 @@ async function sendWhatsApp() {
       signal: controller.signal
     });
     clearTimeout(timeoutId);
-    if (!res.ok) throw new Error((await res.json()).error || "Error al registrar el pedido");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const error = new Error(data.error || "Error al registrar el pedido");
+      error.status = res.status;
+      throw error;
+    }
     const order = await res.json();
     const msg = buildOrderMessage(order.number, clientName, clientPhone, address, notes, dateText, timeText, total, saving, discount);
     const whatsappText = encodeURIComponent(msg);
@@ -2520,6 +2533,11 @@ async function sendWhatsApp() {
     const msg = buildOrderMessage("", clientName, clientPhone, address, notes, dateText, timeText, total, saving, discount);
     btn.disabled = false;
     btn.textContent = "Enviar pedido";
+    if (err.status === 409) {
+      toast(err.message || "El total cambio. Revisa el pedido e intenta de nuevo.");
+      await load();
+      return;
+    }
     toast("No se pudo registrar, pero podés enviarlo por WhatsApp");
     openWhatsAppConfirm(null, `<strong>Total:</strong> ${total.toLocaleString("es-AR")}<br><strong>Horario:</strong> ${escapeHtml(dateText)} ${escapeHtml(timeText)}`, buildWhatsAppUrl(msg), buildWhatsAppUrl(msg));
   }
@@ -2576,11 +2594,22 @@ function getComboPiecePrice(p) {
   return Math.round(unitPrice / piecesPerUnit);
 }
 
-function getComboPrice() {
-  return Object.entries(comboSelections).reduce((total, [id, pieces]) => {
+function getComboPriceForSelections(selections) {
+  return Object.entries(selections || {}).reduce((total, [id, pieces]) => {
     const p = products.find(x => x._id === id);
     return total + (p ? getComboPiecePrice(p) * pieces : 0);
   }, 0);
+}
+
+function getComboPrice() {
+  return getComboPriceForSelections(comboSelections);
+}
+
+function getComboNoteForSelections(selections) {
+  return Object.entries(selections || {}).map(([id, pieces]) => {
+    const p = products.find(x => x._id === id);
+    return p ? `${p.name} ×${pieces}pz` : "";
+  }).filter(Boolean).join(", ");
 }
 
 // Cuántas piezas máximas puedo elegir de un producto (limitado por stock en piezas)
@@ -2812,18 +2841,13 @@ function addComboToCart() {
   const totalPieces = getComboPiecesTotal();
   const sizeLabel   = comboSelectedSize.label;
 
-  const contentParts = Object.entries(comboSelections).map(([id, pieces]) => {
-    const p = products.find(x => x._id === id);
-    return p ? `${p.name} ×${pieces}pz` : "";
-  }).filter(Boolean);
-
   const comboLineId = makeLineId();
   cart.push({
     _id: `combo-eleccion-${comboLineId}`,
     name: `Combo Elección ${sizeLabel} (${totalPieces} pz)`,
     price,
     qty: 1,
-    note: contentParts.join(", "),
+    note: getComboNoteForSelections(comboSelections),
     lineId: comboLineId,
     category: "combos",
     isComboEleccion: true,
@@ -2886,7 +2910,7 @@ loadSavedCart();
 updateCart();
 load();
 
-// Polling silencioso: refresca productos y configuracion cada 60s sin mover nada en la UI
+// Polling silencioso: refresca productos y configuracion cada 30s sin mover nada en la UI
 setInterval(async () => {
   try {
     const [freshProducts, freshSettings] = await Promise.all([
@@ -2901,7 +2925,7 @@ setInterval(async () => {
     updateCart();
     if (document.getElementById("checkoutOverlay").classList.contains("open")) updateCheckoutSummary();
   } catch (_) { /* silencioso, no hacer nada si falla */ }
-}, 60000);
+}, 30000);
 </script>
 
 </body>
