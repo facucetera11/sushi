@@ -1,17 +1,17 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const crypto = require("crypto");
 require("dotenv").config();
 
-const Product = require("./models/Product");
 const Order = require("./models/Order");
 const Settings = require("./models/Settings");
 
 const app = express();
 app.disable("x-powered-by");
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN ? process.env.FRONTEND_ORIGIN.split(",").map(origin => origin.trim()) : true
+  origin: process.env.FRONTEND_ORIGIN
+    ? process.env.FRONTEND_ORIGIN.split(",").map(o => o.trim())
+    : true
 }));
 app.use(express.json({ limit: "6mb" }));
 app.use((req, res, next) => {
@@ -21,9 +21,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
-const authAttempts = new Map();
-const orderAttempts = new Map();
+/* ── SSE ── */
 const sseClients = new Set();
 
 function broadcast(type, data) {
@@ -33,131 +31,28 @@ function broadcast(type, data) {
   }
 }
 
-function rateLimit(store, limit, windowMs) {
-  return (req, res, next) => {
-    const key = req.ip || req.socket.remoteAddress || "unknown";
-    const now = Date.now();
-    const current = store.get(key) || { count: 0, resetAt: now + windowMs };
-    if (current.resetAt <= now) {
-      current.count = 0;
-      current.resetAt = now + windowMs;
-    }
-    current.count += 1;
-    store.set(key, current);
-    if (current.count > limit) {
-      return res.status(429).json({ error: "Demasiados intentos. Proba de nuevo en unos minutos." });
-    }
-    next();
-  };
-}
+// Exponemos broadcast a los routers vía app.locals
+app.locals.broadcast = broadcast;
 
-function base64url(value) {
-  return Buffer.from(JSON.stringify(value)).toString("base64url");
-}
+const { requireAdmin } = require("./middleware/auth");
 
-function signTokenPayload(payload) {
-  const secret = process.env.ADMIN_TOKEN_SECRET || process.env.ADMIN_PASSWORD;
-  if (!secret) throw new Error("ADMIN_TOKEN_SECRET o ADMIN_PASSWORD no configurado");
-  if (!process.env.ADMIN_TOKEN_SECRET) {
-    console.warn("⚠️  ADMIN_TOKEN_SECRET no está configurado. Se usa ADMIN_PASSWORD como fallback. Configurar ADMIN_TOKEN_SECRET por separado es más seguro.");
-  }
-  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
-}
+app.get("/events", requireAdmin, (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+  res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+  sseClients.add(res);
 
-function createToken(version = 0) {
-  const payload = base64url({ role: "admin", version, exp: Date.now() + TOKEN_TTL_MS });
-  return `${payload}.${signTokenPayload(payload)}`;
-}
+  const heartbeat = setInterval(() => {
+    try { res.write(": heartbeat\n\n"); } catch { clearInterval(heartbeat); sseClients.delete(res); }
+  }, 25000);
 
-function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
-  const hash = crypto.pbkdf2Sync(password, salt, 120000, 64, "sha512").toString("hex");
-  return { salt, hash };
-}
+  req.on("close", () => { clearInterval(heartbeat); sseClients.delete(res); });
+});
 
-function verifyPassword(password, salt, hash) {
-  const candidate = hashPassword(password, salt).hash;
-  return crypto.timingSafeEqual(Buffer.from(candidate, "hex"), Buffer.from(hash, "hex"));
-}
-
-async function getSettings() {
-  let s = await Settings.findOne();
-  if (!s) {
-    s = await Settings.create({ openHour: 19, closeHour: 23, openDays: [1,2,3,4,5,6], cashDiscount: 0, transferAlias: "", mercadoPagoLink: "", whatsappNumber: "5491121734894", acceptingOrders: true });
-  }
-  return s;
-}
-
-function publicSettings(settings) {
-  const data = settings.toObject ? settings.toObject() : settings;
-  delete data.adminPasswordHash;
-  delete data.adminPasswordSalt;
-  delete data.adminTokenVersion;
-  return data;
-}
-
-async function isAdminPassword(password) {
-  const s = await getSettings();
-  if (s.adminPasswordHash && s.adminPasswordSalt) {
-    return verifyPassword(password, s.adminPasswordSalt, s.adminPasswordHash);
-  }
-  return Boolean(process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD);
-}
-
-async function requireAdmin(req, res, next) {
-  try {
-    const header = req.get("authorization") || "";
-    const queryToken = req.query.token || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : queryToken;
-    const [payload, signature] = token.split(".");
-    if (!payload || !signature || signature !== signTokenPayload(payload)) {
-      return res.status(401).json({ error: "Sesion invalida" });
-    }
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    const s = await getSettings();
-    if (data.role !== "admin" || data.exp < Date.now() || data.version !== (s.adminTokenVersion || 0)) {
-      return res.status(401).json({ error: "Sesion vencida" });
-    }
-    next();
-  } catch (err) {
-    res.status(401).json({ error: "Sesion invalida" });
-  }
-}
-
-function getStockRecipe(product, itemOverride) {
-  // Si el item trae _piecesOverride, descontamos exactamente esas piezas (para combos libres)
-  if (itemOverride && itemOverride._piecesOverride > 0) {
-    return [{ product: product._id, pieces: itemOverride._piecesOverride }];
-  }
-  const recipe = Array.isArray(product.stockItems)
-    ? product.stockItems.filter(item => item.product && item.pieces > 0)
-    : [];
-  if (recipe.length) return recipe;
-  return [{ product: product._id, pieces: product.piecesPerUnit || 1 }];
-}
-
-function getComboPiecePrice(product) {
-  const customPrice = Number(product.comboPiecePrice) || 0;
-  if (customPrice > 0) return customPrice;
-  const unitPrice = Number(product.price) || 0;
-  const piecesPerUnit = Number(product.piecesPerUnit) || 1;
-  return Math.round(unitPrice / piecesPerUnit);
-}
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(async () => {
-    console.log("✅ MongoDB conectado");
-    // Sincronizar _orderSeq con el último número de pedido real si es la primera vez.
-    const s = await Settings.findOne();
-    if (s && (s._orderSeq || 0) === 0) {
-      const last = await Order.findOne().sort({ number: -1 });
-      if (last && last.number > 0) {
-        await Settings.findOneAndUpdate({}, { $set: { _orderSeq: last.number } });
-        console.log(`✅ Contador de pedidos inicializado en ${last.number}`);
-      }
-    }
-  })
-  .catch((err) => { console.error("❌ Error conectando a MongoDB:", err.message); process.exit(1); });
-
+/* ── HEALTH ── */
 app.get("/health", (req, res) => {
   const dbReady = mongoose.connection.readyState === 1;
   res.status(dbReady ? 200 : 503).json({
@@ -169,258 +64,28 @@ app.get("/health", (req, res) => {
   });
 });
 
-/* ── SSE ── */
-app.get("/events", requireAdmin, (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no");
-  res.flushHeaders();
-
-  res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
-  sseClients.add(res);
-
-  const heartbeat = setInterval(() => {
-    try { res.write(": heartbeat\n\n"); } catch { clearInterval(heartbeat); sseClients.delete(res); }
-  }, 25000);
-
-  req.on("close", () => { clearInterval(heartbeat); sseClients.delete(res); });
-});
-
-/* ── AUTH ── */
-app.post("/auth", rateLimit(authAttempts, 8, 15 * 60 * 1000), async (req, res) => {
-  try {
-    const { password } = req.body;
-    if (!password) return res.status(400).json({ error: "Ingresa la contrasena" });
-    const s = await getSettings();
-    if (await isAdminPassword(password)) {
-      return res.json({ ok: true, token: createToken(s.adminTokenVersion || 0) });
-    }
-    return res.status(401).json({ error: "Contrasena incorrecta" });
-  } catch (err) {
-    res.status(500).json({ error: "Error al iniciar sesion" });
-  }
-});
-
-app.post("/auth/change-password", requireAdmin, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ error: "La nueva contrasena debe tener al menos 8 caracteres" });
-    }
-    if (!(await isAdminPassword(currentPassword || ""))) {
-      return res.status(400).json({ error: "La contrasena actual no es correcta" });
-    }
-    const s = await getSettings();
-    const { salt, hash } = hashPassword(newPassword);
-    s.adminPasswordSalt = salt;
-    s.adminPasswordHash = hash;
-    s.adminTokenVersion = (s.adminTokenVersion || 0) + 1;
-    await s.save();
-    res.json({ ok: true, token: createToken(s.adminTokenVersion) });
-  } catch (err) {
-    res.status(500).json({ error: "Error al cambiar contrasena" });
-  }
-});
-
-/* ── PRODUCTS ── */
-app.get("/products", async (req, res) => {
-  try { res.json(await Product.find()); }
-  catch (err) { res.status(500).json({ error: "Error al obtener productos" }); }
-});
-
-app.post("/products", requireAdmin, async (req, res) => {
-  try { const p = new Product(req.body); await p.save(); res.json(p); }
-  catch (err) { res.status(400).json({ error: "Error al crear producto", detalle: err.message }); }
-});
-
-app.put("/products/:id", requireAdmin, async (req, res) => {
-  try {
-    const p = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!p) return res.status(404).json({ error: "Producto no encontrado" });
-    res.json(p);
-  } catch (err) { res.status(400).json({ error: "Error al actualizar producto", detalle: err.message }); }
-});
-
-app.delete("/products/:id", requireAdmin, async (req, res) => {
-  try {
-    const p = await Product.findByIdAndDelete(req.params.id);
-    if (!p) return res.status(404).json({ error: "Producto no encontrado" });
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: "Error al eliminar producto" }); }
-});
-
-/* ── SETTINGS ── */
-app.get("/settings", async (req, res) => {
-  try {
-    res.json(publicSettings(await getSettings()));
-  } catch (err) { res.status(500).json({ error: "Error al obtener configuración" }); }
-});
-
-app.put("/settings", requireAdmin, async (req, res) => {
-  try {
-    const allowed = ["openHour", "closeHour", "deliveryHour", "openDays", "cashDiscount", "transferAlias", "mercadoPagoLink", "whatsappNumber", "acceptingOrders"];
-    const updates = {};
-    allowed.forEach(key => {
-      if (Object.prototype.hasOwnProperty.call(req.body, key)) updates[key] = req.body[key];
-    });
-    let s = await getSettings();
-    Object.assign(s, updates);
-    await s.save();
-    res.json(publicSettings(s));
-  } catch (err) { res.status(500).json({ error: "Error al guardar configuración" }); }
-});
-
-/* ── ORDERS ── */
-app.get("/orders", requireAdmin, async (req, res) => {
-  try {
-    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
-    const skip = parseInt(req.query.skip) || 0;
-    res.json(await Order.find().sort({ number: -1 }).skip(skip).limit(limit));
-  }
-  catch (err) { res.status(500).json({ error: "Error al obtener pedidos" }); }
-});
-
-app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) => {
-  const deductedIds = []; // para rollback si algo falla a mitad
-  try {
-    const { items, total, deliveryType, address, clientName, clientPhone, notes, scheduledDate, scheduledTime, paymentMethod } = req.body;
-
-    if (!Array.isArray(items) || !items.length) {
-      return res.status(400).json({ error: "El pedido no tiene productos" });
-    }
-
-    const settings = await Settings.findOne();
-    if (settings && settings.acceptingOrders === false) {
-      return res.status(403).json({ error: "El local esta cerrado y no esta aceptando pedidos en este momento" });
-    }
-
-    // Calcular piezas a descontar por producto, validando existencia y estado.
-    const stockDeductions = new Map();
-    const productPriceMap = new Map(); // para recalcular total
-    for (const item of items) {
-      const product = await Product.findById(item._id);
-      if (!product) return res.status(400).json({ error: `Producto no encontrado: ${item.name}` });
-      if (product.active === false) return res.status(400).json({ error: `Producto no disponible: ${product.name}` });
-
-      const qty = Number(item.qty) || 0;
-      if (qty <= 0) return res.status(400).json({ error: `Cantidad invalida para: ${item.name}` });
-
-      // Guardar precio real del producto. Los combos eleccion se cobran por pieza.
-      if (item._piecesOverride > 0) {
-        productPriceMap.set(`combo:${item._id?.toString()}`, { price: getComboPiecePrice(product), qty: Number(item._piecesOverride) * qty });
-      } else {
-        productPriceMap.set(item._id?.toString(), { price: product.price, qty });
-      }
-
-      for (const recipeItem of getStockRecipe(product, item)) {
-        const id = recipeItem.product.toString();
-        const pieces = (Number(recipeItem.pieces) || 0) * qty;
-        stockDeductions.set(id, (stockDeductions.get(id) || 0) + pieces);
-      }
-    }
-
-    // Recalcular total server-side para no confiar en el cliente
-    let calculatedBase = 0;
-    for (const { price, qty } of productPriceMap.values()) {
-      calculatedBase += price * qty;
-    }
-    const discount = (paymentMethod === "cash" && settings.cashDiscount > 0)
-      ? Math.round(calculatedBase * settings.cashDiscount / 100)
-      : 0;
-    const calculatedTotal = calculatedBase - discount;
-    const submittedTotal = Number(total);
-    if (Number.isFinite(submittedTotal) && Math.abs(submittedTotal - calculatedTotal) > 10) {
-      return res.status(409).json({ error: "El total cambio. Actualiza el pedido y volve a intentarlo." });
-    }
-
-    // Pre-cargar nombres para los detalles del pedido.
-    const stockProducts = await Product.find({ _id: { $in: [...stockDeductions.keys()] } });
-    const stockById = new Map(stockProducts.map(p => [p._id.toString(), p]));
-
-    // Descontar stock de forma atómica: solo aplica si stock >= piezas requeridas.
-    // Si el documento no existe o el stock no alcanza, findOneAndUpdate devuelve null.
-    const stockDeductionDetails = [];
-    for (const [id, pieces] of stockDeductions) {
-      const updated = await Product.findOneAndUpdate(
-        { _id: id, stock: { $gte: pieces } },
-        { $inc: { stock: -pieces } },
-        { new: false } // devuelve el doc antes del update (para el nombre)
-      );
-      if (!updated) {
-        // Rollback: restaurar todo lo que ya descontamos antes de este fallo.
-        await Promise.all(deductedIds.map(({ did, dpieces }) =>
-          Product.findByIdAndUpdate(did, { $inc: { stock: dpieces } })
-        ));
-        const name = stockById.get(id)?.name || id;
-        return res.status(400).json({ error: `Stock insuficiente para: ${name}` });
-      }
-      deductedIds.push({ did: id, dpieces: pieces });
-      stockDeductionDetails.push({ product: id, name: updated.name, pieces });
-    }
-
-    // Número de pedido: usar findOneAndUpdate atómico para evitar duplicados.
-    // Incrementamos un contador en Settings en lugar de buscar el último Order.
-    const settingsUpdated = await Settings.findOneAndUpdate(
-      {},
-      { $inc: { _orderSeq: 1 } },
-      { new: true, upsert: true }
-    );
-    const orderNumber = settingsUpdated._orderSeq || 1;
-
-    const order = new Order({
-      number: orderNumber,
-      items,
-      total: calculatedTotal,
-      deliveryType: deliveryType || "retiro",
-      address: address || "",
-      clientName: clientName || "",
-      clientPhone: clientPhone || "",
-      notes: notes || "",
-      scheduledDate: scheduledDate || "",
-      scheduledTime: scheduledTime || "",
-      paymentMethod: paymentMethod || "transfer",
-      stockDeductions: stockDeductionDetails
-    });
-    await order.save();
-    broadcast("order_new", order);
-    res.json(order);
-  } catch (err) {
-    // Rollback de stock si el guardado del pedido falló después de descontar.
-    if (deductedIds.length) {
-      await Promise.all(deductedIds.map(({ did, dpieces }) =>
-        Product.findByIdAndUpdate(did, { $inc: { stock: dpieces } })
-      )).catch(e => console.error("Error en rollback de stock:", e));
-    }
-    res.status(400).json({ error: "Error al crear pedido", detalle: err.message });
-  }
-});
-
-app.put("/orders/:id", requireAdmin, async (req, res) => {
-  try {
-    const o = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!o) return res.status(404).json({ error: "Pedido no encontrado" });
-    broadcast("order_updated", o);
-    res.json(o);
-  } catch (err) { res.status(400).json({ error: "Error al actualizar pedido", detalle: err.message }); }
-});
-
-app.delete("/orders/:id", requireAdmin, async (req, res) => {
-  try {
-    const o = await Order.findByIdAndDelete(req.params.id);
-    if (!o) return res.status(404).json({ error: "Pedido no encontrado" });
-    // Restaurar stock de las piezas descontadas al crear el pedido
-    if (Array.isArray(o.stockDeductions) && o.stockDeductions.length) {
-      await Promise.all(o.stockDeductions.map(d =>
-        Product.findByIdAndUpdate(d.product, { $inc: { stock: d.pieces } })
-      ));
-    }
-    broadcast("order_deleted", { _id: o._id });
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: "Error al eliminar pedido" }); }
-});
+/* ── ROUTES ── */
+app.use("/auth",     require("./routes/auth"));
+app.use("/products", require("./routes/products"));
+app.use("/settings", require("./routes/settings").router);
+app.use("/orders",   require("./routes/orders"));
 
 app.use((req, res) => res.status(404).json({ error: "Ruta no encontrada" }));
+
+/* ── DB + ARRANQUE ── */
+mongoose.connect(process.env.MONGO_URI)
+  .then(async () => {
+    console.log("✅ MongoDB conectado");
+    const s = await Settings.findOne();
+    if (s && (s._orderSeq || 0) === 0) {
+      const last = await Order.findOne().sort({ number: -1 });
+      if (last && last.number > 0) {
+        await Settings.findOneAndUpdate({}, { $set: { _orderSeq: last.number } });
+        console.log(`✅ Contador de pedidos inicializado en ${last.number}`);
+      }
+    }
+  })
+  .catch(err => { console.error("❌ Error conectando a MongoDB:", err.message); process.exit(1); });
 
 app.listen(process.env.PORT || 5000, () => {
   console.log(`🚀 Servidor corriendo en puerto ${process.env.PORT || 5000}`);
