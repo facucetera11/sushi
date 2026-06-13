@@ -1503,6 +1503,7 @@ function renderStockInventory(products) {
 
 function renderProducts(products) {
   toggleNewProductStockFields();
+  products.forEach(p => rememberCustomCategory(normalizeCategory(p.category)));
   const cats = orderedCategories(products);
   const hasCombos = products.some(p => normalizeCategory(p.category) === "combos");
 
@@ -1581,6 +1582,7 @@ async function addProduct() {
     const categoryCustom = document.getElementById("categoryCustomInput").value.trim().toLowerCase();
     if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el tipo personalizado", "error"); return; }
     const category = normalizeCategory(categoryRaw === "otro" ? categoryCustom : categoryRaw);
+    if (categoryRaw === "otro") rememberCustomCategory(category);
     const name = document.getElementById("nameInput").value.trim();
     const price = +document.getElementById("priceInput").value;
     if (!name || !price) { toast("Completá nombre y precio", "error"); return; }
@@ -1621,6 +1623,7 @@ async function updateProduct(id) {
     const categoryCustom = customInp ? customInp.value.trim().toLowerCase() : "";
     if (categoryRaw === "otro" && !categoryCustom) { toast("Escribí el tipo personalizado", "error"); return; }
     const category = normalizeCategory(categoryRaw === "otro" ? categoryCustom : categoryRaw);
+    if (categoryRaw === "otro") rememberCustomCategory(category);
     const piecesPerUnit = +document.getElementById(`pp-${id}`).value || (STOCK_TYPES.includes(category) ? 8 : 1);
     const stockUnits = +document.getElementById(`st-${id}`).value || 0;
     const stock = RECIPE_TYPES.includes(category) ? 0 : STOCK_TYPES.includes(category) ? stockPiecesFromUnits(stockUnits, { piecesPerUnit }) : stockUnits;
@@ -1857,6 +1860,20 @@ function onPromoScopeChange() {
   document.getElementById("promoCategoriesWrap").style.display = scope === "categories" ? "" : "none";
 }
 
+function rememberCustomCategory(cat) {
+  if (!cat || BASE_CATEGORIES.includes(cat)) return;
+  const stored = JSON.parse(localStorage.getItem("kizuna_custom_categories") || "[]");
+  if (!stored.includes(cat)) {
+    stored.push(cat);
+    localStorage.setItem("kizuna_custom_categories", JSON.stringify(stored));
+  }
+}
+
+function getAllKnownCategories() {
+  const customCats = JSON.parse(localStorage.getItem("kizuna_custom_categories") || "[]");
+  return [...new Set([...BASE_CATEGORIES, ...customCats, ...allProducts.map(p => normalizeCategory(p.category))])];
+}
+
 function populatePromoSelectors() {
   const productsSelect = document.getElementById("promoProducts");
   const categoriesSelect = document.getElementById("promoCategories");
@@ -1866,7 +1883,7 @@ function populatePromoSelectors() {
     `<option value="${p._id}">${categoryLabel(p.category)} — ${p.name}</option>`
   ).join("");
 
-  const cats = [...new Set(allProducts.map(p => normalizeCategory(p.category)))];
+  const cats = getAllKnownCategories();
   categoriesSelect.innerHTML = cats.map(c => `<option value="${c}">${categoryLabel(c)}</option>`).join("");
 }
 
