@@ -12,6 +12,7 @@ const OrderSchema=new mongoose.Schema({
     default: []
   },
   total: Number,
+  appliedPromoIds: { type: [String], default: [] },
   status: { type: String, default: "Pendiente" },
   deliveryType: { type: String, default: "retiro" }, // "retiro" | "delivery"
   address: { type: String, default: "" },

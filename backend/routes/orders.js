@@ -6,6 +6,8 @@ const Settings = require("../models/Settings");
 const rateLimit = require("../middleware/rateLimit");
 const { requireAdmin } = require("../middleware/auth");
 
+const { calculateOrderTotal, getActivePromotions } = require("../utils/promoEngine");
+
 const orderAttempts = new Map();
 
 function getStockRecipe(product, itemOverride) {
@@ -79,6 +81,8 @@ router.post("/", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) 
 
     const stockDeductions = new Map();
     const productPriceMap = new Map();
+    const orderLines = [];
+    const productsById = new Map();
     for (const item of items) {
       const product = await Product.findById(item._id);
       if (!product) return res.status(400).json({ error: `Producto no encontrado: ${item.name}` });
@@ -87,10 +91,13 @@ router.post("/", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) 
       const qty = Number(item.qty) || 0;
       if (qty <= 0) return res.status(400).json({ error: `Cantidad invalida para: ${item.name}` });
 
+      productsById.set(product._id.toString(), product);
+
       if (item._piecesOverride > 0) {
         productPriceMap.set(`combo:${item._id?.toString()}`, { price: getComboPiecePrice(product), qty: Number(item._piecesOverride) * qty });
       } else {
         productPriceMap.set(item._id?.toString(), { price: product.price, qty });
+        orderLines.push({ productId: product._id, qty });
       }
 
       for (const recipeItem of getStockRecipe(product, item)) {
@@ -100,9 +107,12 @@ router.post("/", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) 
       }
     }
 
-    let calculatedBase = 0;
-    for (const { price, qty } of productPriceMap.values()) {
-      calculatedBase += price * qty;
+    const promos = await getActivePromotions();
+    const { total: promoTotal, appliedPromoIds } = calculateOrderTotal(orderLines, productsById, promos);
+
+    let calculatedBase = promoTotal;
+    for (const [key, { price, qty }] of productPriceMap) {
+      if (key.startsWith("combo:")) calculatedBase += price * qty;
     }
     const discount = (paymentMethod === "cash" && settings.cashDiscount > 0)
       ? Math.round(calculatedBase * settings.cashDiscount / 100)
@@ -145,6 +155,7 @@ router.post("/", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) 
       number: orderNumber,
       items,
       total: calculatedTotal,
+      appliedPromoIds,
       deliveryType: deliveryType || "retiro",
       address: address || "",
       clientName: clientName || "",

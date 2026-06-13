@@ -639,6 +639,62 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       </div>
     </div>
 
+    <!-- OFERTAS -->
+    <div class="panel">
+      <button class="panel-toggle-btn" id="promosToggleBtn" onclick="togglePanel('promosToggleBtn','promosBody')">
+        <h2>🎯 Ofertas</h2>
+        <span class="toggle-arrow">▼</span>
+      </button>
+      <div class="panel-collapsible" id="promosBody">
+        <div class="panel-body">
+
+          <div style="background:rgba(216,106,94,.05);border:1px solid rgba(216,106,94,.18);border-radius:10px;padding:16px;margin-bottom:18px;">
+            <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;">➕ Nueva oferta</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <input id="promoLabel" placeholder="Texto (ej: 🔥 2x1 en Rolls)" style="grid-column:1/-1;">
+              <select id="promoType" onchange="onPromoTypeChange()">
+                <option value="percent">% Descuento</option>
+                <option value="2x1">2x1</option>
+                <option value="fixed_price">Precio fijo por combo (3x$X)</option>
+                <option value="bundle">Bundle (conjunto a precio fijo)</option>
+              </select>
+              <select id="promoScope" onchange="onPromoScopeChange()">
+                <option value="products">Por producto</option>
+                <option value="categories">Por categoría</option>
+              </select>
+
+              <div id="promoValueWrap" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <input id="promoValue" type="number" placeholder="% descuento">
+                <input id="promoQuantity" type="number" placeholder="Cada cuántas unidades" style="display:none;">
+              </div>
+
+              <div id="promoProductsWrap" style="grid-column:1/-1;">
+                <div class="label" style="margin-bottom:4px;">Productos incluidos</div>
+                <select id="promoProducts" multiple style="width:100%;height:110px;"></select>
+              </div>
+
+              <div id="promoCategoriesWrap" style="grid-column:1/-1;display:none;">
+                <div class="label" style="margin-bottom:4px;">Categorías incluidas</div>
+                <select id="promoCategories" multiple style="width:100%;height:110px;"></select>
+              </div>
+
+              <input id="promoStartDate" type="date" title="Desde (opcional)">
+              <input id="promoEndDate" type="date" title="Hasta (opcional)">
+
+              <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;">
+                <input type="color" id="promoBadgeColor" value="#d86a5e" style="width:40px;height:32px;padding:2px;border-radius:6px;">
+                <span class="label" style="margin:0;">Color del badge</span>
+              </div>
+            </div>
+            <button class="btn btn-success" style="margin-top:12px;width:100%;" onclick="createPromotion()">Crear oferta</button>
+          </div>
+
+          <div id="promotionsList" style="display:grid;gap:10px;"></div>
+
+        </div>
+      </div>
+    </div>
+
   </div><!-- /page -->
 </div><!-- /adminMain -->
 
@@ -650,6 +706,7 @@ const SESSION_KEY = "kizuna_admin_auth";
 const DAYS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 let openDays = [], refreshTimer = null;
 let allProducts = [];
+let allPromotions = [];
 let lastOrderCount = null;
 let soundEnabled = localStorage.getItem("kizuna_sound") !== "off";
 let audioCtx = null;
@@ -922,11 +979,12 @@ async function loadImageFile(input, targetInputId, previewId) {
 /* ── LOAD ALL ── */
 async function loadAll() {
   try {
-    const [productsRes, ordersRes, settingsRes] = await Promise.all([
-      publicFetch(`${API}/products`), authFetch(`${API}/orders`), publicFetch(`${API}/settings`)
+    const [productsRes, ordersRes, settingsRes, promosRes] = await Promise.all([
+      publicFetch(`${API}/products`), authFetch(`${API}/orders`), publicFetch(`${API}/settings`), authFetch(`${API}/promotions`)
     ]);
-    const [products, orders, settings] = await Promise.all([productsRes.json(), ordersRes.json(), settingsRes.json()]);
+    const [products, orders, settings, promotions] = await Promise.all([productsRes.json(), ordersRes.json(), settingsRes.json(), promosRes.json()]);
     allProducts = products;
+    allPromotions = promotions;
     window._kizunaSettings = settings;
     const activeCount = orders.filter(o => o.status !== "Entregado").length;
     if (lastOrderCount !== null && activeCount > lastOrderCount) showNewOrderBanner();
@@ -936,6 +994,7 @@ async function loadAll() {
     renderOrders(orders);
     renderSettings(settings);
     renderProducts(products);
+    renderPromotions(promotions, products);
   } catch (err) {
     if (err.message !== "Sesion vencida") { toast("❌ Error al cargar datos.", "error"); console.error(err); }
   }
@@ -1279,26 +1338,6 @@ async function deleteOrder(id) {
     if (!res.ok) throw new Error();
     toast("✓ Pedido eliminado", "success"); startAutoRefresh(); loadAll();
   } catch { toast("Error al eliminar pedido", "error"); }
-}
-
-async function deleteAllDelivered() {
-  const delivered = allOrders.filter(o => o.status === "Entregado");
-  if (!delivered.length) return toast("No hay pedidos entregados para eliminar", "error");
-  if (!confirm(`¿Eliminar ${delivered.length} pedido(s) entregado(s)? Esta acción no se puede deshacer.`)) return;
-
-  let errores = 0;
-  for (const o of delivered) {
-    try {
-      const res = await authFetch(`${API}/orders/${o._id}`, { method: "DELETE" });
-      if (!res.ok) errores++;
-    } catch { errores++; }
-  }
-
-  if (errores) toast(`Se eliminaron algunos pedidos, pero ${errores} fallaron`, "error");
-  else toast("✓ Historial de entregados eliminado", "success");
-
-  startAutoRefresh();
-  loadAll();
 }
 
 /* ── SETTINGS ── */
@@ -1769,6 +1808,187 @@ ${pagesHTML}
   w.document.open();
   w.document.write(html);
   w.document.close();
+}
+
+/* ── PROMOCIONES / OFERTAS ── */
+
+const PROMO_TYPE_LABELS = {
+  percent: "% Descuento",
+  "2x1": "2x1",
+  fixed_price: "Precio fijo por combo",
+  bundle: "Bundle"
+};
+
+function onPromoTypeChange() {
+  const type = document.getElementById("promoType").value;
+  const valueInput = document.getElementById("promoValue");
+  const qtyInput = document.getElementById("promoQuantity");
+  const productsWrap = document.getElementById("promoProductsWrap");
+  const scopeSelect = document.getElementById("promoScope");
+
+  if (type === "2x1") {
+    valueInput.style.display = "none";
+    qtyInput.style.display = "none";
+  } else if (type === "fixed_price") {
+    valueInput.style.display = "";
+    valueInput.placeholder = "Precio total del combo ($)";
+    qtyInput.style.display = "";
+    qtyInput.placeholder = "Cada cuántas unidades (ej: 3)";
+  } else if (type === "bundle") {
+    valueInput.style.display = "";
+    valueInput.placeholder = "Precio total del bundle ($)";
+    qtyInput.style.display = "none";
+    // Bundle solo tiene sentido por producto, forzamos scope productos
+    scopeSelect.value = "products";
+    onPromoScopeChange();
+    scopeSelect.disabled = true;
+  } else { // percent
+    valueInput.style.display = "";
+    valueInput.placeholder = "% descuento (ej: 20)";
+    qtyInput.style.display = "none";
+  }
+
+  if (type !== "bundle") scopeSelect.disabled = false;
+}
+
+function onPromoScopeChange() {
+  const scope = document.getElementById("promoScope").value;
+  document.getElementById("promoProductsWrap").style.display = scope === "products" ? "" : "none";
+  document.getElementById("promoCategoriesWrap").style.display = scope === "categories" ? "" : "none";
+}
+
+function populatePromoSelectors() {
+  const productsSelect = document.getElementById("promoProducts");
+  const categoriesSelect = document.getElementById("promoCategories");
+  if (!productsSelect || !categoriesSelect) return;
+
+  productsSelect.innerHTML = allProducts.map(p =>
+    `<option value="${p._id}">${categoryLabel(p.category)} — ${p.name}</option>`
+  ).join("");
+
+  const cats = [...new Set(allProducts.map(p => normalizeCategory(p.category)))];
+  categoriesSelect.innerHTML = cats.map(c => `<option value="${c}">${categoryLabel(c)}</option>`).join("");
+}
+
+async function createPromotion() {
+  try {
+    const label = document.getElementById("promoLabel").value.trim();
+    if (!label) { toast("Escribí un texto para la oferta", "error"); return; }
+
+    const type = document.getElementById("promoType").value;
+    const scope = document.getElementById("promoScope").value;
+    const value = +document.getElementById("promoValue").value || 0;
+    const quantity = +document.getElementById("promoQuantity").value || 2;
+    const startDate = document.getElementById("promoStartDate").value;
+    const endDate = document.getElementById("promoEndDate").value;
+    const badgeColor = document.getElementById("promoBadgeColor").value;
+
+    const productIds = scope === "products"
+      ? [...document.getElementById("promoProducts").selectedOptions].map(o => o.value)
+      : [];
+    const categories = scope === "categories"
+      ? [...document.getElementById("promoCategories").selectedOptions].map(o => o.value)
+      : [];
+
+    if (scope === "products" && !productIds.length) { toast("Elegí al menos un producto", "error"); return; }
+    if (scope === "categories" && !categories.length) { toast("Elegí al menos una categoría", "error"); return; }
+    if (type === "bundle" && productIds.length < 2) { toast("Un bundle necesita al menos 2 productos", "error"); return; }
+    if (type === "percent" && (value <= 0 || value > 100)) { toast("El % debe estar entre 1 y 100", "error"); return; }
+    if ((type === "fixed_price" || type === "bundle") && value <= 0) { toast("Ingresá el precio fijo", "error"); return; }
+
+    const body = { label, type, scope, value, quantity, productIds, categories, startDate, endDate, badgeColor, active: true };
+
+    const res = await authFetch(`${API}/promotions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al crear oferta"); }
+
+    document.getElementById("promoLabel").value = "";
+    document.getElementById("promoValue").value = "";
+    document.getElementById("promoQuantity").value = "";
+    document.getElementById("promoStartDate").value = "";
+    document.getElementById("promoEndDate").value = "";
+    document.getElementById("promoScope").disabled = false;
+
+    toast("✓ Oferta creada", "success");
+    loadAll();
+  } catch (err) {
+    toast(`❌ ${err.message}`, "error");
+  }
+}
+
+async function togglePromotionActive(id, active) {
+  try {
+    const res = await authFetch(`${API}/promotions/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active }) });
+    if (!res.ok) throw new Error();
+    toast(active ? "✓ Oferta activada" : "✓ Oferta desactivada", "success");
+    loadAll();
+  } catch { toast("Error al actualizar oferta", "error"); }
+}
+
+async function deletePromotion(id) {
+  if (!confirm("¿Eliminar esta oferta?")) return;
+  try {
+    const res = await authFetch(`${API}/promotions/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error();
+    toast("✓ Oferta eliminada", "success");
+    loadAll();
+  } catch { toast("Error al eliminar oferta", "error"); }
+}
+
+function promoTargetSummary(promo, products) {
+  if (promo.scope === "categories") {
+    return promo.categories.map(c => categoryLabel(c)).join(", ");
+  }
+  const names = promo.productIds.map(id => {
+    const p = products.find(x => x._id === id || x._id === id.toString());
+    return p ? p.name : "(producto eliminado)";
+  });
+  return names.join(", ");
+}
+
+function promoValueSummary(promo) {
+  switch (promo.type) {
+    case "percent": return `${promo.value}% de descuento`;
+    case "2x1": return "2x1";
+    case "fixed_price": return `${promo.quantity} unidades por $${Number(promo.value).toLocaleString("es-AR")}`;
+    case "bundle": return `Combo por $${Number(promo.value).toLocaleString("es-AR")}`;
+    default: return "";
+  }
+}
+
+function renderPromotions(promotions, products) {
+  populatePromoSelectors();
+  onPromoTypeChange();
+  onPromoScopeChange();
+
+  const list = document.getElementById("promotionsList");
+  if (!list) return;
+
+  if (!promotions.length) {
+    list.innerHTML = `<p style="opacity:.4;font-size:14px;">No hay ofertas creadas todavía.</p>`;
+    return;
+  }
+
+  list.innerHTML = promotions.map(promo => `
+    <div style="border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;${promo.active ? "" : "opacity:.5;"}">
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${promo.badgeColor || '#d86a5e'};"></span>
+          <strong style="font-family:'Syne',sans-serif;">${promo.label}</strong>
+        </div>
+        <div style="font-size:12px;color:rgba(22,32,74,.5);">
+          ${PROMO_TYPE_LABELS[promo.type] || promo.type} · ${promoValueSummary(promo)}<br>
+          Aplica a: ${promoTargetSummary(promo, products)}
+          ${promo.startDate || promo.endDate ? `<br>Vigencia: ${promo.startDate || "—"} a ${promo.endDate || "—"}` : ""}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn ${promo.active ? 'btn-danger' : 'btn-success'}" style="font-size:12px;padding:6px 12px;" onclick="togglePromotionActive('${promo._id}', ${!promo.active})">
+          ${promo.active ? "Desactivar" : "Activar"}
+        </button>
+        <button class="btn btn-danger" style="font-size:12px;padding:6px 12px;" onclick="deletePromotion('${promo._id}')">Eliminar</button>
+      </div>
+    </div>
+  `).join("");
 }
 </script>
 </body>

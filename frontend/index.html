@@ -1438,6 +1438,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
       <div class="modal-cat" id="modalCat"></div>
       <h2 id="modalName"></h2>
       <p class="modal-desc" id="modalDesc"></p>
+      <p id="modalPromoNote" style="font-size:12px;font-weight:700;margin-top:-6px;margin-bottom:4px;display:none;"></p>
       <p class="modal-stock-info" id="modalStock"></p>
       <div class="modal-qty-row">
         <span class="modal-qty-label">Cantidad</span>
@@ -1656,7 +1657,7 @@ footer p { opacity: .35; font-size: 12px; letter-spacing: 1px; font-weight: 300;
 <script>
 const API = "https://kizuna-api-8ja8.onrender.com";
 const CATS = ["rolls","combos","veggie","bandejas","extras"];
-let products = [], cart = [], settings = {};
+let products = [], cart = [], settings = {}, promotions = [];
 let menuCats = [...CATS];
 let searchQuery = "";
 let modalProduct = null, modalQty = 1;
@@ -1812,6 +1813,108 @@ function escapeHtml(value) {
 function escapeAttr(value) {
   return escapeHtml(value);
 }
+
+/* ── PROMOCIONES ── */
+
+function getPromoForProduct(p) {
+  if (!promotions || !promotions.length) return null;
+  const candidates = promotions.filter(promo => {
+    if (promo.scope === "products") {
+      return (promo.productIds || []).some(id => (id._id || id) == p._id);
+    }
+    if (promo.scope === "categories") {
+      return (promo.categories || []).includes(normalizeCategory(p.category));
+    }
+    return false;
+  });
+  if (!candidates.length) return null;
+  const priority = { bundle: 4, "2x1": 3, fixed_price: 2, percent: 1 };
+  candidates.sort((a, b) => (priority[b.type] || 0) - (priority[a.type] || 0));
+  return candidates[0];
+}
+
+// Precio "desde" mostrado en la card (para 2x1/fixed_price es el precio promedio si se compra el lote completo)
+function getPromoDisplayPrice(p, promo) {
+  const base = Number(p.price) || 0;
+  if (!promo) return { display: base, original: null, badge: null };
+
+  switch (promo.type) {
+    case "percent": {
+      const pct = Math.min(100, Math.max(0, Number(promo.value) || 0));
+      const display = Math.round(base * (1 - pct / 100));
+      return { display, original: base, badge: promo.label || `-${pct}%` };
+    }
+    case "2x1": {
+      // Precio promedio pagando 1 cada 2
+      const display = Math.round(base / 2);
+      return { display, original: base, badge: promo.label || "2x1", suffix: " c/u (2x1)" };
+    }
+    case "fixed_price": {
+      const groupSize = Math.max(1, Number(promo.quantity) || 2);
+      const groupPrice = Number(promo.value) || base * groupSize;
+      const display = Math.round(groupPrice / groupSize);
+      return { display, original: base, badge: promo.label || `${groupSize}x$${groupPrice}`, suffix: ` c/u (${groupSize}x$${groupPrice.toLocaleString("es-AR")})` };
+    }
+    case "bundle":
+      return { display: base, original: null, badge: promo.label || "🎁 Bundle" };
+    default:
+      return { display: base, original: null, badge: null };
+  }
+}
+
+// Calcula el total de una línea del carrito aplicando la promo correspondiente
+function getLinePromoTotal(item) {
+  const base = Number(item.price) || 0;
+  const qty = item.qty;
+  const promo = getPromoForProduct(item);
+  if (!promo) return base * qty;
+
+  switch (promo.type) {
+    case "percent": {
+      const pct = Math.min(100, Math.max(0, Number(promo.value) || 0));
+      return Math.round(base * qty * (1 - pct / 100));
+    }
+    case "2x1": {
+      const payableUnits = Math.ceil(qty / 2);
+      return payableUnits * base;
+    }
+    case "fixed_price": {
+      const groupSize = Math.max(1, Number(promo.quantity) || 2);
+      const groupPrice = Number(promo.value) || base * groupSize;
+      const fullGroups = Math.floor(qty / groupSize);
+      const remainder = qty % groupSize;
+      return fullGroups * groupPrice + remainder * base;
+    }
+    default:
+      return base * qty;
+  }
+}
+
+// Calcula el total del carrito aplicando promos (incluye bundles)
+function getCartPromoTotal() {
+  let total = 0;
+  for (const item of cart) {
+    if (item.isComboEleccion) { total += item.price * item.qty; continue; }
+    total += getLinePromoTotal(item);
+  }
+
+  // Bundles: si están todos los productos del bundle en el carrito (>=1 c/u)
+  for (const promo of promotions.filter(p => p.type === "bundle")) {
+    const ids = (promo.productIds || []).map(id => (id._id || id).toString());
+    const allPresent = ids.every(id => cart.some(i => i._id === id && i.qty >= 1));
+    if (!allPresent) continue;
+    let normalSumOneEach = 0;
+    for (const id of ids) {
+      const p = products.find(x => x._id === id);
+      if (p) normalSumOneEach += Number(p.price) || 0;
+    }
+    const savings = normalSumOneEach - (Number(promo.value) || 0);
+    if (savings > 0) total -= savings;
+  }
+
+  return Math.max(0, Math.round(total));
+}
+
 
 function normalizePhone(value) {
   return String(value || "").replace(/\D/g, "");
@@ -2001,7 +2104,7 @@ function selectPayment(method) {
   document.getElementById("transferDetail").classList.toggle("show", method === "transfer");
   document.getElementById("cashDetail").classList.toggle("show", method === "cash");
 
-  const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
+  const base = getCartPromoTotal();
   const discount = settings.cashDiscount || 0;
 
   if (method === "transfer") {
@@ -2184,9 +2287,10 @@ async function load() {
     if (grid) grid.innerHTML = `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
   });
   try {
-    [products, settings] = await Promise.all([
+    [products, settings, promotions] = await Promise.all([
       fetch(`${API}/products`).then(r => r.json()),
-      fetch(`${API}/settings`).then(r => r.json())
+      fetch(`${API}/settings`).then(r => r.json()),
+      fetch(`${API}/promotions?active=1`).then(r => r.json()).catch(() => [])
     ]);
     updateStatus();
     menuCats = buildMenuCats();
@@ -2242,11 +2346,21 @@ function renderCat(cat) {
     const tag = i === 0 && !sinStock ? `<span class="card-tag">Popular</span>` : "";
     const desc = p.description || "";
     const image = escapeAttr(p.image || "https://images.unsplash.com/photo-1579871494447-9811cf80d66c");
+    const promo = getPromoForProduct(p);
+    const promoInfo = getPromoDisplayPrice(p, promo);
+    const promoBadge = promo ? `<span class="card-tag" style="background:${promo.badgeColor || 'var(--red)'};left:auto;right:10px;top:44px;">${escapeHtml(promo.label)}</span>` : "";
+    const priceHTML = promo && promo.type !== "bundle"
+      ? `<div class="price" style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">
+           <span style="text-decoration:line-through;opacity:.4;font-size:13px;">$${promoInfo.original.toLocaleString("es-AR")}</span>
+           <span style="color:${promo.badgeColor || 'var(--red)'};">$${promoInfo.display.toLocaleString("es-AR")}${promoInfo.suffix || ""}</span>
+         </div>`
+      : `<div class="price">$${p.price.toLocaleString("es-AR")}</div>`;
     return `
     <div class="card ${sinStock ? "out-of-stock" : ""}" onclick="openModal('${escapeAttr(p._id)}')">
       <div class="card-img-wrap">
         <img src="${image}" alt="${escapeAttr(p.name)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1579871494447-9811cf80d66c'">
         ${tag}
+        ${promoBadge}
         ${stockTag}
         <div class="card-quick"><span>Vista rápida</span></div>
       </div>
@@ -2255,7 +2369,7 @@ function renderCat(cat) {
         <p class="card-desc">${escapeHtml(desc.substring(0, 60))}${desc.length > 60 ? "…" : ""}</p>
         <div class="card-bottom">
           <div>
-            <div class="price">$${p.price.toLocaleString("es-AR")}</div>
+            ${priceHTML}
             ${stockBadge}
           </div>
           <button class="btn-add" onclick="event.stopPropagation(); addToCartDirect('${escapeAttr(p._id)}')" ${sinStock || closed ? "disabled" : ""}>
@@ -2266,6 +2380,25 @@ function renderCat(cat) {
     </div>`;
   }).join("");
   return filtered.length + (cat === "combos" ? 1 : 0);
+}
+
+function updateModalPrice() {
+  if (!modalProduct) return;
+  const p = modalProduct;
+  const promo = getPromoForProduct(p);
+  const note = document.getElementById("modalPromoNote");
+
+  if (!promo || promo.type === "bundle") {
+    document.getElementById("modalPrice").textContent = `$${(p.price * modalQty).toLocaleString("es-AR")}`;
+    note.style.display = "none";
+    return;
+  }
+
+  const lineTotal = getLinePromoTotal({ price: p.price, qty: modalQty, _id: p._id, category: p.category });
+  document.getElementById("modalPrice").textContent = `$${lineTotal.toLocaleString("es-AR")}`;
+  note.textContent = `${promo.label}`;
+  note.style.color = promo.badgeColor || "var(--red)";
+  note.style.display = "block";
 }
 
 function openModal(id) {
@@ -2281,7 +2414,7 @@ function openModal(id) {
   document.getElementById("modalDesc").textContent = p.description || "";
   document.getElementById("modalStock").textContent = available > 0 ? `Stock disponible: ${available} unidades` : "Sin stock disponible";
   document.getElementById("modalQtyVal").textContent = "1";
-  document.getElementById("modalPrice").textContent = `$${p.price.toLocaleString("es-AR")}`;
+  updateModalPrice();
   document.getElementById("modalAdded").classList.remove("show");
   document.getElementById("modalAddBtn").disabled = available <= 0 || !isAcceptingOrders();
   document.getElementById("modalAddBtn").textContent = !isAcceptingOrders() ? "Local cerrado" : available <= 0 ? "Sin stock" : "Agregar al pedido";
@@ -2296,8 +2429,9 @@ function changeModalQty(delta) {
   const maxQty = Math.max(1, available - alreadyInCart + modalQty);
   modalQty = Math.max(1, Math.min(maxQty, modalQty + delta));
   document.getElementById("modalQtyVal").textContent = modalQty;
-  document.getElementById("modalPrice").textContent = `$${(modalProduct.price * modalQty).toLocaleString("es-AR")}`;
+  updateModalPrice();
 }
+
 
 function addFromModal() {
   if (!modalProduct || modalProduct.active === false || getAvailableUnits(modalProduct) <= 0 || !isAcceptingOrders()) return;
@@ -2322,7 +2456,7 @@ function updateCart() {
     itemsDiv.innerHTML = `<p style="opacity:.32;font-size:13px;padding:12px 0;letter-spacing:.3px;">Tu carrito está vacío</p>`;
   } else {
     itemsDiv.innerHTML = cart.map(i => {
-      total += i.price * i.qty;
+      total += i.isComboEleccion ? i.price * i.qty : getLinePromoTotal(i);
       count += i.qty;
       const lineId = escapeAttr(i.lineId);
       if (i.isComboEleccion) {
@@ -2338,11 +2472,15 @@ function updateCart() {
           </div>
         </div>`;
       }
+      const promo = getPromoForProduct(i);
+      const subLine = promo
+        ? `<span style="text-decoration:line-through;opacity:.4;">$${i.price.toLocaleString("es-AR")}</span> <span style="color:${promo.badgeColor || 'var(--red)'};font-weight:600;">${promo.label}</span>`
+        : `$${i.price.toLocaleString("es-AR")} c/u`;
       return `
       <div class="cart-item">
         <div class="cart-item-main">
           <div class="cart-item-name">${escapeHtml(i.name)}</div>
-          <div class="cart-item-sub">$${i.price.toLocaleString("es-AR")} c/u</div>
+          <div class="cart-item-sub">${subLine}</div>
           <input class="cart-item-note" type="text" maxlength="120" value="${escapeAttr(i.note || "")}" placeholder="Nota: sin palta, sin sésamo..." oninput="updateCartNote('${lineId}', this.value)">
         </div>
         <div class="qty">
@@ -2404,7 +2542,7 @@ function updateCheckoutSummary() {
   const date = document.getElementById("deliveryDate")?.options[document.getElementById("deliveryDate").selectedIndex]?.text || "";
   const time = document.getElementById("deliveryTime")?.value || "";
   const address = document.getElementById("addressInput")?.value.trim() || "";
-  const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
+  const base = getCartPromoTotal();
   const discount = settings.cashDiscount || 0;
   const saving = paymentMethod === "cash" ? Math.round(base * discount / 100) : 0;
   const final = base - saving;
@@ -2482,7 +2620,7 @@ async function sendWhatsApp() {
   btn.textContent = "Enviando pedido...";
   orderInFlight = true;
 
-  const base = cart.reduce((a, i) => a + i.price * i.qty, 0);
+  const base = getCartPromoTotal();
   const discount = settings.cashDiscount || 0;
   const saving = paymentMethod === "cash" ? Math.round(base * discount / 100) : 0;
   const total = base - saving;
@@ -2913,12 +3051,14 @@ load();
 // Polling silencioso: refresca productos y configuracion cada 30s sin mover nada en la UI
 setInterval(async () => {
   try {
-    const [freshProducts, freshSettings] = await Promise.all([
+    const [freshProducts, freshSettings, freshPromos] = await Promise.all([
       fetch(`${API}/products`).then(r => r.json()),
-      fetch(`${API}/settings`).then(r => r.json())
+      fetch(`${API}/settings`).then(r => r.json()),
+      fetch(`${API}/promotions?active=1`).then(r => r.json()).catch(() => promotions)
     ]);
     products = freshProducts;
     settings = freshSettings;
+    promotions = freshPromos;
     // Re-renderizar sin tocar scroll, carrito ni estado de checkout/modal.
     renderAllCats();
     reconcileCartWithProducts();

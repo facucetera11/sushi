@@ -69,6 +69,7 @@ app.use("/auth",     require("./routes/auth"));
 app.use("/products", require("./routes/products"));
 app.use("/settings", require("./routes/settings").router);
 app.use("/orders",   require("./routes/orders"));
+app.use("/promotions", require("./routes/promotions"));
 
 app.use((req, res) => res.status(404).json({ error: "Ruta no encontrada" }));
 
