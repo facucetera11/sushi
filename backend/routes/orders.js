@@ -79,6 +79,19 @@ router.post("/", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) 
       return res.status(403).json({ error: "El local esta cerrado y no esta aceptando pedidos en este momento" });
     }
 
+    const promos = await getActivePromotions();
+
+    // Armamos un Set con los IDs de productos que tienen 2x1 activo
+    const promo2x1Ids = new Set();
+    for (const pr of promos) {
+      if (pr.type !== "2x1") continue;
+      if (pr.scope === "products") pr.productIds.forEach(id => promo2x1Ids.add(id.toString()));
+      // las de scope "categories" las resolvemos por producto más abajo
+    }
+    const promo2x1Categories = new Set(
+      promos.filter(pr => pr.type === "2x1" && pr.scope === "categories").flatMap(pr => pr.categories)
+    );
+
     const stockDeductions = new Map();
     const productPriceMap = new Map();
     const orderLines = [];
@@ -100,14 +113,17 @@ router.post("/", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, res) 
         orderLines.push({ productId: product._id, qty });
       }
 
+      // Si el producto tiene 2x1, cada unidad pedida consume 2 unidades reales de stock
+      const has2x1 = promo2x1Ids.has(product._id.toString()) || promo2x1Categories.has(product.category);
+      const stockMultiplier = has2x1 && !item._piecesOverride ? 2 : 1;
+
       for (const recipeItem of getStockRecipe(product, item)) {
         const id = recipeItem.product.toString();
-        const pieces = (Number(recipeItem.pieces) || 0) * qty;
+        const pieces = (Number(recipeItem.pieces) || 0) * qty * stockMultiplier;
         stockDeductions.set(id, (stockDeductions.get(id) || 0) + pieces);
       }
     }
 
-    const promos = await getActivePromotions();
     const { total: promoTotal, appliedPromoIds } = calculateOrderTotal(orderLines, productsById, promos);
 
     let calculatedBase = promoTotal;
