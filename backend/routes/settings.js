@@ -6,7 +6,7 @@ const { requireAdmin } = require("../middleware/auth");
 const ALLOWED_SETTINGS = [
   "openHour", "closeHour", "deliveryHour", "openDays",
   "cashDiscount", "transferAlias", "mercadoPagoLink",
-  "whatsappNumber", "acceptingOrders"
+  "whatsappNumber", "acceptingOrders", "customCategories"
 ];
 
 async function getSettings() {

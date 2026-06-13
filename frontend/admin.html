@@ -1860,17 +1860,24 @@ function onPromoScopeChange() {
   document.getElementById("promoCategoriesWrap").style.display = scope === "categories" ? "" : "none";
 }
 
-function rememberCustomCategory(cat) {
+async function rememberCustomCategory(cat) {
   if (!cat || BASE_CATEGORIES.includes(cat)) return;
-  const stored = JSON.parse(localStorage.getItem("kizuna_custom_categories") || "[]");
-  if (!stored.includes(cat)) {
-    stored.push(cat);
-    localStorage.setItem("kizuna_custom_categories", JSON.stringify(stored));
-  }
+  const settings = window._kizunaSettings || {};
+  const current = settings.customCategories || [];
+  if (current.includes(cat)) return;
+  const updated = [...current, cat];
+  try {
+    await authFetch(`${API}/settings`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customCategories: updated })
+    });
+    settings.customCategories = updated;
+  } catch (err) { console.error("Error guardando categoría", err); }
 }
 
 function getAllKnownCategories() {
-  const customCats = JSON.parse(localStorage.getItem("kizuna_custom_categories") || "[]");
+  const customCats = (window._kizunaSettings && window._kizunaSettings.customCategories) || [];
   return [...new Set([...BASE_CATEGORIES, ...customCats, ...allProducts.map(p => normalizeCategory(p.category))])];
 }
 
