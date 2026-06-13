@@ -10,6 +10,10 @@ const ProductSchema = new mongoose.Schema({
     required: true,
     default: 0
   },
+  comboPiecePrice: {
+    type: Number,
+    default: 0
+  },
   stock: {
     type: Number,
     required: true,

@@ -585,6 +585,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div><div class="label">Nombre</div><input id="nameInput" placeholder="Ej: Dragon Roll"></div>
             <div><div class="label">Precio</div><input id="priceInput" type="number" placeholder="1500"></div>
+            <div><div class="label">Precio pieza combo</div><input id="comboPiecePriceInput" type="number" placeholder="Ej: 2000"></div>
             <div class="unit-stock-field"><div class="label">Stock inicial (rolls/unidades)</div><input id="stockInput" type="number" placeholder="10"></div>
             <div class="unit-stock-field"><div class="label">Piezas por unidad</div><input id="piecesInput" type="number" placeholder="Ej: 8"></div>
             <div>
@@ -1338,52 +1339,7 @@ async function saveTransfer() {
 function renderComboEleccionAdminSection() {
   const container = document.getElementById("comboEleccionSection");
   if (!container) return;
-  const prices = (window._kizunaSettings && window._kizunaSettings.comboEleccionPrices) || {};
-  const SIZES = [
-    { key: "p8",  pieces: 8,  label: "Pequeño", ph: "17000" },
-    { key: "p16", pieces: 16, label: "Mediano",  ph: "31000" },
-    { key: "p35", pieces: 35, label: "Grande",   ph: "70000" },
-  ];
-  container.innerHTML = `
-    <div style="grid-column:1/-1;background:white;border:1.5px solid rgba(22,32,74,.13);border-radius:14px;padding:20px 24px;margin-bottom:4px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <span style="font-size:10px;letter-spacing:2px;color:var(--red);font-weight:700;">COMBO ELECCIÓN</span>
-        <span style="font-size:12px;color:rgba(22,32,74,.38);">Precios fijos por tamaño</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
-        ${SIZES.map(s => {
-          const price = prices[s.key] || "";
-          const hasPrice = price > 0;
-          return `<div style="border:1.5px solid ${hasPrice ? "rgba(22,32,74,.15)" : "rgba(200,116,0,.35)"};border-radius:10px;padding:14px;background:${hasPrice ? "rgba(22,32,74,.02)" : "rgba(255,248,240,.7)"};">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:var(--navy);line-height:1;">${s.pieces}<span style="font-size:12px;font-weight:500;margin-left:3px;opacity:.5;">pz</span></div>
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(22,32,74,.4);margin-bottom:10px;">${s.label}</div>
-            ${hasPrice
-              ? `<div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:10px;">✓ $${Number(price).toLocaleString("es-AR")}</div>`
-              : `<div style="font-size:12px;color:#c87400;font-weight:600;margin-bottom:10px;">Sin precio</div>`}
-            <input id="ce-price-${s.key}" type="number" min="0" value="${price}" placeholder="${s.ph}" style="margin-bottom:8px;">
-            <button class="btn btn-success" style="padding:7px 0;font-size:12px;width:100%;" onclick="saveComboEleccionPrice('${s.key}', ${s.pieces})">Guardar</button>
-          </div>`;
-        }).join("")}
-      </div>
-    </div>`;
-}
-
-async function saveComboEleccionPrice(key, pieces) {
-  const input = document.getElementById(`ce-price-${key}`);
-  const price = parseInt(input.value);
-  if (isNaN(price) || price < 0) { toast("Precio inválido", "error"); return; }
-  const current = (window._kizunaSettings && window._kizunaSettings.comboEleccionPrices) || {};
-  const updated = { ...current, [key]: price };
-  const res = await authFetch(`${API}/settings`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ comboEleccionPrices: updated })
-  });
-  if (!res.ok) { toast("Error al guardar precio", "error"); return; }
-  if (!window._kizunaSettings) window._kizunaSettings = {};
-  window._kizunaSettings.comboEleccionPrices = updated;
-  toast(`✓ Combo ${pieces} pz — $${price.toLocaleString("es-AR")} guardado`, "success");
-  renderComboEleccionAdminSection();
+  container.innerHTML = "";
 }
 
 /* ── PRODUCTS ── */
@@ -1525,6 +1481,7 @@ function renderProducts(products) {
           </div>
           <input id="n-${p._id}" value="${p.name}">
           <input id="pr-${p._id}" type="number" value="${p.price}" placeholder="Precio">
+          <input id="cpp-${p._id}" type="number" value="${p.comboPiecePrice || ""}" placeholder="Precio pieza combo">
           <div style="display:${recipeStock ? "none" : "grid"};grid-template-columns:1fr 1fr;gap:6px;">
             <div><div class="label" style="font-size:11px;">Stock (${isStockType(p) ? "rolls" : "unidades"})</div><input id="st-${p._id}" type="number" value="${isStockType(p) ? units : p.stock}"></div>
             <div><div class="label" style="font-size:11px;">Piezas/unidad</div><input id="pp-${p._id}" type="number" value="${p.piecesPerUnit||1}"></div>
@@ -1569,10 +1526,11 @@ async function addProduct() {
     const stock = RECIPE_TYPES.includes(category) ? 0 : STOCK_TYPES.includes(category) ? stockUnits * piecesPerUnit : stockUnits;
     const stockItems = RECIPE_TYPES.includes(category) ? getRecipeFromEditor("new") : [];
     if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll a la receta");
-    const body = { name, price, stock, piecesPerUnit, stockItems, active: true, image: document.getElementById("imageInput").value.trim(), description: document.getElementById("descInput").value.trim(), category };
+    const comboPiecePrice = +document.getElementById("comboPiecePriceInput").value || 0;
+    const body = { name, price, comboPiecePrice, stock, piecesPerUnit, stockItems, active: true, image: document.getElementById("imageInput").value.trim(), description: document.getElementById("descInput").value.trim(), category };
     const res = await authFetch(`${API}/products`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
     if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al crear"); }
-    ["nameInput","priceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id => document.getElementById(id).value = "");
+    ["nameInput","priceInput","comboPiecePriceInput","stockInput","piecesInput","imageInput","descInput"].forEach(id => document.getElementById(id).value = "");
     document.getElementById("imageFileInput").value = "";
     document.getElementById("imagePreview").classList.remove("show");
     document.getElementById("imagePreview").src = "";
@@ -1606,7 +1564,8 @@ async function updateProduct(id) {
     const stockItems = RECIPE_TYPES.includes(category) ? getRecipeFromEditor(id) : [];
     if (RECIPE_TYPES.includes(category) && !stockItems.length) throw new Error("Agregá al menos un roll");
     const active = document.getElementById(`ac-${id}`).value === "true";
-    const res = await authFetch(`${API}/products/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name: document.getElementById(`n-${id}`).value, price: +document.getElementById(`pr-${id}`).value, stock, piecesPerUnit, stockItems, active, image: document.getElementById(`im-${id}`).value, description: document.getElementById(`de-${id}`).value, category }) });
+    const comboPiecePrice = +document.getElementById(`cpp-${id}`).value || 0;
+    const res = await authFetch(`${API}/products/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name: document.getElementById(`n-${id}`).value, price: +document.getElementById(`pr-${id}`).value, comboPiecePrice, stock, piecesPerUnit, stockItems, active, image: document.getElementById(`im-${id}`).value, description: document.getElementById(`de-${id}`).value, category }) });
     if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error al guardar"); }
     toast("✓ Guardado", "success"); startAutoRefresh(); loadAll();
   } catch (err) { toast(err.message || "Error al guardar", "error"); }

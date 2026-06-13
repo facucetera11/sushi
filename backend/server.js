@@ -135,6 +135,14 @@ function getStockRecipe(product, itemOverride) {
   return [{ product: product._id, pieces: product.piecesPerUnit || 1 }];
 }
 
+function getComboPiecePrice(product) {
+  const customPrice = Number(product.comboPiecePrice) || 0;
+  if (customPrice > 0) return customPrice;
+  const unitPrice = Number(product.price) || 0;
+  const piecesPerUnit = Number(product.piecesPerUnit) || 1;
+  return Math.round(unitPrice / piecesPerUnit);
+}
+
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log("✅ MongoDB conectado");
@@ -251,7 +259,7 @@ app.get("/settings", async (req, res) => {
 
 app.put("/settings", requireAdmin, async (req, res) => {
   try {
-    const allowed = ["openHour", "closeHour", "deliveryHour", "openDays", "cashDiscount", "transferAlias", "mercadoPagoLink", "whatsappNumber", "acceptingOrders", "comboEleccionPrices"];
+    const allowed = ["openHour", "closeHour", "deliveryHour", "openDays", "cashDiscount", "transferAlias", "mercadoPagoLink", "whatsappNumber", "acceptingOrders"];
     const updates = {};
     allowed.forEach(key => {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) updates[key] = req.body[key];
@@ -298,8 +306,10 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
       const qty = Number(item.qty) || 0;
       if (qty <= 0) return res.status(400).json({ error: `Cantidad invalida para: ${item.name}` });
 
-      // Guardar precio real del producto (solo items sin _piecesOverride tienen precio propio)
-      if (!(item._piecesOverride > 0)) {
+      // Guardar precio real del producto. Los combos eleccion se cobran por pieza.
+      if (item._piecesOverride > 0) {
+        productPriceMap.set(`combo:${item._id?.toString()}`, { price: getComboPiecePrice(product), qty: Number(item._piecesOverride) * qty });
+      } else {
         productPriceMap.set(item._id?.toString(), { price: product.price, qty });
       }
 
@@ -313,13 +323,6 @@ app.post("/orders", rateLimit(orderAttempts, 20, 10 * 60 * 1000), async (req, re
     // Recalcular total server-side para no confiar en el cliente
     let calculatedBase = 0;
     for (const { price, qty } of productPriceMap.values()) {
-      calculatedBase += price * qty;
-    }
-    // Sumar combos elección (líneas con precio fijo enviadas por separado)
-    const comboLines = Array.isArray(req.body.comboLines) ? req.body.comboLines : [];
-    for (const line of comboLines) {
-      const qty = Number(line.qty) || 0;
-      const price = Number(line.price) || 0;
       calculatedBase += price * qty;
     }
     const discount = (paymentMethod === "cash" && settings.cashDiscount > 0)
